@@ -1,140 +1,329 @@
-import React, { useEffect, useState } from 'react';
-import { XIcon, ShieldCheckIcon, BellIcon, ZapIcon, HomeIcon } from 'lucide-react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { 
+  X, 
+  Shield, 
+  Bell, 
+  Zap, 
+  Smartphone, 
+  Download,
+  ArrowRight 
+} from 'lucide-react';
 
-const PWAInstallPrompt: React.FC = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showPrompt, setShowPrompt] = useState(false);
+interface PWAInstallPromptProps {
+  appName?: string;
+  appIcon?: string;
+  screenshots?: string[];
+  learnMoreUrl?: string;
+  features?: Array<{
+    icon: React.ComponentType<{ className?: string; size?: number }>;
+    text: string;
+    color: string;
+  }>;
+  onInstall?: () => void;
+  onDismiss?: () => void;
+}
+
+const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
+  appName = "Afroscholarhub Ambassadors",
+  appIcon = "/icon-192x192.png",
+  screenshots = ["/screenshot1.png", "/screenshot2.png"],
+  learnMoreUrl = "/about",
+  features = [
+    { icon: Shield, text: "Secure, private dashboards", color: "text-green-600" },
+    { icon: Bell, text: "Push notifications for updates", color: "text-blue-600" },
+    { icon: Zap, text: "Fast, offline access", color: "text-yellow-500" },
+    { icon: Smartphone, text: "Easy home screen access", color: "text-purple-600" }
+  ],
+  onInstall,
+  onDismiss
+}) => {
+  // Only use state hooks - no callbacks
+  const [isVisible, setIsVisible] = useState(false);
   const [showScreenshots, setShowScreenshots] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
-  useEffect(() => {
-    // Detect if app is already installed
-    const checkInstalled = () => {
-      // For most browsers
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        setIsInstalled(true);
-        setShowPrompt(false);
-      }
-      // For iOS Safari
-      if ((window.navigator as any).standalone === true) {
-        setIsInstalled(true);
-        setShowPrompt(false);
-      }
-    };
-    checkInstalled();
+  // Refs for mutable values that don't trigger re-renders
+  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const componentMountedRef = useRef(true);
 
-    // Listen for install prompt
-    const handler = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      checkInstalled();
-      if (!isInstalled) setShowPrompt(true);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-
-    // Listen for appinstalled event
-    const appInstalledHandler = () => {
+  // Check if app is already installed
+  const checkInstallationStatus = () => {
+    if (!componentMountedRef.current) return;
+    
+    const isStandalone = 
+      window.matchMedia('(display-mode: standalone)').matches || 
+      (window.navigator as any).standalone === true;
+    
+    if (isStandalone && !isInstalled) {
       setIsInstalled(true);
-      setShowPrompt(false);
-    };
-    window.addEventListener('appinstalled', appInstalledHandler);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-      window.removeEventListener('appinstalled', appInstalledHandler);
-    };
-    // eslint-disable-next-line
-  }, [isInstalled]);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setShowPrompt(false);
-      }
-      setDeferredPrompt(null);
+      setIsVisible(false);
     }
   };
 
-  const handleClose = () => {
-    setShowPrompt(false);
+  // Handle beforeinstallprompt event
+  const handleBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
+    if (!componentMountedRef.current) return;
+    
+    event.preventDefault();
+    deferredPromptRef.current = event;
+    checkInstallationStatus();
+    
+    if (!isInstalled) {
+      setIsVisible(true);
+    }
   };
 
+  // Handle app installation completion
+  const handleAppInstalled = () => {
+    if (!componentMountedRef.current) return;
+    
+    setIsInstalled(true);
+    setIsVisible(false);
+    deferredPromptRef.current = null;
+    onInstall?.();
+  };
 
-  if (!showPrompt || isInstalled) return null;
+  // Install the app
+  const installApp = async () => {
+    if (!deferredPromptRef.current || isInstalling) return;
+
+    setIsInstalling(true);
+    
+    try {
+      deferredPromptRef.current.prompt();
+      const { outcome } = await deferredPromptRef.current.userChoice;
+      
+      if (outcome === 'accepted') {
+        handleAppInstalled();
+      }
+    } catch (error) {
+      console.error('PWA installation failed:', error);
+    } finally {
+      deferredPromptRef.current = null;
+      setIsInstalling(false);
+    }
+  };
+
+  // Handle prompt dismissal
+  const dismissPrompt = () => {
+    if (!componentMountedRef.current) return;
+    
+    setIsVisible(false);
+    deferredPromptRef.current = null;
+    onDismiss?.();
+  };
+
+  // Toggle screenshots visibility
+  const toggleScreenshots = () => {
+    setShowScreenshots(prev => !prev);
+  };
+
+  // Setup event listeners - only runs once
+  useEffect(() => {
+    componentMountedRef.current = true;
+    checkInstallationStatus();
+
+    // Create event handlers inside effect to avoid closure issues
+    const beforeInstallHandler = (event: any) => {
+      if (event instanceof BeforeInstallPromptEvent) {
+        handleBeforeInstallPrompt(event);
+      }
+    };
+
+    const appInstalledHandler = () => {
+      handleAppInstalled();
+    };
+
+    window.addEventListener('beforeinstallprompt', beforeInstallHandler);
+    window.addEventListener('appinstalled', appInstalledHandler);
+
+    return () => {
+      componentMountedRef.current = false;
+      window.removeEventListener('beforeinstallprompt', beforeInstallHandler);
+      window.removeEventListener('appinstalled', appInstalledHandler);
+    };
+  }, []); // Empty dependency array - runs once
+
+  // Don't render if not visible or already installed
+  if (!isVisible || isInstalled) return null;
+
+  // Memoized feature list
+  const featureList = useMemo(() => 
+    features.map(({ icon: Icon, text, color }) => (
+      <li key={text} className="flex items-start gap-3 py-2">
+        <Icon size={18} className={`${color} flex-shrink-0 mt-0.5`} />
+        <span className="text-sm text-gray-700 leading-relaxed">{text}</span>
+      </li>
+    ))
+  , [features]);
+
+  // Memoized screenshot gallery
+  const screenshotGallery = useMemo(() => 
+    screenshots.map((src, index) => (
+      <div
+        key={index}
+        className="relative group overflow-hidden rounded-xl shadow-lg"
+        style={{ aspectRatio: '9/16' }}
+      >
+        <img
+          src={src}
+          alt={`${appName} screenshot ${index + 1}`}
+          className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-110"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    ))
+  , [screenshots, appName]);
 
   return (
-    <div
-      className="fixed bottom-6 right-6 z-50 backdrop-blur-lg bg-white/80 border border-gray-300 shadow-2xl rounded-2xl p-8 flex flex-col md:flex-row items-center gap-8 max-w-lg w-full transition-transform duration-700 ease-out animate-slide-in"
+    <div 
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6 pointer-events-none"
       role="dialog"
       aria-modal="true"
-      aria-label="Install Afroscholarhub Ambassadors"
-      style={{ animation: 'slideIn 0.7s cubic-bezier(0.23, 1, 0.32, 1)' }}
+      aria-label={`Install ${appName}`}
     >
-      <button
-        className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 focus:outline-none"
-        aria-label="Close install prompt"
-        onClick={handleClose}
+      <div 
+        className={`
+          w-full max-w-md bg-white/95 backdrop-blur-xl border border-gray-200/50 
+          shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 
+          ease-out transform pointer-events-auto
+          ${isVisible 
+            ? 'translate-y-0 opacity-100 scale-100' 
+            : 'translate-y-8 opacity-0 scale-95'
+          }
+        `}
       >
-        <XIcon size={22} />
-      </button>
-      <div className="flex flex-col items-center gap-2">
-        <img
-          src="/icon-192x192.png"
-          alt="Afroscholarhub Ambassadors App Icon"
-          className="w-20 h-20 rounded-2xl border-2 border-ash-gold shadow-lg mb-2 animate-bounce"
-        />
-        <div className="w-24 h-2 bg-gradient-to-r from-blue-400 via-yellow-400 to-green-400 rounded-full animate-pulse" />
-      </div>
-      <div className="flex-1">
-        <h2 className="font-extrabold text-2xl mb-2 text-ash-gold drop-shadow">Install Afroscholarhub Ambassadors</h2>
-        <p className="text-base text-gray-800 mb-3 font-medium">
-          Unlock the full experience of African scholarship and collaboration. Installing the app gives you:
-        </p>
-        <ul className="text-base text-gray-700 mb-3 space-y-2">
-          <li className="flex items-center gap-2"><ShieldCheckIcon size={18} className="text-green-600" /> <span>Secure, private dashboards</span></li>
-          <li className="flex items-center gap-2"><BellIcon size={18} className="text-blue-600" /> <span>Push notifications for updates</span></li>
-          <li className="flex items-center gap-2"><ZapIcon size={18} className="text-yellow-500" /> <span>Fast, reliable offline access</span></li>
-          <li className="flex items-center gap-2"><HomeIcon size={18} className="text-purple-600" /> <span>Easy home screen access</span></li>
-        </ul>
-        <a
-          href="/about"
-          className="text-xs text-blue-600 underline hover:text-blue-800 mb-3 inline-block"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn more about the app
-        </a>
-        <div className="flex gap-3 mt-3">
+        {/* Header */}
+        <div className="relative p-6 pb-4">
           <button
-            className="px-5 py-2 bg-gradient-to-r from-blue-600 to-ash-gold text-white font-bold rounded-lg shadow-lg hover:from-blue-700 hover:to-yellow-600 transition transform hover:scale-105 active:scale-95 duration-200 focus:outline-none"
-            onClick={handleInstallClick}
+            className="absolute -top-2 -right-2 p-2 text-gray-400 hover:text-gray-600 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                     rounded-full transition-colors duration-200 hover:bg-gray-100"
+            onClick={dismissPrompt}
+            aria-label="Close install prompt"
           >
-            <ZapIcon size={18} className="inline-block mr-1" /> Install Now
+            <X size={20} />
           </button>
-          <button
-            className="px-5 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition transform hover:scale-105 active:scale-95 duration-200 focus:outline-none"
-            onClick={() => setShowScreenshots(!showScreenshots)}
-          >
-            {showScreenshots ? 'Hide Screenshots' : 'Show Screenshots'}
-          </button>
+
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <img
+                src={appIcon}
+                alt={`${appName} icon`}
+                className="w-16 h-16 rounded-2xl border-2 border-gray-200 shadow-lg"
+              />
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20 animate-pulse" />
+            </div>
+
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
+                Add to Home Screen
+              </h2>
+              <p className="text-sm text-gray-600 max-w-[280px]">
+                Get {appName} on your home screen for the best experience
+              </p>
+            </div>
+          </div>
         </div>
+
+        {/* Features */}
+        <div className="px-6 pb-4">
+          <ul className="space-y-2">
+            {featureList}
+          </ul>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="px-6 pb-6 space-y-3">
+          <button
+            className={`
+              w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl 
+              font-semibold text-white shadow-lg transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white
+              ${isInstalling 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95'
+              }
+            `}
+            onClick={installApp}
+            disabled={isInstalling}
+            aria-label="Install the app"
+          >
+            {isInstalling ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Installing...
+              </>
+            ) : (
+              <>
+                <Download size={18} />
+                Install App
+                <ArrowRight size={18} className="ml-auto" />
+              </>
+            )}
+          </button>
+
+          <div className="flex gap-2">
+            <button
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 
+                       bg-gray-100/80 hover:bg-gray-200 rounded-lg transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-gray-300
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={toggleScreenshots}
+              disabled={isInstalling}
+            >
+              {showScreenshots ? 'Hide Preview' : 'Preview'}
+            </button>
+            
+            <a
+              href={learnMoreUrl}
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-blue-600 
+                       bg-blue-50/80 hover:bg-blue-100 rounded-lg transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-blue-300 text-center
+                       hover:underline disabled:opacity-50"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-disabled={isInstalling}
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+
+        {/* Screenshot Gallery */}
         {showScreenshots && (
-          <div className="mt-5 flex gap-3">
-            <img
-              src="/screenshot1.png"
-              alt="App screenshot 1"
-              className="w-28 h-40 object-cover rounded-xl border shadow"
-            />
-            <img
-              src="/screenshot2.png"
-              alt="App screenshot 2"
-              className="w-28 h-40 object-cover rounded-xl border shadow"
-            />
+          <div className="bg-gray-50 px-6 pb-6 pt-0">
+            <div className="flex gap-3 justify-center">
+              {screenshotGallery}
+            </div>
           </div>
         )}
+
+        {/* Custom CSS Animation */}
+        <style jsx>{`
+          @keyframes slideInUp {
+            from {
+              opacity: 0;
+              transform: translateY(24px) scale(0.95);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) scale(1);
+            }
+          }
+        `}</style>
       </div>
+
+      {/* Backdrop */}
+      {isVisible && (
+        <div 
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm"
+          onClick={dismissPrompt}
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 };
