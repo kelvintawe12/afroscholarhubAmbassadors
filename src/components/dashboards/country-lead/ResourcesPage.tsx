@@ -126,7 +126,7 @@ const featuredResources: Resource[] = [
     format: 'ZIP',
     size: '12.4MB',
     updated: 'Dec 15, 2024',
-    downloads: 1,234,
+    downloads: 1234,
     rating: 4.8,
     countrySpecific: false,
     countries: [],
@@ -557,7 +557,7 @@ const ResourcesPage: React.FC = () => {
     const matchesCountry = filters.country === 'all' || 
                           !resource.countrySpecific || 
                           resource.countries.includes(filters.country) ||
-                          (filters.country === 'multi' && resource.countrySpecific === false);
+                          (filters.country === 'multi' && !resource.countrySpecific);
     const matchesType = filters.type === 'all' || resource.type === filters.type;
     const matchesRating = filters.rating === 'all' || resource.rating >= (filters.rating === '4+' ? 4 : 0);
     
@@ -847,7 +847,6 @@ const ResourcesPage: React.FC = () => {
           data={allResources}
           keyField="id"
           rowsPerPage={10}
-          searchable
         />
       </div>
 

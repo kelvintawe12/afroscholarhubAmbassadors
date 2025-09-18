@@ -18,16 +18,14 @@ import {
   Activity,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import { DataTable } from '../../../ui/widgets/DataTable';
 import { KpiCard } from '../../../ui/widgets/KpiCard';
-import { 
-  BarChart, 
-  PieChart, 
-  LineChart, 
-  HeatMapChart 
-} from '../../../ui/widgets/charts'; // Assuming these exist
+import { BarChart } from '../../../ui/widgets/BarChart';
+import { PieChart } from '../../../ui/widgets/PieChart';
+import { LineChart } from '../../../ui/widgets/LineChart';
 
 // Types
 interface Ambassador {
@@ -996,7 +994,6 @@ const AmbassadorsPage: React.FC = () => {
               data={ambassadorsData}
               keyField="id"
               rowsPerPage={10}
-              searchable
             />
           </div>
         </div>
@@ -1015,8 +1012,8 @@ const AmbassadorsPage: React.FC = () => {
             />
             <PerformanceSummary
               title="Scholarship Generation"
-              score={2,847}
-              target={2,500}
+              score={2847}
+              target={2500}
               color="bg-gradient-to-r from-yellow-400 to-orange-500"
               icon={<Award className="h-5 w-5 text-white" />}
             />
@@ -1046,27 +1043,10 @@ const AmbassadorsPage: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <BarChart 
+              <BarChart
+                title="Performance by Country"
                 data={performanceByCountryData}
                 height={300}
-                className="w-full"
-                options={{
-                  scales: {
-                    y: {
-                      type: 'linear',
-                      display: true,
-                      position: 'left',
-                    },
-                    y1: {
-                      type: 'linear',
-                      display: true,
-                      position: 'right',
-                      grid: {
-                        drawOnChartArea: false,
-                      },
-                    },
-                  }
-                }}
               />
             </div>
 
@@ -1079,10 +1059,10 @@ const AmbassadorsPage: React.FC = () => {
                 </h3>
                 <span className="text-sm text-gray-500">Total: 1,247</span>
               </div>
-              <PieChart 
+              <PieChart
+                title="Role Distribution"
                 data={roleDistributionData}
                 height={300}
-                className="w-full"
               />
             </div>
           </div>
@@ -1098,27 +1078,10 @@ const AmbassadorsPage: React.FC = () => {
                 <span className="text-sm text-gray-500">Last 30 days</span>
               </div>
             </div>
-            <LineChart 
+            <LineChart
+              title="Activity Trends"
               data={activityTrendsData}
               height={300}
-              className="w-full"
-              options={{
-                scales: {
-                  y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                  },
-                  y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    grid: {
-                      drawOnChartArea: false,
-                    },
-                  },
-                }
-              }}
             />
           </div>
         </div>
@@ -1133,7 +1096,7 @@ const AmbassadorsPage: React.FC = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Top Performers Q4 2024</h3>
               <DataTable 
                 columns={[
-                  { header: 'Rank', accessor: 'rank', width: '60px' },
+                { header: 'Rank', accessor: 'rank' },
                   { header: 'Ambassador', accessor: 'name' },
                   { header: 'Country', accessor: 'country' },
                   { header: 'Score', accessor: 'score', sortable: true },

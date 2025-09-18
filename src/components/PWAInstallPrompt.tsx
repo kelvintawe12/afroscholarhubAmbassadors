@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   X, 
   Shield, 
@@ -8,6 +8,13 @@ import {
   Download,
   ArrowRight 
 } from 'lucide-react';
+
+// Type definition for BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+  prompt(): Promise<void>;
+}
 
 interface PWAInstallPromptProps {
   appName?: string;
@@ -126,8 +133,13 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
 
     // Create event handlers inside effect to avoid closure issues
     const beforeInstallHandler = (event: any) => {
-      if (event instanceof BeforeInstallPromptEvent) {
-        handleBeforeInstallPrompt(event);
+      if (
+        event &&
+        typeof event === "object" &&
+        "prompt" in event &&
+        "userChoice" in event
+      ) {
+        handleBeforeInstallPrompt(event as BeforeInstallPromptEvent);
       }
     };
 
@@ -148,34 +160,30 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   // Don't render if not visible or already installed
   if (!isVisible || isInstalled) return null;
 
-  // Memoized feature list
-  const featureList = useMemo(() => 
-    features.map(({ icon: Icon, text, color }) => (
-      <li key={text} className="flex items-start gap-3 py-2">
-        <Icon size={18} className={`${color} flex-shrink-0 mt-0.5`} />
-        <span className="text-sm text-gray-700 leading-relaxed">{text}</span>
-      </li>
-    ))
-  , [features]);
+  // Feature list
+  const featureList = features.map(({ icon: Icon, text, color }) => (
+    <li key={text} className="flex items-start gap-3 py-2">
+      <Icon size={18} className={`${color} flex-shrink-0 mt-0.5`} />
+      <span className="text-sm text-gray-700 leading-relaxed">{text}</span>
+    </li>
+  ));
 
-  // Memoized screenshot gallery
-  const screenshotGallery = useMemo(() => 
-    screenshots.map((src, index) => (
-      <div
-        key={index}
-        className="relative group overflow-hidden rounded-xl shadow-lg"
-        style={{ aspectRatio: '9/16' }}
-      >
-        <img
-          src={src}
-          alt={`${appName} screenshot ${index + 1}`}
-          className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-110"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-    ))
-  , [screenshots, appName]);
+  // Screenshot gallery
+  const screenshotGallery = screenshots.map((src, index) => (
+    <div
+      key={index}
+      className="relative group overflow-hidden rounded-xl shadow-lg"
+      style={{ aspectRatio: '9/16' }}
+    >
+      <img
+        src={src}
+        alt={`${appName} screenshot ${index + 1}`}
+        className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-110"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
+  ));
 
   return (
     <div 
@@ -302,7 +310,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         )}
 
         {/* Custom CSS Animation */}
-        <style jsx>{`
+        <style>{`
           @keyframes slideInUp {
             from {
               opacity: 0;

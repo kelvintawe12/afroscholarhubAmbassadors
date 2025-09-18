@@ -14,7 +14,8 @@ import {
   MessageSquare,
   Zap,
   CheckCircle,
-  X
+  X,
+  TrendingUp
 } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
@@ -292,7 +293,7 @@ const EventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event, onC
             <div className="text-xs text-gray-500 uppercase tracking-wide">Leads</div>
           </div>
           <div className="text-center">
-            <div className={`text-2xl font-bold ${attendanceRate >= 80 ? 'text-green-600' : 'text-yellow-600'}`}>
+            <div className={`text-2xl font-bold ${Number(attendanceRate) >= 80 ? 'text-green-600' : 'text-yellow-600'}`}>
               {attendanceRate}%
             </div>
             <div className="text-xs text-gray-500 uppercase tracking-wide">Fill Rate</div>
@@ -660,9 +661,9 @@ const EventsPage: React.FC = () => {
           </h2>
           
           <ActivityFeed 
+            title="Recent Activity"
             activities={recentActivities} 
             maxItems={8}
-            className="space-y-3"
           />
         </div>
       </div>

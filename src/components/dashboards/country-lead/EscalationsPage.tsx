@@ -770,9 +770,9 @@ const EscalationsPage: React.FC = () => {
           </h2>
           
           <ActivityFeed 
+            title="Recent Activity"
             activities={recentActivities} 
             maxItems={6}
-            className="space-y-3"
           />
         </div>
       </div>

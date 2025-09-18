@@ -8,21 +8,25 @@ export const AmbassadorDashboard = () => {
     title: 'Leads Generated',
     value: '150',
     change: 12,
-    icon: <SchoolIcon size={20} />
+    icon: <SchoolIcon size={20} />,
+    color: 'bg-ash-teal'
   }, {
     title: 'Tasks Completed',
     value: '28',
     change: 5,
-    icon: <CheckSquareIcon size={20} />
+    icon: <CheckSquareIcon size={20} />,
+    color: 'bg-ash-gold'
   }, {
     title: 'Daily Streak',
     value: '7 days',
-    icon: <CalendarIcon size={20} />
+    icon: <CalendarIcon size={20} />,
+    color: 'bg-blue-400'
   }, {
     title: 'Impact Score',
     value: '92/100',
     change: 8,
-    icon: <TrophyIcon size={20} />
+    icon: <TrophyIcon size={20} />,
+    color: 'bg-green-400'
   }];
   // Mock data for tasks
   const taskColumns = [{
@@ -192,10 +196,11 @@ export const AmbassadorDashboard = () => {
         <p className="text-sm text-gray-500">
           Great job, John! Your last visit generated 20 sign-ups. 🎉
         </p>
+        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} icon={kpi.icon} color={kpi.color} />)}
       </div>
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} change={kpi.change} icon={kpi.icon} />)}
+        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} icon={kpi.icon} color={kpi.color} />)}
       </div>
       {/* Quick Log Button */}
       <div className="mb-6 flex justify-end">

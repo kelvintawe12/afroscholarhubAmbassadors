@@ -21,7 +21,7 @@ import {
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { KpiCard } from '../../ui/widgets/KpiCard';
-import { PipelineChart } from '../../ui/widgets/PipelineChart'; // Assuming this exists
+// import { PipelineChart } from '../../ui/widgets/PipelineChart'; // Assuming this exists
 
 // Types
 interface School {
@@ -100,7 +100,7 @@ const schoolsData: School[] = [
     flag: '🇳🇬',
     type: 'secondary',
     stage: 'partnered',
-    students: 1,245,
+    students: 1245,
     ambassadors: 3,
     scholarships: 45,
     potential: 'High',
@@ -125,7 +125,7 @@ const schoolsData: School[] = [
     flag: '🇬🇭',
     type: 'polytechnic',
     stage: 'proposal',
-    students: 3,456,
+    students: 3456,
     ambassadors: 2,
     scholarships: 0,
     potential: 'Very High',
@@ -150,7 +150,7 @@ const schoolsData: School[] = [
     flag: '🇰🇪',
     type: 'university',
     stage: 'visited',
-    students: 8,234,
+    students: 8234,
     ambassadors: 1,
     scholarships: 12,
     potential: 'Medium',
@@ -175,7 +175,7 @@ const schoolsData: School[] = [
     flag: '🇿🇦',
     type: 'university',
     stage: 'contacted',
-    students: 2,134,
+    students: 2134,
     ambassadors: 0,
     scholarships: 0,
     potential: 'High',
@@ -200,7 +200,7 @@ const schoolsData: School[] = [
     flag: '🇺🇬',
     type: 'university',
     stage: 'prospect',
-    students: 5,678,
+    students: 5678,
     ambassadors: 0,
     scholarships: 0,
     potential: 'Medium',
@@ -225,7 +225,7 @@ const schoolsData: School[] = [
     flag: '🇪🇬',
     type: 'university',
     stage: 'inactive',
-    students: 12,345,
+    students: 12345,
     ambassadors: 0,
     scholarships: 0,
     potential: 'Low',
@@ -383,12 +383,12 @@ const SchoolCard: React.FC<{ school: School; onClick: () => void }> = ({ school,
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wide">Potential Value</p>
-              <p className={`text-sm font-semibold ${potentialColors[school.potential]}`}>
-                {potentialColors[school.potential]}
+              <p className={`text-sm font-semibold ${potentialColors[school.potential as keyof typeof potentialColors]}`}>
+                {potentialColors[school.potential as keyof typeof potentialColors]}
                 ₦{formatPotentialValue(school.potential)}M
               </p>
             </div>
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${potentialColors[school.potential]}`}>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${potentialColors[school.potential as keyof typeof potentialColors]}`}>
               {school.potential}
             </span>
           </div>
@@ -812,11 +812,11 @@ const PipelinePage: React.FC = () => {
                 <div className="w-2 h-2 bg-green-500 rounded-full" />
               </div>
             </div>
-            <PipelineChart 
+            {/* <PipelineChart 
               data={stageSummary} 
               height={300}
               className="w-full"
-            />
+            /> */}
           </div>
 
           {/* Schools Grid */}
@@ -864,9 +864,9 @@ const PipelinePage: React.FC = () => {
           </h2>
           
           <ActivityFeed 
+            title="Recent Activity"
             activities={recentActivities} 
             maxItems={6}
-            className="space-y-3"
           />
         </div>
       </div>

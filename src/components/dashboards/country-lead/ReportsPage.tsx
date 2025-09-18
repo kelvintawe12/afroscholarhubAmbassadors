@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  BarChart3, 
-  FileText, 
-  Download, 
-  Calendar, 
-  Filter, 
-  Search, 
-  Users, 
-  Award, 
-  MapPin, 
+import {
+  BarChart3,
+  FileText,
+  Download,
+  Calendar,
+  Filter,
+  Search,
+  Users,
+  Award,
+  MapPin,
   TrendingUp,
   Zap,
   Shield,
@@ -16,15 +16,13 @@ import {
   GraduationCap,
   Activity,
   DollarSign,
-  Percent
+  Percent,
+  Clock,
+  Plus
 } from 'lucide-react';
-import { 
-  LineChart, 
-  BarChart, 
-  PieChart, 
-  AreaChart,
-  HeatMapChart 
-} from '../../ui/widgets/charts'; // Assuming these exist
+import { BarChart } from '../../ui/widgets/BarChart';
+import { PieChart } from '../../ui/widgets/PieChart';
+import { LineChart } from '../../ui/widgets/LineChart';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { DataTable } from '../../ui/widgets/DataTable';
 
@@ -532,27 +530,10 @@ const ReportsPage: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <LineChart 
+              <LineChart
+                title="Scholarship Trends"
                 data={scholarshipTrendsData}
                 height={300}
-                className="w-full"
-                options={{
-                  scales: {
-                    y: {
-                      type: 'linear',
-                      display: true,
-                      position: 'left',
-                    },
-                    y1: {
-                      type: 'linear',
-                      display: true,
-                      position: 'right',
-                      grid: {
-                        drawOnChartArea: false,
-                      },
-                    },
-                  }
-                }}
               />
             </div>
 
@@ -565,10 +546,10 @@ const ReportsPage: React.FC = () => {
                 </h3>
                 <span className="text-sm text-gray-500">Q4 2024</span>
               </div>
-              <PieChart 
+              <PieChart
+                title="Category Breakdown"
                 data={categoryBreakdownData}
                 height={300}
-                className="w-full"
               />
             </div>
           </div>
@@ -586,27 +567,10 @@ const ReportsPage: React.FC = () => {
                   <Filter className="h-4 w-4 text-gray-400" />
                 </div>
               </div>
-              <BarChart 
+              <BarChart
+                title="Regional Performance"
                 data={regionalPerformanceData}
                 height={300}
-                className="w-full"
-                options={{
-                  scales: {
-                    y: {
-                      type: 'linear',
-                      display: true,
-                      position: 'left',
-                    },
-                    y1: {
-                      type: 'linear',
-                      display: true,
-                      position: 'right',
-                      grid: {
-                        drawOnChartArea: false,
-                      },
-                    },
-                  }
-                }}
               />
             </div>
 
@@ -619,10 +583,10 @@ const ReportsPage: React.FC = () => {
                 </h3>
                 <span className="text-sm text-gray-500">2024</span>
               </div>
-              <AreaChart 
+              <BarChart
+                title="Ambassador Performance"
                 data={ambassadorPerformanceData}
                 height={300}
-                className="w-full"
               />
             </div>
           </div>
