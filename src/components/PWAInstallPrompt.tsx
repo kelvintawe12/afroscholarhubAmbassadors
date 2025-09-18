@@ -49,6 +49,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   const [showScreenshots, setShowScreenshots] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
 
   // Refs for mutable values that don't trigger re-renders
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
@@ -126,6 +127,17 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
     setShowScreenshots(prev => !prev);
   };
 
+  // Cycle through features for slideshow
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const interval = setInterval(() => {
+      setCurrentFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
+    }, 3000); // Change slide every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [isVisible, features.length]);
+
   // Setup event listeners - only runs once
   useEffect(() => {
     componentMountedRef.current = true;
@@ -160,13 +172,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   // Don't render if not visible or already installed
   if (!isVisible || isInstalled) return null;
 
-  // Feature list
-  const featureList = features.map(({ icon: Icon, text, color }) => (
-    <li key={text} className="flex items-start gap-3 py-2">
-      <Icon size={18} className={`${color} flex-shrink-0 mt-0.5`} />
-      <span className="text-sm text-gray-700 leading-relaxed">{text}</span>
-    </li>
-  ));
+
 
   // Screenshot gallery
   const screenshotGallery = screenshots.map((src, index) => (
@@ -245,11 +251,43 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           </div>
         </div>
 
-        {/* Features */}
+        {/* Features Slideshow */}
         <div className="px-6 pb-4">
-          <ul className="space-y-2">
-            {featureList}
-          </ul>
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              {features.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <Icon
+                    key={index}
+                    size={24}
+                    className={`${
+                      index === currentFeatureIndex ? feature.color : 'text-gray-400'
+                    } transition-colors duration-500`}
+                  />
+                );
+              })}
+            </div>
+            <div className="h-12 flex items-center justify-center">
+              <p className="text-sm text-gray-700 leading-relaxed transition-opacity duration-500">
+                {features[currentFeatureIndex].text}
+              </p>
+            </div>
+            <div className="flex justify-center gap-2 mt-2">
+              {features.map((_, index) => (
+                <button
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    index === currentFeatureIndex
+                      ? 'bg-blue-600 scale-125'
+                      : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  onClick={() => setCurrentFeatureIndex(index)}
+                  aria-label={`Go to feature ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -294,18 +332,16 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
               {showScreenshots ? 'Hide Preview' : 'Preview'}
             </button>
 
-            <a
-              href={learnMoreUrl}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-blue-600
-                       bg-blue-50/80 hover:bg-blue-100 rounded-lg transition-colors
-                       focus:outline-none focus:ring-2 focus:ring-blue-300 text-center
-                       hover:underline disabled:opacity-50"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-disabled={isInstalling}
+            <button
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600
+                       bg-gray-100/80 hover:bg-gray-200 rounded-lg transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-gray-300
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={dismissPrompt}
+              disabled={isInstalling}
             >
-              Learn More
-            </a>
+              Dismiss
+            </button>
           </div>
         </div>
 
