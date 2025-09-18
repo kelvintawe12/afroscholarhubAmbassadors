@@ -1,13 +1,39 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title></title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Afroscholarhub Ambassadors is a professional platform connecting African scholars to share, discover, and collaborate on research, outreach, and impact initiatives. Empowering education, productivity, and community across Africa." />
+  <title>Afroscholarhub Ambassadors Platform</title>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/public/manifest.json" />
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/png" sizes="48x48" href="/public/icon-48x48.png" />
+  <link rel="icon" type="image/png" sizes="72x72" href="/public/icon-72x72.png" />
+  <link rel="icon" type="image/png" sizes="96x96" href="/public/icon-96x96.png" />
+  <link rel="icon" type="image/png" sizes="128x128" href="/public/icon-128x128.png" />
+  <link rel="icon" type="image/png" sizes="144x144" href="/public/icon-144x144.png" />
+  <link rel="icon" type="image/png" sizes="152x152" href="/public/icon-152x152.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/public/icon-192x192.png" />
+  <link rel="icon" type="image/png" sizes="384x384" href="/public/icon-384x384.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/public/icon-512x512.png" />
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/public/icon-192x192.png" />
+  <!-- Theme Color for Mobile Browsers -->
+  <meta name="theme-color" content="#1a202c" />
   </head>
   <body>
     <div id="root"></div>
+    <!-- Register Service Worker for PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/public/service-worker.js').catch(function(error) {
+            console.error('Service Worker registration failed:', error);
+          });
+        });
+      }
+    </script>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
