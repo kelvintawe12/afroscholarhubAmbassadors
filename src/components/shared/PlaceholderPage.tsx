@@ -1,6 +1,6 @@
 import React from 'react'
 import { useLocation } from 'react-router-dom'
-import { ConstructionIcon } from 'lucide-react'
+import { ConstructionIcon as LucideConstructionIcon } from 'lucide-react'
 export const PlaceholderPage = ({ title }: { title?: string }) => {
   const location = useLocation()
   const pathSegments = location.pathname.split('/')
@@ -9,7 +9,7 @@ export const PlaceholderPage = ({ title }: { title?: string }) => {
   return (
     <div className="flex h-full flex-col items-center justify-center py-16 text-center">
       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-ash-teal/10">
-        <ConstructionIcon size={40} className="text-ash-teal" />
+        <LucideConstructionIcon size={40} className="text-ash-teal" />
       </div>
       <h1 className="mb-2 text-2xl font-bold text-gray-900">
         {pageName.charAt(0).toUpperCase() + pageName.slice(1)} Page
