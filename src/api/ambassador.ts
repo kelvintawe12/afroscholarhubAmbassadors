@@ -1,4 +1,4 @@
-import { supabase, Task, School, Visit } from '../utils/supabase';
+import { supabase, Task, School, Visit, User } from '../utils/supabase';
 // Ambassador API functions
 export const getAmbassadorTasks = async (ambassadorId: string) => {
   const {
@@ -80,4 +80,15 @@ export const getAmbassadorImpactMetrics = async (ambassadorId: string) => {
     schoolCount: schoolCount || 0,
     partnershipCount: partnershipCount || 0
   };
+};
+
+export const getAllAmbassadors = async () => {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('role', 'ambassador')
+    .order('full_name', { ascending: true });
+
+  if (error) throw error;
+  return data as User[];
 };
