@@ -1,44 +1,28 @@
-# TODO: Implement Toggle for Floating Action Buttons
+# Ambassador Dashboard Implementation Plan
 
-## Current State Analysis
-- FloatingActionButton component is always rendered in DashboardLayout.tsx
-- No existing toggle mechanism exists in the UI
-- Component renders based on user role (management, country_lead, ambassador, support)
+## Overview
+Implement real functionality for placeholder pages in ambassador dashboards.
 
-## Implementation Plan
+## Tasks
+- [x] Implement SchoolsPage: Display assigned schools with status, leads, last visit, and actions
+- [x] Implement ImpactPage: Show impact metrics, charts, and achievements
+- [x] Implement ResourcesPage: List downloadable resources and materials
+- [x] Implement SupportPage: Provide FAQs, contact options, and help articles
+- [x] Implement ActivityLogPage: Display activity history and visit logs
 
-### 1. Add State Management
-- [x] Add `showFloatingButtons` state to DashboardLayout component
-- [x] Default to `false` to hide buttons initially
-- [x] Persist state in localStorage for user preference
+## Files to Edit
+- src/components/dashboards/ambassador/SchoolsPage.tsx
+- src/components/dashboards/ambassador/ImpactPage.tsx
+- src/components/dashboards/ambassador/ResourcesPage.tsx
+- src/components/dashboards/ambassador/SupportPage.tsx
+- src/components/dashboards/ambassador/ActivityLogPage.tsx
 
-### 2. Create Toggle Button
-- [x] Add small toggle button (plus icon) that shows when floating buttons are hidden
-- [x] Position it at bottom-right with proper styling
-- [x] Clicking it shows the full FloatingActionButton
+## Dependencies
+- Use existing API functions from src/api/ambassador.ts
+- Leverage components like DataTable, KpiCard, BarChart, LineChart
+- Mock data for resources and support content
 
-### 3. Update DashboardLayout
-- [x] Conditionally render FloatingActionButton based on state
-- [x] Pass onClose callback to FloatingActionButton
-
-### 4. Update FloatingActionButton
-- [x] Add onClose prop to FloatingActionButton component
-- [x] Call onClose when action is executed
-- [x] Call onClose when clicking outside the FAB
-- [x] Hide floating buttons after interaction
-
-### 5. Testing
-- [x] Test toggle functionality across different roles
-- [x] Verify state persistence
-- [x] Test on mobile and desktop
-
-## Files Modified
-- [x] src/components/layout/DashboardLayout.tsx
-- [x] src/components/ui/FloatingActionButton.tsx
-
-## Expected Outcome
-- [x] Floating buttons are hidden by default
-- [x] Users can click the small plus button to show floating buttons
-- [x] Floating buttons hide after performing an action or clicking outside
-- [x] State persists across page reloads
-- [x] Clean UI when buttons are hidden
+## Followup Steps
+- Test each page for functionality
+- Ensure responsive design
+- Verify integration with navigation
