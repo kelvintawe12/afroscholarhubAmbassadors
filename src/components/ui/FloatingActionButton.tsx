@@ -371,12 +371,12 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   // Calculate button positions and animations
   const getButtonStyles = useCallback((index: number, total: number) => {
     const x = 0;
-    const y = -(index + 1) * 60; // Vertical stack upwards
+    const y = -(index + 1) * 50; // Vertical stack upwards with tighter spacing
 
     return {
       // Initial closed position (stacked below main button)
       closed: {
-        transform: `translateY(${(index + 1) * 8}px) scale(0.95)`,
+        transform: `translateY(${(index + 1) * 6}px) scale(0.95)`,
         opacity: 0,
         pointerEvents: 'none' as const
       },
@@ -403,7 +403,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     'top-left': 'top-6 left-6'
   };
 
-  const containerClass = `fixed z-50 flex flex-col items-end space-y-2 ${positionClasses[position]} ${className}`;
+  const containerClass = `fixed z-50 flex flex-col items-end space-y-1 ${positionClasses[position]} ${className}`;
 
   if (actions.length === 0) {
     return null;
@@ -412,7 +412,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   return (
     <div ref={containerRef} className={containerClass}>
       {/* Action Buttons */}
-      <div className="relative flex flex-col-reverse space-y-reverse space-y-1 origin-bottom">
+      <div className="relative flex flex-col-reverse space-y-reverse space-y-0.5 origin-bottom">
         {actions.map((action, index) => {
           const styles = getButtonStyles(index, actions.length);
           const isActive = activeAction === action.id;
