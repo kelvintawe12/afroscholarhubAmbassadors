@@ -53,13 +53,15 @@ interface FloatingActionButtonProps {
   };
   position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
   className?: string;
+  onClose?: () => void;
 }
 
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   role,
   userContext = {},
   position = 'bottom-right',
-  className = ''
+  className = '',
+  onClose
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -279,20 +281,12 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const actions = getActions();
 
   // Sophisticated animation handling
-  const handleToggle = useCallback(async () => {
+  const handleToggle = useCallback(() => {
     if (isAnimating) return;
-    
+
     setIsAnimating(true);
-    
-    if (isOpen) {
-      // Closing animation
-      await new Promise(resolve => {
-        timeoutRef.current = setTimeout(resolve, 200);
-      });
-    }
-    
     setIsOpen(prev => !prev);
-    
+
     // Reset animation after completion
     setTimeout(() => {
       setIsAnimating(false);
@@ -301,7 +295,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         timeoutRef.current = null;
       }
     }, 300);
-  }, [isOpen, isAnimating]);
+  }, [isAnimating]);
 
   // Auto-close on route change
   useEffect(() => {
@@ -318,6 +312,10 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setIsAnimating(false);
+        // Close the floating buttons when clicking outside
+        if (onClose) {
+          onClose();
+        }
       }
     };
 
@@ -325,7 +323,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   // Enhanced action execution with loading states
   const executeAction = useCallback(async (action: ActionItem) => {
@@ -348,7 +346,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
       // Success feedback (you can replace with toast notification)
       console.log(`✅ ${action.label} completed successfully`);
-      
+
       // Optional: Track analytics
       if (window.gtag) {
         window.gtag('event', 'fab_action', {
@@ -358,6 +356,11 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           value: 1
         });
       }
+
+      // Close the floating buttons after action execution
+      if (onClose) {
+        onClose();
+      }
     } catch (error) {
       console.error(`❌ Error executing ${action.label}:`, error);
       // Optional: Show error toast
@@ -366,7 +369,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
       setActiveAction(null);
       setIsAnimating(false);
     }
-  }, [role, isAnimating]);
+  }, [role, isAnimating, onClose]);
 
   // Calculate button positions and animations
   const getButtonStyles = useCallback((index: number, total: number) => {
@@ -385,7 +388,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         transform: `translate(${x}px, ${y}px) scale(1)`,
         opacity: 1,
         pointerEvents: 'auto' as const,
-        transition: `all 0.4s cubic-bezier(0.23, 1, 0.320, 1) ${0.1 + (index * 0.05)}s`
+        transition: `all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1) ${0.05 + (index * 0.03)}s`
       },
       // Hover effect
       hover: {
@@ -397,13 +400,13 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
   // Position classes
   const positionClasses = {
-    'bottom-right': 'bottom-6 right-6',
-    'bottom-left': 'bottom-6 left-6',
+    'bottom-right': 'bottom-20 right-6',
+    'bottom-left': 'bottom-20 left-6',
     'top-right': 'top-6 right-6',
     'top-left': 'top-6 left-6'
   };
 
-  const containerClass = `fixed z-50 flex flex-col items-end space-y-1 ${positionClasses[position]} ${className}`;
+  const containerClass = `fixed z-[60] flex flex-col items-end space-y-1 ${positionClasses[position]} ${className}`;
 
   if (actions.length === 0) {
     return null;
@@ -412,7 +415,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   return (
     <div ref={containerRef} className={containerClass}>
       {/* Action Buttons */}
-      <div className="relative flex flex-col-reverse space-y-reverse space-y-0.5 origin-bottom">
+      <div className="relative flex flex-col-reverse space-y-reverse space-y-0.5 origin-center">
         {actions.map((action, index) => {
           const styles = getButtonStyles(index, actions.length);
           const isActive = activeAction === action.id;
@@ -422,18 +425,17 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
             <div
               key={action.id}
               className={`
-                relative group flex items-center rounded-full px-5 py-3 text-sm font-semibold shadow-lg
+                relative z-50 group flex items-center rounded-full px-5 py-3 text-sm font-semibold shadow-lg
                 transition-all duration-300 ease-out overflow-hidden
                 bg-white border border-gray-200 hover:border-gray-300
-                ${action.disabled 
-                  ? 'opacity-50 cursor-not-allowed' 
+                ${action.disabled
+                  ? 'opacity-50 cursor-not-allowed'
                   : 'cursor-pointer hover:bg-gray-50 active:bg-gray-100'
                 }
                 ${isActive ? 'ring-2 ring-blue-500 ring-opacity-30' : ''}
-                ${styles.closed.transform} ${styles.closed.opacity}
               `}
               style={{
-                ...styles.open,
+                ...(isOpen ? styles.open : styles.closed),
                 ...(isOpen && !action.disabled ? styles.hover : {})
               }}
               onClick={() => !action.disabled && executeAction(action)}
@@ -533,7 +535,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         
         {/* Icon container with rotation */}
         <div className={`
-          relative h-8 w-8 flex items-center justify-center transition-all duration-500 ease-out
+          relative h-8 w-8 flex items-center justify-center transition-all duration-300 ease-out
           ${isOpen ? 'rotate-180 scale-110' : 'rotate-0 scale-100'}
         `}>
           <div className={`

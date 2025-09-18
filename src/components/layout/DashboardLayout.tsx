@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Sidebar } from './Sidebar';
-import { XIcon, HeartIcon, InfoIcon } from 'lucide-react';
+import { XIcon, HeartIcon, InfoIcon, Plus } from 'lucide-react';
 import { ChatBot } from '../ChatBot';
 import { FloatingActionButton } from '../ui/FloatingActionButton';
 interface DashboardLayoutProps {
@@ -12,7 +12,23 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showFloatingButtons, setShowFloatingButtons] = useState(false);
   const location = useLocation();
+
+  // Load floating buttons preference from localStorage
+  useEffect(() => {
+    const savedPreference = localStorage.getItem('showFloatingButtons');
+    if (savedPreference !== null) {
+      setShowFloatingButtons(JSON.parse(savedPreference));
+    }
+  }, []);
+
+  // Save floating buttons preference to localStorage
+  const toggleFloatingButtons = () => {
+    const newValue = !showFloatingButtons;
+    setShowFloatingButtons(newValue);
+    localStorage.setItem('showFloatingButtons', JSON.stringify(newValue));
+  };
   // Determine current role from URL
   const getCurrentRole = () => {
     const path = location.pathname;
@@ -48,7 +64,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} currentRole={role} />
+        <Navbar
+          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          currentRole={role}
+          showFloatingButtons={showFloatingButtons}
+          toggleFloatingButtons={toggleFloatingButtons}
+        />
         <main className="flex-1 overflow-y-auto bg-gray-100 p-4 md:p-6">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
@@ -72,7 +93,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </div>
       {/* Chatbot */}
       <ChatBot />
-      {/* Floating Action Button */}
-      <FloatingActionButton role={role} />
+      {/* Floating Action Button Toggle */}
+      {showFloatingButtons ? (
+        <FloatingActionButton
+          role={role}
+          onClose={() => setShowFloatingButtons(false)}
+        />
+      ) : (
+        <button
+          onClick={toggleFloatingButtons}
+          className="fixed bottom-20 right-6 z-[60] flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-ash-gold via-ash-teal to-ash-gold shadow-lg transition-all duration-300 ease-out hover:shadow-xl active:scale-95"
+          aria-label="Show quick actions"
+          title="Show Quick Actions"
+        >
+          <Plus size={20} className="text-white" />
+        </button>
+      )}
     </div>;
 };
