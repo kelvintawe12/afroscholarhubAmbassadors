@@ -186,19 +186,28 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   ));
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6 pointer-events-none"
       role="dialog"
       aria-modal="true"
       aria-label={`Install ${appName}`}
     >
-      <div 
+      {/* Backdrop */}
+      {isVisible && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={dismissPrompt}
+          aria-hidden="true"
+        />
+      )}
+
+      <div
         className={`
-          w-full max-w-md bg-white/95 backdrop-blur-xl border border-gray-200/50 
-          shadow-2xl rounded-2xl overflow-hidden transition-all duration-500 
+          w-full max-w-md bg-white border border-gray-200/50
+          shadow-2xl rounded-2xl overflow-hidden transition-all duration-500
           ease-out transform pointer-events-auto
-          ${isVisible 
-            ? 'translate-y-0 opacity-100 scale-100' 
+          ${isVisible
+            ? 'translate-y-0 opacity-100 scale-100'
             : 'translate-y-8 opacity-0 scale-95'
           }
         `}
@@ -206,7 +215,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         {/* Header */}
         <div className="relative p-6 pb-4">
           <button
-            className="absolute -top-2 -right-2 p-2 text-gray-400 hover:text-gray-600 
+            className="absolute -top-2 -right-2 p-2 text-gray-400 hover:text-gray-600
                      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
                      rounded-full transition-colors duration-200 hover:bg-gray-100"
             onClick={dismissPrompt}
@@ -247,11 +256,11 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         <div className="px-6 pb-6 space-y-3">
           <button
             className={`
-              w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl 
+              w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
               font-semibold text-white shadow-lg transition-all duration-200
               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white
-              ${isInstalling 
-                ? 'bg-gray-400 cursor-not-allowed' 
+              ${isInstalling
+                ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95'
               }
             `}
@@ -275,7 +284,7 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
 
           <div className="flex gap-2">
             <button
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700
                        bg-gray-100/80 hover:bg-gray-200 rounded-lg transition-colors
                        focus:outline-none focus:ring-2 focus:ring-gray-300
                        disabled:opacity-50 disabled:cursor-not-allowed"
@@ -284,10 +293,10 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
             >
               {showScreenshots ? 'Hide Preview' : 'Preview'}
             </button>
-            
+
             <a
               href={learnMoreUrl}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-blue-600 
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-blue-600
                        bg-blue-50/80 hover:bg-blue-100 rounded-lg transition-colors
                        focus:outline-none focus:ring-2 focus:ring-blue-300 text-center
                        hover:underline disabled:opacity-50"
@@ -323,15 +332,6 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           }
         `}</style>
       </div>
-
-      {/* Backdrop */}
-      {isVisible && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm"
-          onClick={dismissPrompt}
-          aria-hidden="true"
-        />
-      )}
     </div>
   );
 };
