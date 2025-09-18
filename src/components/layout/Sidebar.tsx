@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { LayoutDashboardIcon, UsersIcon, SchoolIcon, CalendarIcon, FileTextIcon, SettingsIcon, ChevronRightIcon, CheckSquareIcon, FolderIcon, BarChart3Icon, MessageSquareIcon, HelpCircleIcon, ClipboardListIcon, FileIcon, ShieldIcon, UserPlusIcon, InboxIcon, BookOpenIcon, LineChartIcon } from 'lucide-react';
 interface SidebarProps {
   currentRole: string;
@@ -52,21 +52,25 @@ export const Sidebar = ({
       </div>
       <SidebarItem title="Settings" icon={<SettingsIcon size={18} />} href="/dashboard/management/settings" active={isActive('/management/settings')} onNavigate={onNavigate} />
     </nav>;
-  const renderCountryLeadSidebar = () => <nav className="mt-2 px-2">
-      <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-        Operations
-      </div>
-      <SidebarItem title="My Team" icon={<UsersIcon size={18} />} href="/dashboard/country-lead/team" active={isActive('/country-lead/team')} onNavigate={onNavigate} />
-      <SidebarItem title="School Pipeline" icon={<SchoolIcon size={18} />} href="/dashboard/country-lead/pipeline" active={isActive('/country-lead/pipeline')} onNavigate={onNavigate} />
-      <SidebarItem title="Events" icon={<CalendarIcon size={18} />} href="/dashboard/country-lead/events" active={isActive('/country-lead/events')} onNavigate={onNavigate} />
-      <SidebarItem title="Resources" icon={<FolderIcon size={18} />} href="/dashboard/country-lead/resources" active={isActive('/country-lead/resources')} onNavigate={onNavigate} />
-      <SidebarItem title="Escalations" icon={<MessageSquareIcon size={18} />} href="/dashboard/country-lead/escalations" active={isActive('/country-lead/escalations')} onNavigate={onNavigate} />
-      <div className="my-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-        Insights
-      </div>
-      <SidebarItem title="Global Peek" icon={<BarChart3Icon size={18} />} href="/dashboard/country-lead/global" active={isActive('/country-lead/global')} onNavigate={onNavigate} />
-      <SidebarItem title="Reports" icon={<FileTextIcon size={18} />} href="/dashboard/country-lead/reports" active={isActive('/country-lead/reports')} onNavigate={onNavigate} />
-    </nav>;
+  const renderCountryLeadSidebar = () => {
+    const params = useParams<{ countryCode?: string }>();
+    const countryCode = params.countryCode || 'ng';
+    return <nav className="mt-2 px-2">
+        <div className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Operations
+        </div>
+        <SidebarItem title="My Team" icon={<UsersIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/team`} active={isActive(`/country-lead/${countryCode}/team`)} onNavigate={onNavigate} />
+        <SidebarItem title="School Pipeline" icon={<SchoolIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/pipeline`} active={isActive(`/country-lead/${countryCode}/pipeline`)} onNavigate={onNavigate} />
+        <SidebarItem title="Events" icon={<CalendarIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/events`} active={isActive(`/country-lead/${countryCode}/events`)} onNavigate={onNavigate} />
+        <SidebarItem title="Resources" icon={<FolderIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/resources`} active={isActive(`/country-lead/${countryCode}/resources`)} onNavigate={onNavigate} />
+        <SidebarItem title="Escalations" icon={<MessageSquareIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/escalations`} active={isActive(`/country-lead/${countryCode}/escalations`)} onNavigate={onNavigate} />
+        <div className="my-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+          Insights
+        </div>
+        <SidebarItem title="Global Peek" icon={<BarChart3Icon size={18} />} href={`/dashboard/country-lead/${countryCode}/global`} active={isActive(`/country-lead/${countryCode}/global`)} onNavigate={onNavigate} />
+        <SidebarItem title="Reports" icon={<FileTextIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/reports`} active={isActive(`/country-lead/${countryCode}/reports`)} onNavigate={onNavigate} />
+      </nav>;
+  };
   const renderAmbassadorSidebar = () => <nav className="mt-2 px-2">
       <SidebarItem title="My Tasks" icon={<CheckSquareIcon size={18} />} href="/dashboard/ambassador/tasks" active={isActive('/ambassador/tasks')} onNavigate={onNavigate} />
       <SidebarItem title="My Schools" icon={<SchoolIcon size={18} />} href="/dashboard/ambassador/schools" active={isActive('/ambassador/schools')} onNavigate={onNavigate} />

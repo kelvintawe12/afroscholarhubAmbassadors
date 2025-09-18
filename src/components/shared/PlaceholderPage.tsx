@@ -1,4 +1,3 @@
-import React from 'react'
 import { useLocation } from 'react-router-dom'
 import { ConstructionIcon as LucideConstructionIcon } from 'lucide-react'
 export const PlaceholderPage = ({ title }: { title?: string }) => {
