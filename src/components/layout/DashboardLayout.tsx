@@ -14,7 +14,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
   // Determine current role from URL
   const getCurrentRole = () => {
     const path = location.pathname;
