@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar';
 import { XIcon, HeartIcon, InfoIcon } from 'lucide-react';
 import { ChatBot } from '../ChatBot';
 import { FloatingActionButton } from '../ui/FloatingActionButton';
+import PWAInstallPrompt from '../PWAInstallPrompt';
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -31,6 +32,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     }
   };
   return <div className="flex h-screen overflow-hidden bg-gray-100">
+    <PWAInstallPrompt />
       {/* Mobile sidebar overlay */}
       <div className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-200 ease-in-out lg:hidden ${sidebarOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={() => setSidebarOpen(false)} />
       {/* Sidebar */}
