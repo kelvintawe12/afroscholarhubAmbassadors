@@ -1,8 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
-// Initialize the Supabase client
-const supabaseUrl = 'https://your-supabase-project.supabase.co';
-const supabaseAnonKey = 'your-anon-key';
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error(
+    'Missing Supabase configuration. Please check your environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY'
+  );
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'afroscholarhub-ambassadors@1.0.0',
+    },
+  },
+});
 // Define database types to match Supabase schema
 export type User = {
   id: string;
