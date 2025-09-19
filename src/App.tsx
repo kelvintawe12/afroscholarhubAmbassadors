@@ -1,54 +1,81 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
-import { LoginPage } from './components/LoginPage';
-import { DashboardLayout } from './components/layout/DashboardLayout';
-import PWAInstallPrompt from './components/PWAInstallPrompt';
-import { ManagementDashboard } from './components/dashboards/management/ManagementDashboard';
-import { AnalyticsPage } from './components/dashboards/management/AnalyticsPage';
-import { InsightsPage } from './components/dashboards/management/InsightsPage';
-import { CountryLeadDashboard } from './components/dashboards/country-lead/CountryLeadDashboard';
-import { TeamPage } from './components/dashboards/country-lead/TeamPage';
-import PipelinePage from './components/dashboards/country-lead/PipelinePage';
-import  EventsPage  from './components/dashboards/country-lead/EventsPage';
-import  ResourcesPage  from './components/dashboards/country-lead/ResourcesPage';
-import  EscalationsPage  from './components/dashboards/country-lead/EscalationsPage';
-import  GlobalPeekPage  from './components/dashboards/country-lead/GlobalPeekPage';
-import  ReportsPage  from './components/dashboards/country-lead/ReportsPage';
-import { AmbassadorDashboard } from './components/dashboards/ambassador/AmbassadorDashboard';
-import { TasksPage } from './components/dashboards/ambassador/TasksPage';
-import { AmbassadorSchoolsPage } from './components/dashboards/ambassador/SchoolsPage';
-import { ActivityLogPage } from './components/dashboards/ambassador/ActivityLogPage';
-import { AmbassadorResourcesPage } from './components/dashboards/ambassador/ResourcesPage';
-import { ImpactPage } from './components/dashboards/ambassador/ImpactPage';
-import { SupportPage } from './components/dashboards/ambassador/SupportPage';
-import { ProfilePage } from './components/dashboards/ambassador/ProfilePage';
-import { SettingsPage } from './components/dashboards/ambassador/SettingsPage';
-import  AmbassadorsPage  from './components/dashboards/management/ambassadors/AmbassadorsPage';
-import { AmbassadorPerformancePage } from './components/dashboards/management/ambassadors/PerformancePage';
-import { AmbassadorTrainingPage } from './components/dashboards/management/ambassadors/TrainingPage';
-import { SchoolsPage } from './components/dashboards/management/schools/SchoolsPage';
-import { SchoolProspectsPage } from './components/dashboards/management/schools/ProspectsPage';
-import { SchoolPartnershipsPage } from './components/dashboards/management/schools/PartnershipsPage';
-import { OutreachEventsPage } from './components/dashboards/management/outreaches/EventsPage';
-import { OutreachPipelinePage } from './components/dashboards/management/outreaches/PipelinePage';
-import { CalendarPage } from './components/dashboards/management/outreaches/CalendarPage';
-import { EventCreatePage } from './components/dashboards/management/outreaches/EventCreatePage';
-import { EventEditPage } from './components/dashboards/management/outreaches/EventEditPage';
-import { WeeklyReportsPage } from './components/dashboards/management/reports/WeeklyReportsPage';
-import { MonthlyReportsPage } from './components/dashboards/management/reports/MonthlyReportsPage';
-import { QuarterlyReportsPage } from './components/dashboards/management/reports/QuarterlyReportsPage';
-import { CustomReportsPage } from './components/dashboards/management/reports/CustomReportsPage';
-import { PlaceholderPage } from './components/shared/PlaceholderPage';
-import { QueuesPage } from './components/dashboards/support/QueuesPage';
-import { SupportResourcesPage } from './components/dashboards/support/ResourcesPage';
-import { SupportReportsPage } from './components/dashboards/support/ReportsPage';
-import { ModerationPage } from './components/dashboards/support/ModerationPage';
-import { AuditsPage } from './components/dashboards/support/AuditsPage';
-import { DirectoryPage } from './components/dashboards/support/DirectoryPage';
-import { SupportDashboard } from './components/dashboards/support/SupportDashboard';
-import { HelpCenterPage } from './components/help/HelpCenterPage';
+import { LoadingSpinner } from './components/LoadingSpinner';
+
+// Lazy load all components for code splitting
+const LoginPage = React.lazy(() => import('./components/LoginPage').then(module => ({ default: module.LoginPage })));
+const DashboardLayout = React.lazy(() => import('./components/layout/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
+const PWAInstallPrompt = React.lazy(() => import('./components/PWAInstallPrompt').then(module => ({ default: module.default })));
+
+// Management Dashboard Components
+const ManagementDashboard = React.lazy(() => import('./components/dashboards/management/ManagementDashboard').then(module => ({ default: module.ManagementDashboard })));
+const AnalyticsPage = React.lazy(() => import('./components/dashboards/management/AnalyticsPage').then(module => ({ default: module.AnalyticsPage })));
+const InsightsPage = React.lazy(() => import('./components/dashboards/management/InsightsPage').then(module => ({ default: module.InsightsPage })));
+
+// Country Lead Dashboard Components
+const CountryLeadDashboard = React.lazy(() => import('./components/dashboards/country-lead/CountryLeadDashboard').then(module => ({ default: module.CountryLeadDashboard })));
+const TeamPage = React.lazy(() => import('./components/dashboards/country-lead/TeamPage').then(module => ({ default: module.TeamPage })));
+const PipelinePage = React.lazy(() => import('./components/dashboards/country-lead/PipelinePage').then(module => ({ default: module.default })));
+const EventsPage = React.lazy(() => import('./components/dashboards/country-lead/EventsPage').then(module => ({ default: module.default })));
+const ResourcesPage = React.lazy(() => import('./components/dashboards/country-lead/ResourcesPage').then(module => ({ default: module.default })));
+const EscalationsPage = React.lazy(() => import('./components/dashboards/country-lead/EscalationsPage').then(module => ({ default: module.default })));
+const GlobalPeekPage = React.lazy(() => import('./components/dashboards/country-lead/GlobalPeekPage').then(module => ({ default: module.default })));
+const ReportsPage = React.lazy(() => import('./components/dashboards/country-lead/ReportsPage').then(module => ({ default: module.default })));
+
+// Ambassador Dashboard Components
+const AmbassadorDashboard = React.lazy(() => import('./components/dashboards/ambassador/AmbassadorDashboard').then(module => ({ default: module.AmbassadorDashboard })));
+const TasksPage = React.lazy(() => import('./components/dashboards/ambassador/TasksPage').then(module => ({ default: module.TasksPage })));
+const AmbassadorSchoolsPage = React.lazy(() => import('./components/dashboards/ambassador/SchoolsPage').then(module => ({ default: module.AmbassadorSchoolsPage })));
+const ActivityLogPage = React.lazy(() => import('./components/dashboards/ambassador/ActivityLogPage').then(module => ({ default: module.ActivityLogPage })));
+const AmbassadorResourcesPage = React.lazy(() => import('./components/dashboards/ambassador/ResourcesPage').then(module => ({ default: module.AmbassadorResourcesPage })));
+const ImpactPage = React.lazy(() => import('./components/dashboards/ambassador/ImpactPage').then(module => ({ default: module.ImpactPage })));
+const SupportPage = React.lazy(() => import('./components/dashboards/ambassador/SupportPage').then(module => ({ default: module.SupportPage })));
+const ProfilePage = React.lazy(() => import('./components/dashboards/ambassador/ProfilePage').then(module => ({ default: module.ProfilePage })));
+const SettingsPage = React.lazy(() => import('./components/dashboards/ambassador/SettingsPage').then(module => ({ default: module.SettingsPage })));
+
+// Management Ambassador Components
+const AmbassadorsPage = React.lazy(() => import('./components/dashboards/management/ambassadors/AmbassadorsPage').then(module => ({ default: module.default })));
+const AmbassadorPerformancePage = React.lazy(() => import('./components/dashboards/management/ambassadors/PerformancePage').then(module => ({ default: module.AmbassadorPerformancePage })));
+const AmbassadorTrainingPage = React.lazy(() => import('./components/dashboards/management/ambassadors/TrainingPage').then(module => ({ default: module.AmbassadorTrainingPage })));
+
+// Management Schools Components
+const SchoolsPage = React.lazy(() => import('./components/dashboards/management/schools/SchoolsPage').then(module => ({ default: module.SchoolsPage })));
+const SchoolProspectsPage = React.lazy(() => import('./components/dashboards/management/schools/ProspectsPage').then(module => ({ default: module.SchoolProspectsPage })));
+const SchoolPartnershipsPage = React.lazy(() => import('./components/dashboards/management/schools/PartnershipsPage').then(module => ({ default: module.SchoolPartnershipsPage })));
+
+// Management Outreaches Components
+const OutreachEventsPage = React.lazy(() => import('./components/dashboards/management/outreaches/EventsPage').then(module => ({ default: module.OutreachEventsPage })));
+const OutreachPipelinePage = React.lazy(() => import('./components/dashboards/management/outreaches/PipelinePage').then(module => ({ default: module.OutreachPipelinePage })));
+const CalendarPage = React.lazy(() => import('./components/dashboards/management/outreaches/CalendarPage').then(module => ({ default: module.CalendarPage })));
+const EventCreatePage = React.lazy(() => import('./components/dashboards/management/outreaches/EventCreatePage').then(module => ({ default: module.EventCreatePage })));
+const EventEditPage = React.lazy(() => import('./components/dashboards/management/outreaches/EventEditPage').then(module => ({ default: module.EventEditPage })));
+
+// Management Reports Components
+const WeeklyReportsPage = React.lazy(() => import('./components/dashboards/management/reports/WeeklyReportsPage').then(module => ({ default: module.WeeklyReportsPage })));
+const MonthlyReportsPage = React.lazy(() => import('./components/dashboards/management/reports/MonthlyReportsPage').then(module => ({ default: module.MonthlyReportsPage })));
+const QuarterlyReportsPage = React.lazy(() => import('./components/dashboards/management/reports/QuarterlyReportsPage').then(module => ({ default: module.QuarterlyReportsPage })));
+const CustomReportsPage = React.lazy(() => import('./components/dashboards/management/reports/CustomReportsPage').then(module => ({ default: module.CustomReportsPage })));
+
+// Support Dashboard Components
+const SupportDashboard = React.lazy(() => import('./components/dashboards/support/SupportDashboard').then(module => ({ default: module.SupportDashboard })));
+const QueuesPage = React.lazy(() => import('./components/dashboards/support/QueuesPage').then(module => ({ default: module.QueuesPage })));
+const SupportResourcesPage = React.lazy(() => import('./components/dashboards/support/ResourcesPage').then(module => ({ default: module.SupportResourcesPage })));
+const SupportReportsPage = React.lazy(() => import('./components/dashboards/support/ReportsPage').then(module => ({ default: module.SupportReportsPage })));
+const ModerationPage = React.lazy(() => import('./components/dashboards/support/ModerationPage').then(module => ({ default: module.ModerationPage })));
+const AuditsPage = React.lazy(() => import('./components/dashboards/support/AuditsPage').then(module => ({ default: module.AuditsPage })));
+const DirectoryPage = React.lazy(() => import('./components/dashboards/support/DirectoryPage').then(module => ({ default: module.DirectoryPage })));
+
+// Help Components
+const HelpCenterPage = React.lazy(() => import('./components/help/HelpCenterPage').then(module => ({ default: module.HelpCenterPage })));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <LoadingSpinner size="lg" />
+  </div>
+);
 function App() {
   return (
     <ErrorBoundary>
@@ -56,7 +83,8 @@ function App() {
         <>
           <PWAInstallPrompt />
           <Router>
-            <Routes>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
               {/* Management Routes */}
@@ -416,6 +444,7 @@ function App() {
               <Route path="/help/tutorials" element={<HelpCenterPage />} />
               <Route path="/help/support" element={<HelpCenterPage />} />
             </Routes>
+            </Suspense>
           </Router>
         </>
       </ToastProvider>
