@@ -359,7 +359,7 @@ export const Navbar = ({
         </div>}
       <div className="flex items-center space-x-1 md:space-x-4">
         {/* Calendar Button */}
-        <button className="hidden rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 md:flex">
+        <button className="hidden rounded-full p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 md:flex" onClick={() => navigate(`/dashboard/${currentRole}/outreaches/calendar`)}>
           <CalendarIcon size={20} />
         </button>
         {/* Help Button */}
@@ -368,15 +368,15 @@ export const Navbar = ({
             <HelpCircleIcon size={20} />
           </button>
           {showHelpMenu && <div ref={helpMenuRef} className="absolute right-0 mt-2 w-56 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
-              <a href="#" className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50">
+              <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => navigate('/help/documentation')}>
                 <span>Documentation</span>
-              </a>
-              <a href="#" className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50">
+              </button>
+              <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => navigate('/help/tutorials')}>
                 <span>Video Tutorials</span>
-              </a>
-              <a href="#" className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50">
+              </button>
+              <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => navigate('/help/support')}>
                 <span>Contact Support</span>
-              </a>
+              </button>
             </div>}
         </div>
         {/* Notifications */}
@@ -429,45 +429,45 @@ export const Navbar = ({
             </span>
             <ChevronDownIcon size={16} className="ml-1 hidden md:block" />
           </button>
-          {showProfileMenu && <div ref={profileMenuRef} className="absolute right-0 mt-2 w-64 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
-              <div className="border-b border-gray-100 px-4 py-3">
-                <p className="font-medium text-gray-900">John Okafor</p>
-                <p className="text-sm text-gray-500">john@afroscholarhub.org</p>
-                <div className="mt-2">
-                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+          {showProfileMenu && <div ref={profileMenuRef} className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-300 bg-white py-2 shadow-xl transition-all duration-200 ease-in-out">
+              <div className="border-b border-gray-200 px-4 py-4">
+                <p className="font-semibold text-gray-900">John Okafor</p>
+                <p className="text-sm text-gray-600">john@afroscholarhub.org</p>
+                <div className="mt-3">
+                  <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
                     Active
                   </span>
                 </div>
               </div>
-              <div className="border-b border-gray-100 py-2">
-                <div className="px-4 py-1 text-xs font-medium uppercase tracking-wider text-gray-500">
+              <div className="border-b border-gray-200 py-3">
+                <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
                   Switch Role
                 </div>
-                <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => switchRole('management')}>
-                  <CrownIcon size={16} className="mr-2 text-ash-gold" />
-                  <span>Management</span>
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors duration-150" onClick={() => switchRole('management')}>
+                  <CrownIcon size={16} className="mr-3 text-ash-gold" />
+                  <span className="flex-1">Management</span>
                 </button>
-                <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => switchRole('country-lead')}>
-                  <FlagIcon size={16} className="mr-2 text-ash-teal" />
-                  <span>Country Lead</span>
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors duration-150" onClick={() => switchRole('country-lead')}>
+                  <FlagIcon size={16} className="mr-3 text-ash-teal" />
+                  <span className="flex-1">Country Lead</span>
                 </button>
-                <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => switchRole('ambassador')}>
-                  <HandshakeIcon size={16} className="mr-2 text-ash-teal" />
-                  <span>Ambassador</span>
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors duration-150" onClick={() => switchRole('ambassador')}>
+                  <HandshakeIcon size={16} className="mr-3 text-ash-teal" />
+                  <span className="flex-1">Ambassador</span>
                 </button>
               </div>
-              <div className="py-1">
-                <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => {}}>
-                  <UserIcon size={16} className="mr-2" />
-                  <span>My Profile</span>
+              <div className="py-2">
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors duration-150 rounded-md" onClick={() => navigate(`/dashboard/${currentRole}/profile`)}>
+                  <UserIcon size={16} className="mr-3 text-gray-600" />
+                  <span className="flex-1">My Profile</span>
                 </button>
-                <button className="flex w-full items-center px-4 py-2 text-left text-sm hover:bg-gray-50" onClick={() => {}}>
-                  <SettingsIcon size={16} className="mr-2" />
-                  <span>Settings</span>
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm hover:bg-gray-100 transition-colors duration-150 rounded-md" onClick={() => navigate(`/dashboard/${currentRole}/settings`)}>
+                  <SettingsIcon size={16} className="mr-3 text-gray-600" />
+                  <span className="flex-1">Settings</span>
                 </button>
-                <button className="flex w-full items-center px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50" onClick={handleLogout}>
-                  <LogOutIcon size={16} className="mr-2" />
-                  <span>Log out</span>
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 rounded-md" onClick={handleLogout}>
+                  <LogOutIcon size={16} className="mr-3" />
+                  <span className="flex-1">Log out</span>
                 </button>
               </div>
             </div>}

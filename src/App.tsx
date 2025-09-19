@@ -21,6 +21,8 @@ import { ActivityLogPage } from './components/dashboards/ambassador/ActivityLogP
 import { AmbassadorResourcesPage } from './components/dashboards/ambassador/ResourcesPage';
 import { ImpactPage } from './components/dashboards/ambassador/ImpactPage';
 import { SupportPage } from './components/dashboards/ambassador/SupportPage';
+import { ProfilePage } from './components/dashboards/ambassador/ProfilePage';
+import { SettingsPage } from './components/dashboards/ambassador/SettingsPage';
 import  AmbassadorsPage  from './components/dashboards/management/ambassadors/AmbassadorsPage';
 import { AmbassadorPerformancePage } from './components/dashboards/management/ambassadors/PerformancePage';
 import { AmbassadorTrainingPage } from './components/dashboards/management/ambassadors/TrainingPage';
@@ -34,7 +36,6 @@ import { WeeklyReportsPage } from './components/dashboards/management/reports/We
 import { MonthlyReportsPage } from './components/dashboards/management/reports/MonthlyReportsPage';
 import { QuarterlyReportsPage } from './components/dashboards/management/reports/QuarterlyReportsPage';
 import { CustomReportsPage } from './components/dashboards/management/reports/CustomReportsPage';
-import { SettingsPage } from './components/dashboards/management/SettingsPage';
 import { PlaceholderPage } from './components/shared/PlaceholderPage';
 import { QueuesPage } from './components/dashboards/support/QueuesPage';
 import { SupportResourcesPage } from './components/dashboards/support/ResourcesPage';
@@ -43,6 +44,7 @@ import { ModerationPage } from './components/dashboards/support/ModerationPage';
 import { AuditsPage } from './components/dashboards/support/AuditsPage';
 import { DirectoryPage } from './components/dashboards/support/DirectoryPage';
 import { SupportDashboard } from './components/dashboards/support/SupportDashboard';
+import { HelpCenterPage } from './components/help/HelpCenterPage';
 function App() {
   return (
     <>
@@ -151,6 +153,12 @@ function App() {
           <Route path="/dashboard/ambassador/support" element={<DashboardLayout>
                 <SupportPage />
               </DashboardLayout>} />
+          <Route path="/dashboard/ambassador/profile" element={<DashboardLayout>
+                <ProfilePage />
+              </DashboardLayout>} />
+          <Route path="/dashboard/ambassador/settings" element={<DashboardLayout>
+                <SettingsPage />
+              </DashboardLayout>} />
           {/* Support Routes */}
           <Route path="/dashboard/support" element={<DashboardLayout>
                 <SupportDashboard />
@@ -173,6 +181,10 @@ function App() {
           <Route path="/dashboard/support/directory" element={<DashboardLayout>
                 <DirectoryPage />
               </DashboardLayout>} />
+          {/* Help Routes */}
+          <Route path="/help/documentation" element={<HelpCenterPage />} />
+          <Route path="/help/tutorials" element={<HelpCenterPage />} />
+          <Route path="/help/support" element={<HelpCenterPage />} />
         </Routes>
       </Router>
     </>
