@@ -32,6 +32,8 @@ import { SchoolPartnershipsPage } from './components/dashboards/management/schoo
 import { OutreachEventsPage } from './components/dashboards/management/outreaches/EventsPage';
 import { OutreachPipelinePage } from './components/dashboards/management/outreaches/PipelinePage';
 import { CalendarPage } from './components/dashboards/management/outreaches/CalendarPage';
+import { EventCreatePage } from './components/dashboards/management/outreaches/EventCreatePage';
+import { EventEditPage } from './components/dashboards/management/outreaches/EventEditPage';
 import { WeeklyReportsPage } from './components/dashboards/management/reports/WeeklyReportsPage';
 import { MonthlyReportsPage } from './components/dashboards/management/reports/MonthlyReportsPage';
 import { QuarterlyReportsPage } from './components/dashboards/management/reports/QuarterlyReportsPage';
@@ -83,6 +85,12 @@ function App() {
               </DashboardLayout>} />
           <Route path="/dashboard/management/outreaches/events" element={<DashboardLayout>
                 <OutreachEventsPage />
+              </DashboardLayout>} />
+          <Route path="/dashboard/management/outreaches/events/new" element={<DashboardLayout>
+                <EventCreatePage />
+              </DashboardLayout>} />
+          <Route path="/dashboard/management/outreaches/events/:id/edit" element={<DashboardLayout>
+                <EventEditPage />
               </DashboardLayout>} />
           <Route path="/dashboard/management/outreaches/pipeline" element={<DashboardLayout>
                 <OutreachPipelinePage />
