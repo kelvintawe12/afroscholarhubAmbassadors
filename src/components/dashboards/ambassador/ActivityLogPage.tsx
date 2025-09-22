@@ -1,196 +1,235 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarIcon, MapPinIcon, UsersIcon, ClockIcon, SearchIcon, FilterIcon, EyeIcon, DownloadIcon } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, UsersIcon, ClockIcon, SearchIcon, FilterIcon, EyeIcon, DownloadIcon, AlertCircleIcon } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
-import { getAmbassadorVisits } from '../../../api/ambassador';
+import { getAmbassadorVisits, getAmbassadorTasks } from '../../../api/ambassador';
+import { useAuth } from '../../../hooks/useAuth';
+import { LoadingSpinner } from '../../LoadingSpinner';
+
+interface Activity {
+  id: string;
+  type: 'School Visit' | 'Task Completion' | 'Follow-up Call' | 'Email Outreach' | 'Virtual Meeting';
+  school: string;
+  location: string;
+  date: string;
+  duration: string;
+  studentsReached: number;
+  activities: string[];
+  notes: string;
+  status: string;
+  leadsGenerated?: number;
+  rawData?: any; // For storing original data
+}
 
 export const ActivityLogPage = () => {
-  const [activities, setActivities] = useState<any[]>([]);
-  const [filteredActivities, setFilteredActivities] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [filteredActivities, setFilteredActivities] = useState<Activity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [dateRange, setDateRange] = useState('all'); // New filter for date range
 
   useEffect(() => {
     const fetchActivities = async () => {
+      if (!user?.id) return;
+
       try {
         setIsLoading(true);
-        // In a real app, this would use the API client
-        // const data = await getAmbassadorVisits('current-user-id')
-        // For now, use mock data
-        const mockData = [
-          {
-            id: 1,
-            type: 'School Visit',
-            school: 'Lagos Model School',
-            location: 'Lagos, Nigeria',
-            date: '2024-04-15T10:00:00Z',
-            duration: '2 hours',
-            studentsReached: 45,
-            activities: ['Essay Workshop', 'Career Guidance'],
-            notes: 'Very engaged students. Strong interest in STEM programs.',
-            status: 'Completed'
-          },
-          {
-            id: 2,
-            type: 'School Visit',
-            school: 'ABC Academy',
-            location: 'Abuja, Nigeria',
-            date: '2024-04-10T14:30:00Z',
-            duration: '1.5 hours',
-            studentsReached: 30,
-            activities: ['Scholarship Information Session'],
-            notes: 'Discussed application deadlines and requirements.',
-            status: 'Completed'
-          },
-          {
-            id: 3,
-            type: 'Follow-up Call',
-            school: 'Unity College',
-            location: 'Ibadan, Nigeria',
-            date: '2024-04-08T11:00:00Z',
-            duration: '30 minutes',
-            studentsReached: 0,
-            activities: ['Partnership Discussion'],
-            notes: 'Principal interested in expanding our program.',
-            status: 'Completed'
-          },
-          {
-            id: 4,
-            type: 'School Visit',
-            school: 'Heritage Academy',
-            location: 'Kano, Nigeria',
-            date: '2024-04-05T09:15:00Z',
-            duration: '3 hours',
-            studentsReached: 20,
-            activities: ['Essay Workshop', 'Mock Interviews'],
-            notes: 'Great turnout. Students showed excellent preparation.',
-            status: 'Completed'
-          },
-          {
-            id: 5,
-            type: 'Email Outreach',
-            school: 'XYZ High School',
-            location: 'Lagos, Nigeria',
-            date: '2024-04-03T16:00:00Z',
-            duration: '15 minutes',
-            studentsReached: 0,
-            activities: ['Initial Contact'],
-            notes: 'Sent introduction email with program overview.',
-            status: 'Completed'
-          },
-          {
-            id: 6,
-            type: 'School Visit',
-            school: 'Unity College',
-            location: 'Ibadan, Nigeria',
-            date: '2024-03-28T13:45:00Z',
-            duration: '2.5 hours',
-            studentsReached: 75,
-            activities: ['Full Day Workshop', 'Parent Meeting'],
-            notes: 'Excellent collaboration with school administration.',
-            status: 'Completed'
-          },
-          {
-            id: 7,
-            type: 'Virtual Meeting',
-            school: 'ABC Academy',
-            location: 'Abuja, Nigeria',
-            date: '2024-03-25T15:30:00Z',
-            duration: '45 minutes',
-            studentsReached: 0,
-            activities: ['Program Planning'],
-            notes: 'Planned upcoming visit activities and timeline.',
-            status: 'Completed'
-          },
-          {
-            id: 8,
-            type: 'School Visit',
-            school: 'Lagos Model School',
-            location: 'Lagos, Nigeria',
-            date: '2024-03-20T11:00:00Z',
-            duration: '1 hour',
-            studentsReached: 25,
-            activities: ['Quick Check-in'],
-            notes: 'Follow-up on previous workshop outcomes.',
-            status: 'Completed'
-          }
-        ];
-        setActivities(mockData);
-        setFilteredActivities(mockData);
-        setIsLoading(false);
+        setError(null);
+
+        // Fetch visits and tasks in parallel
+        const [visitsData, tasksData] = await Promise.all([
+          getAmbassadorVisits(user.id),
+          getAmbassadorTasks(user.id)
+        ]);
+
+        const combinedActivities: Activity[] = [];
+
+        // Transform visits data
+        if (visitsData) {
+          visitsData.forEach(visit => {
+            combinedActivities.push({
+              id: `visit-${visit.id}`,
+              type: 'School Visit',
+              school: visit.school_name || 'Unknown School',
+              location: visit.school_location || 'Unknown Location',
+              date: visit.visit_date,
+              duration: visit.duration ? `${visit.duration} minutes` : 'Not recorded',
+              studentsReached: visit.students_reached || 0,
+              leadsGenerated: visit.leads_generated || 0,
+              activities: [
+                ...(visit.workshop_conducted ? ['Workshop'] : []),
+                ...(visit.presentation_given ? ['Presentation'] : []),
+                ...(visit.materials_distributed ? ['Material Distribution'] : []),
+                ...(visit.follow_up_scheduled ? ['Follow-up Scheduled'] : [])
+              ],
+              notes: visit.notes || 'No notes provided',
+              status: visit.status || 'Completed',
+              rawData: visit
+            });
+          });
+        }
+
+        // Transform completed tasks data
+        if (tasksData) {
+          tasksData
+            .filter(task => task.status === 'Completed')
+            .forEach(task => {
+              combinedActivities.push({
+                id: `task-${task.id}`,
+                type: 'Task Completion',
+                school: task.school_name || 'General Task',
+                location: task.school_location || 'N/A',
+                date: task.completed_date || task.updated_at,
+                duration: 'N/A',
+                studentsReached: 0,
+                activities: [task.title],
+                notes: task.notes || task.description || 'Task completed',
+                status: 'Completed',
+                rawData: task
+              });
+            });
+        }
+
+        // Sort by date (most recent first)
+        combinedActivities.sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        setActivities(combinedActivities);
+        setFilteredActivities(combinedActivities);
       } catch (error) {
         console.error('Error fetching activities:', error);
+        setError('Failed to load activity data. Please try again.');
+      } finally {
         setIsLoading(false);
       }
     };
+
     fetchActivities();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     let filtered = [...activities];
 
     // Apply type filter
     if (filterType !== 'all') {
-      filtered = filtered.filter(activity => activity.type.toLowerCase().replace(' ', '') === filterType.toLowerCase());
+      const filterMap: { [key: string]: string } = {
+        schoolvisit: 'School Visit',
+        taskcompletion: 'Task Completion',
+        followup: 'Follow-up Call',
+        outreach: 'Email Outreach',
+        virtual: 'Virtual Meeting'
+      };
+      filtered = filtered.filter(activity => 
+        activity.type === filterMap[filterType]
+      );
+    }
+
+    // Apply date range filter
+    if (dateRange !== 'all') {
+      const now = new Date();
+      const filterDate = new Date();
+      
+      switch (dateRange) {
+        case 'today':
+          filterDate.setHours(0, 0, 0, 0);
+          break;
+        case 'week':
+          filterDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          filterDate.setMonth(now.getMonth() - 1);
+          break;
+        case 'quarter':
+          filterDate.setMonth(now.getMonth() - 3);
+          break;
+      }
+      
+      filtered = filtered.filter(activity => 
+        new Date(activity.date) >= filterDate
+      );
     }
 
     // Apply search
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(activity =>
-        activity.school.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.activities.some((act: string) => act.toLowerCase().includes(searchQuery.toLowerCase()))
+        activity.school.toLowerCase().includes(query) ||
+        activity.location.toLowerCase().includes(query) ||
+        activity.notes.toLowerCase().includes(query) ||
+        activity.activities.some(act => act.toLowerCase().includes(query))
       );
     }
 
     setFilteredActivities(filtered);
-  }, [activities, filterType, searchQuery]);
+  }, [activities, filterType, searchQuery, dateRange]);
 
   // Calculate metrics
   const totalActivities = activities.length;
   const totalStudentsReached = activities.reduce((sum, activity) => sum + activity.studentsReached, 0);
+  const totalLeadsGenerated = activities.reduce((sum, activity) => sum + (activity.leadsGenerated || 0), 0);
   const schoolVisits = activities.filter(activity => activity.type === 'School Visit').length;
   const thisMonthActivities = activities.filter(activity => {
     const activityDate = new Date(activity.date);
     const now = new Date();
-    return activityDate.getMonth() === now.getMonth() && activityDate.getFullYear() === now.getFullYear();
+    return activityDate.getMonth() === now.getMonth() && 
+           activityDate.getFullYear() === now.getFullYear();
   }).length;
+
+  const getActivityTypeColor = (type: string) => {
+    switch (type) {
+      case 'School Visit':
+        return 'bg-green-100 text-green-800';
+      case 'Task Completion':
+        return 'bg-blue-100 text-blue-800';
+      case 'Follow-up Call':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Email Outreach':
+        return 'bg-purple-100 text-purple-800';
+      case 'Virtual Meeting':
+        return 'bg-indigo-100 text-indigo-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatRelativeDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays} days ago`;
+    if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+    return date.toLocaleDateString();
+  };
 
   const activityColumns = [
     {
       header: 'Date',
-      accessor: (row: any) => {
-        const date = new Date(row.date);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 1) return 'Yesterday';
-        if (diffDays <= 7) return `${diffDays} days ago`;
-        return date.toLocaleDateString();
-      },
+      accessor: (row: Activity) => formatRelativeDate(row.date),
       sortable: true
     },
     {
       header: 'Type',
-      accessor: (row: any) => (
-        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-          row.type === 'School Visit' ? 'bg-green-100 text-green-800' :
-          row.type === 'Follow-up Call' ? 'bg-blue-100 text-blue-800' :
-          row.type === 'Email Outreach' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-purple-100 text-purple-800'
-        }`}>
+      accessor: (row: Activity) => (
+        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getActivityTypeColor(row.type)}`}>
           {row.type}
         </span>
       )
     },
     {
       header: 'School',
-      accessor: 'school'
+      accessor: 'school',
+      sortable: true
     },
     {
       header: 'Location',
-      accessor: (row: any) => (
+      accessor: (row: Activity) => (
         <div className="flex items-center">
           <MapPinIcon size={14} className="mr-1 text-gray-400" />
           {row.location}
@@ -199,7 +238,7 @@ export const ActivityLogPage = () => {
     },
     {
       header: 'Duration',
-      accessor: (row: any) => (
+      accessor: (row: Activity) => (
         <div className="flex items-center">
           <ClockIcon size={14} className="mr-1 text-gray-400" />
           {row.duration}
@@ -207,18 +246,28 @@ export const ActivityLogPage = () => {
       )
     },
     {
-      header: 'Students',
-      accessor: (row: any) => (
-        <div className="flex items-center">
-          <UsersIcon size={14} className="mr-1 text-gray-400" />
-          {row.studentsReached}
+      header: 'Impact',
+      accessor: (row: Activity) => (
+        <div className="text-sm">
+          {row.studentsReached > 0 && (
+            <div className="flex items-center">
+              <UsersIcon size={14} className="mr-1 text-gray-400" />
+              {row.studentsReached} students
+            </div>
+          )}
+          {row.leadsGenerated && row.leadsGenerated > 0 && (
+            <div className="flex items-center text-green-600">
+              <span className="mr-1">🎯</span>
+              {row.leadsGenerated} leads
+            </div>
+          )}
         </div>
       ),
       sortable: true
     },
     {
       header: 'Activities',
-      accessor: (row: any) => (
+      accessor: (row: Activity) => (
         <div className="max-w-xs">
           <div className="flex flex-wrap gap-1">
             {row.activities.slice(0, 2).map((activity: string, index: number) => (
@@ -237,15 +286,45 @@ export const ActivityLogPage = () => {
     },
     {
       header: 'Actions',
-      accessor: (row: any) => (
+      accessor: (row: Activity) => (
         <div className="flex space-x-2">
-          <button className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90" title="View Details">
+          <button 
+            className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90" 
+            title="View Details"
+            onClick={() => {
+              // Handle view details - could open a modal
+              console.log('View details for:', row);
+            }}
+          >
             <EyeIcon size={14} />
           </button>
         </div>
       )
     }
   ];
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <div className="text-red-600 mb-4">{error}</div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -317,21 +396,27 @@ export const ActivityLogPage = () => {
           </button>
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              filterType === 'follow-upcall' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              filterType === 'taskcompletion' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setFilterType('follow-upcall')}
+            onClick={() => setFilterType('taskcompletion')}
           >
-            Follow-ups
+            Tasks
           </button>
-          <button
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              filterType === 'emailoutreach' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-            onClick={() => setFilterType('emailoutreach')}
+          
+          {/* Date Range Filter */}
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm bg-white text-gray-700 hover:bg-gray-50"
           >
-            Outreach
-          </button>
+            <option value="all">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">Last Week</option>
+            <option value="month">Last Month</option>
+            <option value="quarter">Last Quarter</option>
+          </select>
         </div>
+        
         <div className="flex space-x-2">
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -345,34 +430,48 @@ export const ActivityLogPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90">
+          <button 
+            className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+            onClick={() => {
+              // Export functionality
+              const csvContent = "data:text/csv;charset=utf-8," + 
+                "Date,Type,School,Location,Duration,Students Reached,Leads Generated,Activities,Notes\n" +
+                filteredActivities.map(activity => 
+                  `"${new Date(activity.date).toLocaleDateString()}","${activity.type}","${activity.school}","${activity.location}","${activity.duration}","${activity.studentsReached}","${activity.leadsGenerated || 0}","${activity.activities.join('; ')}","${activity.notes}"`
+                ).join("\n");
+              
+              const encodedUri = encodeURI(csvContent);
+              const link = document.createElement("a");
+              link.setAttribute("href", encodedUri);
+              link.setAttribute("download", `activity_log_${new Date().toISOString().split('T')[0]}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+          >
             <DownloadIcon size={16} className="mr-1" />
             Export
           </button>
         </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-ash-teal border-t-transparent"></div>
-        </div>
-      )}
-
       {/* No Results */}
-      {!isLoading && filteredActivities.length === 0 && (
+      {filteredActivities.length === 0 && (
         <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
           <CalendarIcon size={48} className="mb-4 text-gray-400" />
           <h3 className="mb-2 text-lg font-medium text-gray-900">No activities found</h3>
           <p className="text-sm text-gray-500">
-            {searchQuery || filterType !== 'all' ? 'Try adjusting your search or filters' : 'No activities logged yet'}
+            {searchQuery || filterType !== 'all' || dateRange !== 'all' 
+              ? 'Try adjusting your search or filters' 
+              : 'No activities logged yet. Start by visiting schools or completing tasks.'}
           </p>
-          {(searchQuery || filterType !== 'all') && (
+          {(searchQuery || filterType !== 'all' || dateRange !== 'all') && (
             <button
               className="mt-4 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
               onClick={() => {
                 setSearchQuery('');
                 setFilterType('all');
+                setDateRange('all');
               }}
             >
               Clear filters
@@ -382,45 +481,49 @@ export const ActivityLogPage = () => {
       )}
 
       {/* Activities Table */}
-      {!isLoading && filteredActivities.length > 0 && (
-        <DataTable
-          columns={activityColumns}
-          data={filteredActivities}
-          keyField="id"
-          rowsPerPage={15}
-        />
+      {filteredActivities.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+          <DataTable
+            columns={activityColumns}
+            data={filteredActivities}
+            keyField="id"
+            rowsPerPage={15}
+          />
+        </div>
       )}
 
       {/* Activity Summary */}
-      <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-medium text-gray-900">Activity Summary</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-ash-teal">
-              {activities.filter(a => a.type === 'School Visit').length}
+      {activities.length > 0 && (
+        <div className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-medium text-gray-900">Activity Summary</h3>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-ash-teal">
+                {activities.filter(a => a.type === 'School Visit').length}
+              </div>
+              <div className="text-sm text-gray-500">School Visits</div>
             </div>
-            <div className="text-sm text-gray-500">School Visits</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {activities.filter(a => a.type === 'Follow-up Call').length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {activities.filter(a => a.type === 'Task Completion').length}
+              </div>
+              <div className="text-sm text-gray-500">Tasks Completed</div>
             </div>
-            <div className="text-sm text-gray-500">Follow-ups</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {activities.filter(a => a.type === 'Email Outreach').length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {totalStudentsReached}
+              </div>
+              <div className="text-sm text-gray-500">Students Reached</div>
             </div>
-            <div className="text-sm text-gray-500">Outreach</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {activities.filter(a => a.type === 'Virtual Meeting').length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {totalLeadsGenerated}
+              </div>
+              <div className="text-sm text-gray-500">Leads Generated</div>
             </div>
-            <div className="text-sm text-gray-500">Virtual Meetings</div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

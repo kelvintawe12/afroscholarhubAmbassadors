@@ -3,27 +3,76 @@ import { KpiCard } from '../../ui/widgets/KpiCard';
 import { PieChart } from '../../ui/widgets/PieChart';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
+import { LoadingSpinner } from '../../LoadingSpinner';
 import { UsersIcon, SchoolIcon, CalendarIcon, CheckCircleIcon, PlusIcon, MessageSquareIcon } from 'lucide-react';
+import { useCountryLeadKPIs, useCountryAmbassadors } from '../../../hooks/useDashboardData';
+
+// For demo purposes, using Nigeria as sample country
+// In a real app, this would come from authentication context
+const SAMPLE_COUNTRY_CODE = 'NG';
+
 export const CountryLeadDashboard = () => {
-  // Mock data for KPI cards
-  const kpiData = [{
+  const { data: kpiData, loading: kpisLoading, error: kpisError } = useCountryLeadKPIs(SAMPLE_COUNTRY_CODE);
+  const { data: ambassadorData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(SAMPLE_COUNTRY_CODE);
+
+  // Show loading state
+  if (kpisLoading || ambassadorsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (kpisError || ambassadorsError) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading dashboard data</p>
+          <p className="text-sm text-gray-500">
+            {kpisError || ambassadorsError}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform KPI data for display
+  const displayKpiData = kpiData ? [{
     title: 'Team Members',
-    value: '15',
-    icon: <UsersIcon size={20} />
+    value: kpiData.activeAmbassadors?.toString() || '0',
+    icon: <UsersIcon size={20} />,
+    color: 'bg-ash-teal'
   }, {
     title: 'Schools Pipeline',
-    value: '30',
-    icon: <SchoolIcon size={20} />
+    value: kpiData.schoolsVisited?.toString() || '0',
+    icon: <SchoolIcon size={20} />,
+    color: 'bg-ash-gold'
   }, {
     title: 'Events This Month',
-    value: '8',
-    icon: <CalendarIcon size={20} />
+    value: kpiData.tasksCompleted?.toString() || '0',
+    icon: <CalendarIcon size={20} />,
+    color: 'bg-blue-400'
   }, {
     title: 'Goal Progress',
-    value: '75%',
-    icon: <CheckCircleIcon size={20} />
-  }];
-  // Mock data for charts
+    value: `${kpiData.impactScore || 0}%`,
+    icon: <CheckCircleIcon size={20} />,
+    color: 'bg-green-400'
+  }] : [];
+
+  // Transform ambassador data for display
+  const displayAmbassadorData = ambassadorData ? ambassadorData.map(ambassador => ({
+    id: ambassador.id,
+    name: ambassador.full_name,
+    email: ambassador.email,
+    status: ambassador.status,
+    score: ambassador.performance_score,
+    schoolsCount: ambassador.schools_count,
+    lastActivity: ambassador.last_activity
+  })) : [];
+
+  // Mock data for charts (would be calculated from real data)
   const impactMetricsData = {
     labels: ['Urban Schools', 'Rural Schools', 'Semi-Urban Schools'],
     datasets: [{
@@ -31,98 +80,8 @@ export const CountryLeadDashboard = () => {
       backgroundColor: ['rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(38, 162, 105, 0.8)']
     }]
   };
-  // Mock data for ambassador table
-  const ambassadorColumns = [{
-    header: 'Name',
-    accessor: (row: any) => <div className="flex items-center">
-          <div className="h-8 w-8 flex-shrink-0 rounded-full bg-ash-teal/20 text-ash-teal">
-            <div className="flex h-full w-full items-center justify-center">
-              {row.name.charAt(0)}
-            </div>
-          </div>
-          <div className="ml-3">
-            <div className="font-medium text-gray-900">{row.name}</div>
-            <div className="text-xs text-gray-500">{row.email}</div>
-          </div>
-        </div>
-  }, {
-    header: 'Status',
-    accessor: (row: any) => <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.status === 'Active' ? 'bg-green-100 text-green-800' : row.status === 'Inactive' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
-          {row.status}
-        </span>
-  }, {
-    header: 'Performance',
-    accessor: (row: any) => <div className="w-full">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium">{row.score}/100</span>
-          </div>
-          <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200">
-            <div className={`h-1.5 rounded-full ${row.score >= 80 ? 'bg-green-500' : row.score >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{
-          width: `${row.score}%`
-        }}></div>
-          </div>
-        </div>,
-    sortable: true
-  }, {
-    header: 'Schools',
-    accessor: 'schoolsCount',
-    sortable: true
-  }, {
-    header: 'Recent Activity',
-    accessor: 'lastActivity'
-  }, {
-    header: 'Actions',
-    accessor: (row: any) => <div className="flex space-x-2">
-          <button className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90">
-            <MessageSquareIcon size={16} />
-          </button>
-          <button className="rounded-md bg-ash-gold p-1 text-ash-dark hover:bg-ash-gold/90">
-            <PlusIcon size={16} />
-          </button>
-        </div>
-  }];
-  const ambassadorData = [{
-    id: 1,
-    name: 'Jamal Ibrahim',
-    email: 'jamal@afroscholarhub.org',
-    status: 'Active',
-    score: 88,
-    schoolsCount: 5,
-    lastActivity: '2 hours ago'
-  }, {
-    id: 2,
-    name: 'Amina Yusuf',
-    email: 'amina@afroscholarhub.org',
-    status: 'Active',
-    score: 92,
-    schoolsCount: 7,
-    lastActivity: 'Yesterday'
-  }, {
-    id: 3,
-    name: 'Kwame Osei',
-    email: 'kwame@afroscholarhub.org',
-    status: 'Training',
-    score: 65,
-    schoolsCount: 2,
-    lastActivity: '3 days ago'
-  }, {
-    id: 4,
-    name: 'Fatima Mohammed',
-    email: 'fatima@afroscholarhub.org',
-    status: 'Active',
-    score: 75,
-    schoolsCount: 4,
-    lastActivity: 'Today'
-  }, {
-    id: 5,
-    name: 'Chidi Okonkwo',
-    email: 'chidi@afroscholarhub.org',
-    status: 'Inactive',
-    score: 45,
-    schoolsCount: 3,
-    lastActivity: '2 weeks ago'
-  }];
-  // Mock data for activity feed
+
+  // Mock data for activity feed (would come from real activities)
   const activities = [{
     id: 1,
     type: 'visit',
@@ -162,7 +121,8 @@ export const CountryLeadDashboard = () => {
     },
     status: 'pending'
   }];
-  // School pipeline data
+
+  // School pipeline data (would be calculated from real school statuses)
   const pipelineStages = [{
     name: 'Prospect',
     count: 12
@@ -179,17 +139,29 @@ export const CountryLeadDashboard = () => {
     name: 'Inactive',
     count: 0
   }];
-  return <div>
+
+  return (
+    <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Nigeria Operations</h1>
         <p className="text-sm text-gray-500">
           Aisha, your Nigeria team is crushing it—75% goal met!
         </p>
       </div>
+
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} icon={kpi.icon} />)}
+        {displayKpiData.map((kpi, index) => (
+          <KpiCard
+            key={index}
+            title={kpi.title}
+            value={kpi.value}
+            icon={kpi.icon}
+            color={kpi.color}
+          />
+        ))}
       </div>
+
       {/* Team Roster */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
@@ -199,8 +171,14 @@ export const CountryLeadDashboard = () => {
             Add Ambassador
           </button>
         </div>
-        <DataTable columns={ambassadorColumns} data={ambassadorData} keyField="id" rowsPerPage={5} />
+        <DataTable
+          columns={ambassadorColumns}
+          data={displayAmbassadorData}
+          keyField="id"
+          rowsPerPage={5}
+        />
       </div>
+
       {/* Bottom Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* School Pipeline */}
@@ -209,7 +187,8 @@ export const CountryLeadDashboard = () => {
             School Pipeline
           </h3>
           <div className="space-y-4">
-            {pipelineStages.map(stage => <div key={stage.name}>
+            {pipelineStages.map(stage => (
+              <div key={stage.name}>
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">
                     {stage.name}
@@ -218,17 +197,87 @@ export const CountryLeadDashboard = () => {
                 </div>
                 <div className="h-2 w-full rounded-full bg-gray-200">
                   <div className="h-2 rounded-full bg-ash-teal" style={{
-                width: `${stage.count / 30 * 100}%`
-              }}></div>
+                    width: `${stage.count / 30 * 100}%`
+                  }}></div>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
           <button className="mt-4 w-full rounded-md border border-ash-teal px-3 py-1.5 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
             View Full Pipeline
           </button>
         </div>
+
         <PieChart title="Leads by School Type" data={impactMetricsData} />
         <ActivityFeed title="Recent Activity" activities={activities} maxItems={4} />
       </div>
-    </div>;
+    </div>
+  );
 };
+
+// Ambassador columns configuration
+const ambassadorColumns = [{
+  header: 'Name',
+  accessor: (row: any) => (
+    <div className="flex items-center">
+      <div className="h-8 w-8 flex-shrink-0 rounded-full bg-ash-teal/20 text-ash-teal">
+        <div className="flex h-full w-full items-center justify-center">
+          {row.name.charAt(0)}
+        </div>
+      </div>
+      <div className="ml-3">
+        <div className="font-medium text-gray-900">{row.name}</div>
+        <div className="text-xs text-gray-500">{row.email}</div>
+      </div>
+    </div>
+  )
+}, {
+  header: 'Status',
+  accessor: (row: any) => (
+    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+      row.status === 'Active' ? 'bg-green-100 text-green-800' :
+      row.status === 'Inactive' ? 'bg-red-100 text-red-800' :
+      'bg-yellow-100 text-yellow-800'
+    }`}>
+      {row.status}
+    </span>
+  )
+}, {
+  header: 'Performance',
+  accessor: (row: any) => (
+    <div className="w-full">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium">{row.score}/100</span>
+      </div>
+      <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200">
+        <div className={`h-1.5 rounded-full ${
+          row.score >= 80 ? 'bg-green-500' :
+          row.score >= 60 ? 'bg-yellow-500' :
+          'bg-red-500'
+        }`} style={{
+          width: `${row.score}%`
+        }}></div>
+      </div>
+    </div>
+  ),
+  sortable: true
+}, {
+  header: 'Schools',
+  accessor: 'schoolsCount',
+  sortable: true
+}, {
+  header: 'Recent Activity',
+  accessor: 'lastActivity'
+}, {
+  header: 'Actions',
+  accessor: (row: any) => (
+    <div className="flex space-x-2">
+      <button className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90">
+        <MessageSquareIcon size={16} />
+      </button>
+      <button className="rounded-md bg-ash-gold p-1 text-ash-dark hover:bg-ash-gold/90">
+        <PlusIcon size={16} />
+      </button>
+    </div>
+  )
+}];
