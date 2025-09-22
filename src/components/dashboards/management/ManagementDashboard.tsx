@@ -5,31 +5,76 @@ import { PieChart } from '../../ui/widgets/PieChart';
 import { BarChart } from '../../ui/widgets/BarChart';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
+import { LoadingSpinner } from '../../LoadingSpinner';
 import { UsersIcon, SchoolIcon, TrendingUpIcon, PercentIcon, BellIcon, DownloadIcon, PlusIcon, FilterIcon } from 'lucide-react';
+import { useManagementKPIs, useAllSchools } from '../../../hooks/useDashboardData';
+
 export const ManagementDashboard = () => {
-  // Mock data for KPI cards
-  const kpiData = [{
+  const { data: kpiData, loading: kpisLoading, error: kpisError } = useManagementKPIs();
+  const { data: schoolData, loading: schoolsLoading, error: schoolsError } = useAllSchools();
+
+  // Show loading state
+  if (kpisLoading || schoolsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (kpisError || schoolsError) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading dashboard data</p>
+          <p className="text-sm text-gray-500">
+            {kpisError || schoolsError}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform KPI data for display
+  const displayKpiData = kpiData ? [{
     title: 'Students Reached',
-    value: '1,200',
-    change: 15,
-    icon: <UsersIcon size={20} />
+    value: kpiData.leadsGenerated?.toString() || '0',
+    trend: 'up' as const,
+    icon: <UsersIcon size={20} />,
+    color: 'bg-ash-teal'
   }, {
     title: 'Partnerships',
-    value: '45',
-    change: 8,
-    icon: <SchoolIcon size={20} />
+    value: kpiData.partnerships?.toString() || '0',
+    trend: 'up' as const,
+    icon: <SchoolIcon size={20} />,
+    color: 'bg-ash-gold'
   }, {
     title: 'Active Ambassadors',
-    value: '52',
-    change: -3,
-    icon: <UsersIcon size={20} />
+    value: kpiData.activeAmbassadors?.toString() || '0',
+    trend: 'up' as const,
+    icon: <UsersIcon size={20} />,
+    color: 'bg-blue-400'
   }, {
     title: 'Conversion Rate',
-    value: '18%',
-    change: 5,
-    icon: <PercentIcon size={20} />
-  }];
-  // Mock data for charts
+    value: `${kpiData.conversionRate || 0}%`,
+    trend: 'up' as const,
+    icon: <PercentIcon size={20} />,
+    color: 'bg-green-400'
+  }] : [];
+
+  // Transform school data for display
+  const displaySchoolData = schoolData ? schoolData.map(school => ({
+    id: school.id,
+    name: school.name,
+    country: school.country_code,
+    status: school.status,
+    leads: school.leads,
+    assignedTo: school.ambassador_name || 'Unassigned',
+    lastActivity: school.last_visit
+  })) : [];
+
+  // Mock data for charts (would be calculated from real data)
   const leadsChartData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [{
@@ -39,6 +84,7 @@ export const ManagementDashboard = () => {
       backgroundColor: 'rgba(26, 95, 122, 0.1)'
     }]
   };
+
   const countryDistributionData = {
     labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa', 'Others'],
     datasets: [{
@@ -46,79 +92,17 @@ export const ManagementDashboard = () => {
       backgroundColor: ['rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(38, 162, 105, 0.8)', 'rgba(108, 92, 231, 0.8)', 'rgba(225, 112, 85, 0.8)']
     }]
   };
+
   const ambassadorPerformanceData = {
-    labels: ['Aisha N.', 'John K.', 'Grace M.', 'Samuel O.', 'Elizabeth A.', 'David M.', 'Sarah J.', 'Michael O.', 'Faith N.', 'Daniel A.'],
+    labels: ['John D.', 'Amina Y.', 'Kwame O.', 'Fatima M.', 'Jamal I.'],
     datasets: [{
       label: 'Leads Generated',
-      data: [150, 120, 110, 95, 85, 80, 75, 70, 65, 60],
+      data: [120, 95, 87, 76, 65],
       backgroundColor: 'rgba(26, 95, 122, 0.8)'
     }]
   };
-  // Mock data for school table
-  const schoolColumns = [{
-    header: 'School Name',
-    accessor: 'name'
-  }, {
-    header: 'Country',
-    accessor: 'country'
-  }, {
-    header: 'Status',
-    accessor: (row: any) => <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.status === 'Partnered' ? 'bg-green-100 text-green-800' : row.status === 'Prospect' ? 'bg-blue-100 text-blue-800' : row.status === 'Contacted' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
-          {row.status}
-        </span>
-  }, {
-    header: 'Leads',
-    accessor: 'leads',
-    sortable: true
-  }, {
-    header: 'Assigned To',
-    accessor: 'assignedTo'
-  }, {
-    header: 'Last Activity',
-    accessor: 'lastActivity'
-  }];
-  const schoolData = [{
-    id: 1,
-    name: 'Lagos Model School',
-    country: 'Nigeria',
-    status: 'Partnered',
-    leads: 120,
-    assignedTo: 'Aisha N.',
-    lastActivity: '2 days ago'
-  }, {
-    id: 2,
-    name: 'Nairobi Academy',
-    country: 'Kenya',
-    status: 'Partnered',
-    leads: 95,
-    assignedTo: 'John K.',
-    lastActivity: '1 week ago'
-  }, {
-    id: 3,
-    name: 'Accra High School',
-    country: 'Ghana',
-    status: 'Contacted',
-    leads: 45,
-    assignedTo: 'Grace M.',
-    lastActivity: '3 days ago'
-  }, {
-    id: 4,
-    name: 'Cape Town Secondary',
-    country: 'South Africa',
-    status: 'Prospect',
-    leads: 0,
-    assignedTo: 'Samuel O.',
-    lastActivity: 'Today'
-  }, {
-    id: 5,
-    name: 'Abuja Grammar School',
-    country: 'Nigeria',
-    status: 'Partnered',
-    leads: 75,
-    assignedTo: 'Aisha N.',
-    lastActivity: '5 days ago'
-  }];
-  // Mock data for activity feed
+
+  // Mock data for activity feed (would come from real activities)
   const activities = [{
     id: 1,
     type: 'partnership',
@@ -154,7 +138,9 @@ export const ManagementDashboard = () => {
     timestamp: '1 week ago',
     status: 'pending'
   }];
-  return <div>
+
+  return (
+    <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Management Dashboard
@@ -164,15 +150,27 @@ export const ManagementDashboard = () => {
           LinkedIn?
         </p>
       </div>
+
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} change={kpi.change} icon={kpi.icon} />)}
+        {displayKpiData.map((kpi, index) => (
+          <KpiCard
+            key={index}
+            title={kpi.title}
+            value={kpi.value}
+            trend={kpi.trend}
+            icon={kpi.icon}
+            color={kpi.color}
+          />
+        ))}
       </div>
+
       {/* Charts Row */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <LineChart title="Quarterly Lead Generation Trends" data={leadsChartData} className="lg:col-span-2" />
+        <LineChart title="Quarterly Lead Generation Trends" data={leadsChartData} />
         <PieChart title="Country Distribution" data={countryDistributionData} />
       </div>
+
       {/* Schools Table */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
@@ -194,12 +192,53 @@ export const ManagementDashboard = () => {
             </button>
           </div>
         </div>
-        <DataTable columns={schoolColumns} data={schoolData} keyField="id" rowsPerPage={5} />
+        <DataTable
+          columns={schoolColumns}
+          data={displaySchoolData}
+          keyField="id"
+          rowsPerPage={5}
+        />
       </div>
+
       {/* Bottom Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <BarChart title="Ambassador Performance Leaderboard" data={ambassadorPerformanceData} horizontal={true} className="lg:col-span-2" />
+        <BarChart
+          title="Ambassador Performance Leaderboard"
+          data={ambassadorPerformanceData}
+        />
         <ActivityFeed title="Alerts & Recent Activity" activities={activities} maxItems={4} />
       </div>
-    </div>;
+    </div>
+  );
 };
+
+// School columns configuration
+const schoolColumns = [{
+  header: 'School Name',
+  accessor: 'name'
+}, {
+  header: 'Country',
+  accessor: 'country'
+}, {
+  header: 'Status',
+  accessor: (row: any) => (
+    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+      row.status === 'partnered' ? 'bg-green-100 text-green-800' :
+      row.status === 'prospect' ? 'bg-blue-100 text-blue-800' :
+      row.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+      'bg-gray-100 text-gray-800'
+    }`}>
+      {row.status}
+    </span>
+  )
+}, {
+  header: 'Leads',
+  accessor: 'leads',
+  sortable: true
+}, {
+  header: 'Assigned To',
+  accessor: 'assignedTo'
+}, {
+  header: 'Last Activity',
+  accessor: 'lastActivity'
+}];

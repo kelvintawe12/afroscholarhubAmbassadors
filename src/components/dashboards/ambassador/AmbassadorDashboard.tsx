@@ -1,146 +1,90 @@
 import React from 'react';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { DataTable } from '../../ui/widgets/DataTable';
+import { LoadingSpinner } from '../../LoadingSpinner';
 import { CheckSquareIcon, SchoolIcon, ClipboardIcon, TrophyIcon, PlusIcon, CalendarIcon, ClockIcon, FlagIcon } from 'lucide-react';
+import { useAmbassadorKPIs, useAmbassadorTasks, useAmbassadorSchools } from '../../../hooks/useDashboardData';
+
+// For demo purposes, using a sample ambassador ID from seed data
+// In a real app, this would come from authentication context
+const SAMPLE_AMBASSADOR_ID = '550e8400-e29b-41d4-a716-446655440010'; // John Doe from seed data
+
 export const AmbassadorDashboard = () => {
-  // Mock data for KPI cards
-  const kpiData = [{
+  const { data: kpiData, loading: kpisLoading, error: kpisError } = useAmbassadorKPIs(SAMPLE_AMBASSADOR_ID);
+  const { data: taskData, loading: tasksLoading, error: tasksError } = useAmbassadorTasks(SAMPLE_AMBASSADOR_ID);
+  const { data: schoolData, loading: schoolsLoading, error: schoolsError } = useAmbassadorSchools(SAMPLE_AMBASSADOR_ID);
+
+  // Show loading state
+  if (kpisLoading || tasksLoading || schoolsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (kpisError || tasksError || schoolsError) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading dashboard data</p>
+          <p className="text-sm text-gray-500">
+            {kpisError || tasksError || schoolsError}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Transform KPI data for display
+  const displayKpiData = kpiData ? [{
     title: 'Leads Generated',
-    value: '150',
-    change: 12,
+    value: kpiData.leadsGenerated.toString(),
+    trend: 'up' as const, // Would calculate from historical data
     icon: <SchoolIcon size={20} />,
     color: 'bg-ash-teal'
   }, {
     title: 'Tasks Completed',
-    value: '28',
-    change: 5,
+    value: kpiData.tasksCompleted.toString(),
+    trend: 'up' as const, // Would calculate from historical data
     icon: <CheckSquareIcon size={20} />,
     color: 'bg-ash-gold'
   }, {
     title: 'Daily Streak',
-    value: '7 days',
+    value: `${kpiData.dailyStreak || 0} days`,
     icon: <CalendarIcon size={20} />,
     color: 'bg-blue-400'
   }, {
     title: 'Impact Score',
-    value: '92/100',
-    change: 8,
+    value: `${kpiData.impactScore}/100`,
+    trend: 'up' as const, // Would calculate from historical data
     icon: <TrophyIcon size={20} />,
     color: 'bg-green-400'
-  }];
-  // Mock data for tasks
-  const taskColumns = [{
-    header: 'Priority',
-    accessor: (row: any) => <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.priority === 'High' ? 'bg-red-100 text-red-800' : row.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}`}>
-          {row.priority}
-        </span>
-  }, {
-    header: 'Task',
-    accessor: 'title'
-  }, {
-    header: 'School',
-    accessor: 'school'
-  }, {
-    header: 'Progress',
-    accessor: (row: any) => <div className="w-full">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium">{row.progress}%</span>
-          </div>
-          <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200">
-            <div className="h-1.5 rounded-full bg-ash-teal" style={{
-          width: `${row.progress}%`
-        }}></div>
-          </div>
-        </div>
-  }, {
-    header: 'Due Date',
-    accessor: 'dueDate'
-  }, {
-    header: 'Status',
-    accessor: (row: any) => <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.status === 'Completed' ? 'bg-green-100 text-green-800' : row.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-          {row.status}
-        </span>
-  }];
-  const taskData = [{
-    id: 1,
-    priority: 'High',
-    title: 'Pitch to XYZ High School',
-    school: 'XYZ High School',
-    progress: 25,
-    dueDate: 'Tomorrow',
-    status: 'In Progress'
-  }, {
-    id: 2,
-    priority: 'Medium',
-    title: 'Follow up with ABC Academy',
-    school: 'ABC Academy',
-    progress: 50,
-    dueDate: 'Next week',
-    status: 'In Progress'
-  }, {
-    id: 3,
-    priority: 'Low',
-    title: 'Submit visit report',
-    school: 'Lagos Model School',
-    progress: 100,
-    dueDate: 'Yesterday',
-    status: 'Completed'
-  }];
-  // Mock data for schools
-  const schoolColumns = [{
-    header: 'School Name',
-    accessor: 'name'
-  }, {
-    header: 'Location',
-    accessor: 'location'
-  }, {
-    header: 'Status',
-    accessor: (row: any) => <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${row.status === 'Partnered' ? 'bg-green-100 text-green-800' : row.status === 'Prospect' ? 'bg-blue-100 text-blue-800' : row.status === 'Visited' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>
-          {row.status}
-        </span>
-  }, {
-    header: 'Leads',
-    accessor: 'leads',
-    sortable: true
-  }, {
-    header: 'Last Visit',
-    accessor: 'lastVisit'
-  }, {
-    header: 'Actions',
-    accessor: (row: any) => <button className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90">
-          <ClipboardIcon size={16} />
-        </button>
-  }];
-  const schoolData = [{
-    id: 1,
-    name: 'Lagos Model School',
-    location: 'Lagos, Nigeria',
-    status: 'Partnered',
-    leads: 45,
-    lastVisit: '1 week ago'
-  }, {
-    id: 2,
-    name: 'ABC Academy',
-    location: 'Abuja, Nigeria',
-    status: 'Visited',
-    leads: 30,
-    lastVisit: '2 days ago'
-  }, {
-    id: 3,
-    name: 'XYZ High School',
-    location: 'Lagos, Nigeria',
-    status: 'Prospect',
-    leads: 0,
-    lastVisit: 'Never'
-  }, {
-    id: 4,
-    name: 'Unity College',
-    location: 'Ibadan, Nigeria',
-    status: 'Partnered',
-    leads: 75,
-    lastVisit: '1 month ago'
-  }];
-  // Mock data for badges
+  }] : [];
+
+  // Transform task data for display
+  const displayTaskData = taskData ? taskData.map(task => ({
+    id: task.id,
+    priority: task.priority,
+    title: task.title,
+    school: task.school_name || 'No School',
+    progress: task.progress,
+    dueDate: new Date(task.due_date).toLocaleDateString(),
+    status: task.status
+  })) : [];
+
+  // Transform school data for display
+  const displaySchoolData = schoolData ? schoolData.map(school => ({
+    id: school.id,
+    name: school.name,
+    location: school.location,
+    status: school.status,
+    leads: school.leads,
+    lastVisit: school.last_visit
+  })) : [];
+
+  // Mock data for badges (would be calculated from real achievements)
   const badges = [{
     id: 1,
     name: 'School Closer',
@@ -166,7 +110,8 @@ export const AmbassadorDashboard = () => {
     icon: '🥇',
     unlocked: false
   }];
-  // Mock data for resources
+
+  // Mock data for resources (would come from resources table)
   const resources = [{
     id: 1,
     title: 'Partnership Pitch Deck',
@@ -188,7 +133,9 @@ export const AmbassadorDashboard = () => {
     type: 'PDF',
     icon: '📚'
   }];
-  return <div>
+
+  return (
+    <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Ambassador Dashboard
@@ -196,12 +143,22 @@ export const AmbassadorDashboard = () => {
         <p className="text-sm text-gray-500">
           Great job, John! Your last visit generated 20 sign-ups. 🎉
         </p>
-        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} icon={kpi.icon} color={kpi.color} />)}
       </div>
+
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpiData.map((kpi, index) => <KpiCard key={index} title={kpi.title} value={kpi.value} icon={kpi.icon} color={kpi.color} />)}
+        {displayKpiData.map((kpi, index) => (
+          <KpiCard
+            key={index}
+            title={kpi.title}
+            value={kpi.value}
+            trend={kpi.trend}
+            icon={kpi.icon}
+            color={kpi.color}
+          />
+        ))}
       </div>
+
       {/* Quick Log Button */}
       <div className="mb-6 flex justify-end">
         <button className="flex items-center rounded-md bg-ash-gold px-4 py-2 font-medium text-ash-dark shadow-sm hover:bg-yellow-400">
@@ -209,6 +166,7 @@ export const AmbassadorDashboard = () => {
           Quick Log Activity
         </button>
       </div>
+
       {/* Tasks */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
@@ -224,8 +182,14 @@ export const AmbassadorDashboard = () => {
             </button>
           </div>
         </div>
-        <DataTable columns={taskColumns} data={taskData} keyField="id" pagination={false} />
+        <DataTable
+          columns={taskColumns}
+          data={displayTaskData}
+          keyField="id"
+          pagination={false}
+        />
       </div>
+
       {/* Schools */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
@@ -235,8 +199,14 @@ export const AmbassadorDashboard = () => {
             View All
           </button>
         </div>
-        <DataTable columns={schoolColumns} data={schoolData} keyField="id" rowsPerPage={4} />
+        <DataTable
+          columns={schoolColumns}
+          data={displaySchoolData}
+          keyField="id"
+          rowsPerPage={4}
+        />
       </div>
+
       {/* Bottom Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Badges */}
@@ -245,7 +215,8 @@ export const AmbassadorDashboard = () => {
             My Achievements
           </h3>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {badges.map(badge => <div key={badge.id} className={`flex flex-col items-center rounded-lg p-3 text-center ${badge.unlocked ? 'bg-ash-gold/10' : 'bg-gray-100'}`}>
+            {badges.map(badge => (
+              <div key={badge.id} className={`flex flex-col items-center rounded-lg p-3 text-center ${badge.unlocked ? 'bg-ash-gold/10' : 'bg-gray-100'}`}>
                 <div className="text-3xl">{badge.icon}</div>
                 <h4 className="mt-2 text-sm font-medium text-gray-900">
                   {badge.name}
@@ -253,19 +224,24 @@ export const AmbassadorDashboard = () => {
                 <p className="mt-1 text-xs text-gray-500">
                   {badge.description}
                 </p>
-                {!badge.unlocked && <span className="mt-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
+                {!badge.unlocked && (
+                  <span className="mt-2 rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-600">
                     Locked
-                  </span>}
-              </div>)}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
+
         {/* Resources */}
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <h3 className="mb-4 text-base font-medium text-gray-700">
             Quick Resources
           </h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {resources.map(resource => <div key={resource.id} className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
+            {resources.map(resource => (
+              <div key={resource.id} className="flex cursor-pointer items-center rounded-lg border border-gray-200 p-3 transition-colors hover:bg-gray-50">
                 <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-ash-teal/10 text-xl text-ash-teal">
                   {resource.icon}
                 </div>
@@ -275,12 +251,97 @@ export const AmbassadorDashboard = () => {
                   </h4>
                   <p className="text-xs text-gray-500">{resource.type}</p>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
           <button className="mt-4 w-full rounded-md border border-ash-teal px-3 py-1.5 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
             View All Resources
           </button>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
+// Task columns configuration
+const taskColumns = [{
+  header: 'Priority',
+  accessor: (row: any) => (
+    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+      row.priority === 'High' ? 'bg-red-100 text-red-800' :
+      row.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+      'bg-green-100 text-green-800'
+    }`}>
+      {row.priority}
+    </span>
+  )
+}, {
+  header: 'Task',
+  accessor: 'title'
+}, {
+  header: 'School',
+  accessor: 'school'
+}, {
+  header: 'Progress',
+  accessor: (row: any) => (
+    <div className="w-full">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium">{row.progress}%</span>
+      </div>
+      <div className="mt-1 h-1.5 w-full rounded-full bg-gray-200">
+        <div className="h-1.5 rounded-full bg-ash-teal" style={{
+          width: `${row.progress}%`
+        }}></div>
+      </div>
+    </div>
+  )
+}, {
+  header: 'Due Date',
+  accessor: 'dueDate'
+}, {
+  header: 'Status',
+  accessor: (row: any) => (
+    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+      row.status === 'Completed' ? 'bg-green-100 text-green-800' :
+      row.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+      'bg-gray-100 text-gray-800'
+    }`}>
+      {row.status}
+    </span>
+  )
+}];
+
+// School columns configuration
+const schoolColumns = [{
+  header: 'School Name',
+  accessor: 'name'
+}, {
+  header: 'Location',
+  accessor: 'location'
+}, {
+  header: 'Status',
+  accessor: (row: any) => (
+    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+      row.status === 'Partnered' ? 'bg-green-100 text-green-800' :
+      row.status === 'Prospect' ? 'bg-blue-100 text-blue-800' :
+      row.status === 'Visited' ? 'bg-yellow-100 text-yellow-800' :
+      'bg-gray-100 text-gray-800'
+    }`}>
+      {row.status}
+    </span>
+  )
+}, {
+  header: 'Leads',
+  accessor: 'leads',
+  sortable: true
+}, {
+  header: 'Last Visit',
+  accessor: 'lastVisit'
+}, {
+  header: 'Actions',
+  accessor: (row: any) => (
+    <button className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90">
+      <ClipboardIcon size={16} />
+    </button>
+  )
+}];

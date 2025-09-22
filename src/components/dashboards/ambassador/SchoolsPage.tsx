@@ -1,197 +1,203 @@
 import React, { useEffect, useState } from 'react';
-import { SchoolIcon, MapPinIcon, UsersIcon, CalendarIcon, PlusIcon, SearchIcon, FilterIcon, EyeIcon, EditIcon, MessageSquareIcon } from 'lucide-react';
-import { DataTable } from '../../ui/widgets/DataTable';
-import { KpiCard } from '../../ui/widgets/KpiCard';
-import { getAmbassadorSchools } from '../../../api/ambassador';
+import { SchoolIcon, MapPinIcon, UsersIcon, CalendarIcon, PlusIcon, EyeIcon, PhoneIcon, MailIcon, ExternalLinkIcon, AlertCircleIcon, TrendingUpIcon, Clock, CheckCircle } from 'lucide-react';
+import { getAmbassadorSchools, createVisit } from '../../../api/ambassador';
+import { useAuth } from '../../../hooks/useAuth';
+import { LoadingSpinner } from '../../LoadingSpinner';
 
-export const AmbassadorSchoolsPage = () => {
-  const [schools, setSchools] = useState<any[]>([]);
-  const [filteredSchools, setFilteredSchools] = useState<any[]>([]);
+interface School {
+  id: string;
+  name: string;
+  location: string;
+  country_code: string;
+  status: 'prospect' | 'contacted' | 'visited' | 'partnered' | 'inactive';
+  contact_person?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  students_count?: number;
+  last_visit?: string;
+  visit_count: number;
+  students_reached: number;
+  leads_generated: number;
+  partnership_score?: number;
+  notes?: string;
+  next_action?: string;
+  created_at: string;
+}
+
+export const SchoolsPage = () => {
+  const { user } = useAuth();
+  const [schools, setSchools] = useState<School[]>([]);
+  const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSchools = async () => {
+      if (!user?.id) return;
+
       try {
         setIsLoading(true);
-        // In a real app, this would use the API client
-        // const data = await getAmbassadorSchools('current-user-id')
-        // For now, use mock data
-        const mockData = [
-          {
-            id: 1,
-            name: 'Lagos Model School',
-            location: 'Lagos, Nigeria',
-            status: 'Partnered',
-            leads: 45,
-            lastVisit: '2024-04-15T10:00:00Z',
-            principal: 'Mrs. Adebayo',
-            students: 1200,
-            contact: '+234 801 234 5678',
-            email: 'info@lagosmodel.edu.ng',
-            notes: 'Strong interest in STEM programs'
-          },
-          {
-            id: 2,
-            name: 'ABC Academy',
-            location: 'Abuja, Nigeria',
-            status: 'Visited',
-            leads: 30,
-            lastVisit: '2024-04-10T14:30:00Z',
-            principal: 'Mr. Okon',
-            students: 800,
-            contact: '+234 802 345 6789',
-            email: 'contact@abcacademy.edu.ng',
-            notes: 'Needs follow-up on scholarship applications'
-          },
-          {
-            id: 3,
-            name: 'XYZ High School',
-            location: 'Lagos, Nigeria',
-            status: 'Prospect',
-            leads: 0,
-            lastVisit: null,
-            principal: 'Ms. Johnson',
-            students: 950,
-            contact: '+234 803 456 7890',
-            email: 'admin@xyzhigh.edu.ng',
-            notes: 'Initial outreach completed'
-          },
-          {
-            id: 4,
-            name: 'Unity College',
-            location: 'Ibadan, Nigeria',
-            status: 'Partnered',
-            leads: 75,
-            lastVisit: '2024-03-28T09:15:00Z',
-            principal: 'Dr. Adeyemi',
-            students: 1500,
-            contact: '+234 804 567 8901',
-            email: 'principal@unitycollege.edu.ng',
-            notes: 'Active partnership with multiple programs'
-          },
-          {
-            id: 5,
-            name: 'Heritage Academy',
-            location: 'Kano, Nigeria',
-            status: 'Visited',
-            leads: 20,
-            lastVisit: '2024-04-05T11:45:00Z',
-            principal: 'Mr. Ibrahim',
-            students: 600,
-            contact: '+234 805 678 9012',
-            email: 'info@heritageacademy.edu.ng',
-            notes: 'Interested in career guidance workshops'
-          }
-        ];
-        setSchools(mockData);
-        setFilteredSchools(mockData);
-        setIsLoading(false);
+        setError(null);
+        const data = await getAmbassadorSchools(user.id);
+        
+        // Transform the data to match our interface
+        const transformedSchools: School[] = data.map(school => ({
+          id: school.id,
+          name: school.name,
+          location: school.location,
+          country_code: school.country_code,
+          status: school.status,
+          contact_person: school.contact_person,
+          contact_email: school.contact_email,
+          contact_phone: school.contact_phone,
+          students_count: school.students_count,
+          last_visit: school.last_visit,
+          visit_count: school.visit_count || 0,
+          students_reached: school.students_reached || 0,
+          leads_generated: school.leads_generated || 0,
+          partnership_score: school.partnership_score,
+          notes: school.notes,
+          next_action: school.next_action || getDefaultNextAction(school.status),
+          created_at: school.created_at
+        }));
+
+        setSchools(transformedSchools);
+        setFilteredSchools(transformedSchools);
       } catch (error) {
         console.error('Error fetching schools:', error);
+        setError('Failed to load schools data. Please try again.');
+      } finally {
         setIsLoading(false);
       }
     };
+
     fetchSchools();
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     let filtered = [...schools];
 
     // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(school => school.status.toLowerCase() === statusFilter.toLowerCase());
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(school => school.status === filterStatus);
     }
 
     // Apply search
     if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(school =>
-        school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        school.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        school.principal.toLowerCase().includes(searchQuery.toLowerCase())
+        school.name.toLowerCase().includes(query) ||
+        school.location.toLowerCase().includes(query) ||
+        school.contact_person?.toLowerCase().includes(query)
       );
     }
 
     setFilteredSchools(filtered);
-  }, [schools, statusFilter, searchQuery]);
+  }, [schools, filterStatus, searchQuery]);
 
-  // Calculate metrics
-  const totalSchools = schools.length;
-  const partneredSchools = schools.filter(school => school.status === 'Partnered').length;
-  const totalLeads = schools.reduce((sum, school) => sum + school.leads, 0);
-  const visitedSchools = schools.filter(school => school.lastVisit).length;
-
-  const schoolColumns = [
-    {
-      header: 'School Name',
-      accessor: 'name'
-    },
-    {
-      header: 'Location',
-      accessor: (row: any) => (
-        <div className="flex items-center">
-          <MapPinIcon size={14} className="mr-1 text-gray-400" />
-          {row.location}
-        </div>
-      )
-    },
-    {
-      header: 'Status',
-      accessor: (row: any) => (
-        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-          row.status === 'Partnered' ? 'bg-green-100 text-green-800' :
-          row.status === 'Visited' ? 'bg-blue-100 text-blue-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {row.status}
-        </span>
-      )
-    },
-    {
-      header: 'Leads',
-      accessor: (row: any) => (
-        <div className="flex items-center">
-          <UsersIcon size={14} className="mr-1 text-gray-400" />
-          {row.leads}
-        </div>
-      ),
-      sortable: true
-    },
-    {
-      header: 'Last Visit',
-      accessor: (row: any) => {
-        if (!row.lastVisit) return 'Never';
-        const date = new Date(row.lastVisit);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 1) return 'Yesterday';
-        if (diffDays <= 7) return `${diffDays} days ago`;
-        return date.toLocaleDateString();
-      }
-    },
-    {
-      header: 'Actions',
-      accessor: (row: any) => (
-        <div className="flex space-x-2">
-          <button className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90" title="View Details">
-            <EyeIcon size={14} />
-          </button>
-          <button className="rounded-md bg-blue-500 p-1 text-white hover:bg-blue-600" title="Edit">
-            <EditIcon size={14} />
-          </button>
-          <button className="rounded-md bg-green-500 p-1 text-white hover:bg-green-600" title="Log Visit">
-            <PlusIcon size={14} />
-          </button>
-          <button className="rounded-md bg-gray-500 p-1 text-white hover:bg-gray-600" title="Contact">
-            <MessageSquareIcon size={14} />
-          </button>
-        </div>
-      )
+  const getDefaultNextAction = (status: string): string => {
+    switch (status) {
+      case 'prospect':
+        return 'Initial contact';
+      case 'contacted':
+        return 'Schedule visit';
+      case 'visited':
+        return 'Follow-up';
+      case 'partnered':
+        return 'Maintain relationship';
+      case 'inactive':
+        return 'Re-engage';
+      default:
+        return 'Review status';
     }
-  ];
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'prospect':
+        return 'bg-gray-100 text-gray-800';
+      case 'contacted':
+        return 'bg-blue-100 text-blue-800';
+      case 'visited':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'partnered':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'prospect':
+        return <Clock size={16} className="text-gray-500" />;
+      case 'contacted':
+        return <MailIcon size={16} className="text-blue-500" />;
+      case 'visited':
+        return <CalendarIcon size={16} className="text-yellow-500" />;
+      case 'partnered':
+        return <CheckCircle size={16} className="text-green-500" />;
+      case 'inactive':
+        return <AlertCircleIcon size={16} className="text-red-500" />;
+      default:
+        return <Clock size={16} className="text-gray-500" />;
+    }
+  };
+
+  const calculateDaysSinceLastVisit = (lastVisit?: string): number | null => {
+    if (!lastVisit) return null;
+    const visitDate = new Date(lastVisit);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - visitDate.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const handleScheduleVisit = (school: School) => {
+    setSelectedSchool(school);
+    setIsVisitModalOpen(true);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircleIcon className="h-12 w-12 text-red-500 mx-auto mb-4" />
+        <div className="text-red-600 mb-4">{error}</div>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Calculate stats
+  const stats = {
+    total: schools.length,
+    partnered: schools.filter(s => s.status === 'partnered').length,
+    visited: schools.filter(s => s.status === 'visited').length,
+    contacted: schools.filter(s => s.status === 'contacted').length,
+    totalStudentsReached: schools.reduce((sum, s) => sum + s.students_reached, 0),
+    totalLeads: schools.reduce((sum, s) => sum + s.leads_generated, 0),
+    avgPartnershipScore: schools.length > 0 
+      ? Math.round(schools.reduce((sum, s) => sum + (s.partnership_score || 0), 0) / schools.length)
+      : 0
+  };
 
   return (
     <div>
@@ -202,147 +208,255 @@ export const AmbassadorSchoolsPage = () => {
         </p>
       </div>
 
-      {/* KPI Cards */}
+      {/* Stats Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          title="Total Schools"
-          value={totalSchools.toString()}
-          icon={<SchoolIcon size={20} />}
-          color="bg-ash-teal"
-        />
-        <KpiCard
-          title="Partnered"
-          value={partneredSchools.toString()}
-          icon={<UsersIcon size={20} />}
-          color="bg-green-400"
-        />
-        <KpiCard
-          title="Total Leads"
-          value={totalLeads.toString()}
-          icon={<UsersIcon size={20} />}
-          color="bg-blue-400"
-        />
-        <KpiCard
-          title="Visited"
-          value={visitedSchools.toString()}
-          icon={<CalendarIcon size={20} />}
-          color="bg-yellow-400"
-        />
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center">
+            <SchoolIcon size={20} className="text-ash-teal" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Total Schools</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center">
+            <CheckCircle size={20} className="text-green-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Partnerships</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.partnered}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center">
+            <UsersIcon size={20} className="text-blue-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Students Reached</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalStudentsReached}</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center">
+            <TrendingUpIcon size={20} className="text-purple-600" />
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-500">Leads Generated</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalLeads}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters and Search */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              statusFilter === 'all' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              filterStatus === 'all' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setStatusFilter('all')}
+            onClick={() => setFilterStatus('all')}
           >
-            All Schools
+            All Schools ({stats.total})
           </button>
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              statusFilter === 'partnered' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              filterStatus === 'partnered' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setStatusFilter('partnered')}
+            onClick={() => setFilterStatus('partnered')}
           >
-            Partnered
+            Partnered ({stats.partnered})
           </button>
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              statusFilter === 'visited' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              filterStatus === 'visited' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setStatusFilter('visited')}
+            onClick={() => setFilterStatus('visited')}
           >
-            Visited
+            Visited ({stats.visited})
           </button>
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              statusFilter === 'prospect' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              filterStatus === 'contacted' ? 'bg-ash-teal text-white' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
             }`}
-            onClick={() => setStatusFilter('prospect')}
+            onClick={() => setFilterStatus('contacted')}
           >
-            Prospects
+            Contacted ({stats.contacted})
           </button>
         </div>
-        <div className="flex space-x-2">
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <SearchIcon size={16} className="text-gray-400" />
-            </div>
-            <input
-              type="search"
-              placeholder="Search schools..."
-              className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <button className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90">
-            <PlusIcon size={16} className="mr-1" />
-            Add School
-          </button>
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Search schools..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ash-teal"
+          />
         </div>
       </div>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-ash-teal border-t-transparent"></div>
-        </div>
-      )}
+      {/* Schools Grid */}
+      {filteredSchools.length > 0 ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredSchools.map((school) => {
+            const daysSinceLastVisit = calculateDaysSinceLastVisit(school.last_visit);
+            const needsAttention = daysSinceLastVisit && daysSinceLastVisit > 30;
 
-      {/* No Results */}
-      {!isLoading && filteredSchools.length === 0 && (
-        <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-          <SchoolIcon size={48} className="mb-4 text-gray-400" />
-          <h3 className="mb-2 text-lg font-medium text-gray-900">No schools found</h3>
-          <p className="text-sm text-gray-500">
-            {searchQuery || statusFilter !== 'all' ? 'Try adjusting your search or filters' : 'No schools assigned yet'}
+            return (
+              <div key={school.id} className={`bg-white rounded-lg border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow ${
+                needsAttention ? 'border-orange-200 bg-orange-50' : ''
+              }`}>
+                {/* School Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{school.name}</h3>
+                    <div className="flex items-center text-sm text-gray-500 mb-2">
+                      <MapPinIcon size={14} className="mr-1" />
+                      {school.location}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(school.status)}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(school.status)}`}>
+                      {school.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Contact Info */}
+                {school.contact_person && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium text-gray-900">{school.contact_person}</div>
+                    <div className="flex items-center gap-4 text-xs text-gray-600 mt-1">
+                      {school.contact_email && (
+                        <div className="flex items-center">
+                          <MailIcon size={12} className="mr-1" />
+                          {school.contact_email}
+                        </div>
+                      )}
+                      {school.contact_phone && (
+                        <div className="flex items-center">
+                          <PhoneIcon size={12} className="mr-1" />
+                          {school.contact_phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-ash-teal">{school.visit_count}</div>
+                    <div className="text-xs text-gray-500">Visits</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600">{school.students_reached}</div>
+                    <div className="text-xs text-gray-500">Students</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">{school.leads_generated}</div>
+                    <div className="text-xs text-gray-500">Leads</div>
+                  </div>
+                </div>
+
+                {/* Last Visit */}
+                <div className="mb-4 text-sm">
+                  <div className="flex items-center justify-between text-gray-600">
+                    <span>Last visit:</span>
+                    <span className={needsAttention ? 'text-orange-600 font-medium' : ''}>
+                      {school.last_visit 
+                        ? new Date(school.last_visit).toLocaleDateString()
+                        : 'Never'
+                      }
+                    </span>
+                  </div>
+                  {daysSinceLastVisit && (
+                    <div className="text-xs text-gray-500 mt-1 text-right">
+                      {daysSinceLastVisit} days ago
+                      {needsAttention && ' ⚠️'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Next Action */}
+                <div className="mb-4 p-2 bg-blue-50 rounded text-sm">
+                  <div className="font-medium text-blue-900">Next Action:</div>
+                  <div className="text-blue-700">{school.next_action}</div>
+                </div>
+
+                {/* Notes */}
+                {school.notes && (
+                  <div className="mb-4 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    <div className="font-medium text-gray-900 mb-1">Notes:</div>
+                    <div className="line-clamp-2">{school.notes}</div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleScheduleVisit(school)}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90 text-sm"
+                  >
+                    <CalendarIcon size={14} />
+                    Visit
+                  </button>
+                  <button className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                    <EyeIcon size={14} />
+                  </button>
+                  {school.contact_phone && (
+                    <button className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                      <PhoneIcon size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+          <SchoolIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {schools.length === 0 ? 'No schools assigned' : 'No schools match your filters'}
+          </h3>
+          <p className="text-gray-500">
+            {schools.length === 0 
+              ? 'Schools will be assigned to you by your country lead.'
+              : 'Try adjusting your search or filter criteria.'
+            }
           </p>
-          {(searchQuery || statusFilter !== 'all') && (
-            <button
-              className="mt-4 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              onClick={() => {
-                setSearchQuery('');
-                setStatusFilter('all');
-              }}
-            >
-              Clear filters
-            </button>
-          )}
         </div>
       )}
 
-      {/* Schools Table */}
-      {!isLoading && filteredSchools.length > 0 && (
-        <DataTable
-          columns={schoolColumns}
-          data={filteredSchools}
-          keyField="id"
-          rowsPerPage={10}
-        />
-      )}
-
-      {/* Quick Actions */}
-      <div className="mt-6 rounded-lg border border-gray-200 bg-white p-4">
-        <h3 className="mb-3 text-base font-medium text-gray-900">Quick Actions</h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-2 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
-            <CalendarIcon size={16} className="mr-2" />
-            Schedule Visit
-          </button>
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-2 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
-            <MessageSquareIcon size={16} className="mr-2" />
-            Bulk Contact
-          </button>
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-2 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
-            <UsersIcon size={16} className="mr-2" />
-            Export Data
-          </button>
+      {/* Visit Modal - You'll need to implement this component */}
+      {isVisitModalOpen && selectedSchool && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold mb-4">Schedule Visit - {selectedSchool.name}</h2>
+            <p className="text-gray-600 mb-4">Visit scheduling functionality would go here.</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsVisitModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setIsVisitModalOpen(false);
+                  // Implement visit scheduling logic
+                }}
+                className="px-4 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90"
+              >
+                Schedule
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
