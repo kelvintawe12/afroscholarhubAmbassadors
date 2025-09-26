@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { BellIcon, MenuIcon, SearchIcon, UserIcon, ChevronDownIcon, LogOutIcon, CrownIcon, FlagIcon, HandshakeIcon, SettingsIcon, HelpCircleIcon, CalendarIcon, XIcon, SchoolIcon, FileTextIcon, ClipboardIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 interface NavbarProps {
   toggleSidebar: () => void;
   currentRole: string;
@@ -33,6 +34,7 @@ export const Navbar = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchResultsRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -83,22 +85,9 @@ export const Navbar = ({
         return 'Dashboard';
     }
   };
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'management':
-        return <CrownIcon size={16} className="mr-2 text-ash-gold" />;
-      case 'country_lead':
-        return <FlagIcon size={16} className="mr-2 text-ash-teal" />;
-      case 'ambassador':
-        return <HandshakeIcon size={16} className="mr-2 text-ash-teal" />;
-      case 'support':
-        return <SettingsIcon size={16} className="mr-2 text-gray-500" />;
-      default:
-        return <UserIcon size={16} className="mr-2" />;
-    }
-  };
   const unreadCount = notifications.filter(n => !n.read).length;
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     navigate('/');
   };
   const switchRole = (role: string) => {

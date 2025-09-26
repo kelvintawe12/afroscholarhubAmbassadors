@@ -1,8 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { SchoolIcon, MapPinIcon, UsersIcon, CalendarIcon, PlusIcon, EyeIcon, PhoneIcon, MailIcon, ExternalLinkIcon, AlertCircleIcon, TrendingUpIcon, Clock, CheckCircle } from 'lucide-react';
-import { getAmbassadorSchools, createVisit } from '../../../api/ambassador';
-import { useAuth } from '../../../hooks/useAuth';
+import { useEffect, useState } from 'react';
+import { SchoolIcon, MapPinIcon, UsersIcon, CalendarIcon, EyeIcon, PhoneIcon, MailIcon, AlertCircleIcon, TrendingUpIcon, Clock, CheckCircle } from 'lucide-react';
+import { getAmbassadorSchools } from '../../../api/ambassador';
+import { useAuth } from '../../../contexts/AuthContext';
 import { LoadingSpinner } from '../../LoadingSpinner';
+
+const getDefaultNextAction = (status: 'prospect' | 'contacted' | 'visited' | 'partnered' | 'inactive'): string => {
+  switch (status) {
+    case 'prospect':
+      return 'Initial contact';
+    case 'contacted':
+      return 'Schedule visit';
+    case 'visited':
+      return 'Follow-up';
+    case 'partnered':
+      return 'Maintain relationship';
+    case 'inactive':
+      return 'Re-engage';
+    default:
+      return 'Review status';
+  }
+};
 
 interface School {
   id: string;
@@ -30,7 +47,7 @@ export const SchoolsPage = () => {
   const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'prospect' | 'contacted' | 'visited' | 'partnered' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
@@ -43,10 +60,9 @@ export const SchoolsPage = () => {
         setIsLoading(true);
         setError(null);
         const data = await getAmbassadorSchools(user.id);
-        
-        // Transform the data to match our interface
-        const transformedSchools: School[] = data.map(school => ({
-          id: school.id,
+
+        const transformedSchools: School[] = data.map((school: any) => ({
+          id: String(school.id),
           name: school.name,
           location: school.location,
           country_code: school.country_code,
@@ -58,9 +74,9 @@ export const SchoolsPage = () => {
           last_visit: school.last_visit,
           visit_count: school.visit_count || 0,
           students_reached: school.students_reached || 0,
-          leads_generated: school.leads_generated || 0,
+          leads_generated: school.leads_generated ?? 0,
           partnership_score: school.partnership_score,
-          notes: school.notes,
+          notes: school.notes || '',
           next_action: school.next_action || getDefaultNextAction(school.status),
           created_at: school.created_at
         }));
@@ -81,42 +97,23 @@ export const SchoolsPage = () => {
   useEffect(() => {
     let filtered = [...schools];
 
-    // Apply status filter
     if (filterStatus !== 'all') {
       filtered = filtered.filter(school => school.status === filterStatus);
     }
 
-    // Apply search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(school =>
         school.name.toLowerCase().includes(query) ||
         school.location.toLowerCase().includes(query) ||
-        school.contact_person?.toLowerCase().includes(query)
+        (school.contact_person && school.contact_person.toLowerCase().includes(query))
       );
     }
 
     setFilteredSchools(filtered);
   }, [schools, filterStatus, searchQuery]);
 
-  const getDefaultNextAction = (status: string): string => {
-    switch (status) {
-      case 'prospect':
-        return 'Initial contact';
-      case 'contacted':
-        return 'Schedule visit';
-      case 'visited':
-        return 'Follow-up';
-      case 'partnered':
-        return 'Maintain relationship';
-      case 'inactive':
-        return 'Re-engage';
-      default:
-        return 'Review status';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: School['status']) => {
     switch (status) {
       case 'prospect':
         return 'bg-gray-100 text-gray-800';
@@ -133,7 +130,7 @@ export const SchoolsPage = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: School['status']) => {
     switch (status) {
       case 'prospect':
         return <Clock size={16} className="text-gray-500" />;
@@ -301,7 +298,7 @@ export const SchoolsPage = () => {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredSchools.map((school) => {
             const daysSinceLastVisit = calculateDaysSinceLastVisit(school.last_visit);
-            const needsAttention = daysSinceLastVisit && daysSinceLastVisit > 30;
+            const needsAttention = daysSinceLastVisit !== null && daysSinceLastVisit > 30;
 
             return (
               <div key={school.id} className={`bg-white rounded-lg border border-gray-200 shadow-sm p-6 hover:shadow-md transition-shadow ${
@@ -313,13 +310,13 @@ export const SchoolsPage = () => {
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">{school.name}</h3>
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <MapPinIcon size={14} className="mr-1" />
-                      {school.location}
+                      {school.location} ({school.country_code.toUpperCase()})
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(school.status)}
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(school.status)}`}>
-                      {school.status}
+                      {school.status.charAt(0).toUpperCase() + school.status.slice(1)}
                     </span>
                   </div>
                 </div>
@@ -330,16 +327,14 @@ export const SchoolsPage = () => {
                     <div className="text-sm font-medium text-gray-900">{school.contact_person}</div>
                     <div className="flex items-center gap-4 text-xs text-gray-600 mt-1">
                       {school.contact_email && (
-                        <div className="flex items-center">
-                          <MailIcon size={12} className="mr-1" />
-                          {school.contact_email}
-                        </div>
+                        <span className="flex items-center gap-1">
+                          <MailIcon size={12} /> {school.contact_email}
+                        </span>
                       )}
                       {school.contact_phone && (
-                        <div className="flex items-center">
-                          <PhoneIcon size={12} className="mr-1" />
-                          {school.contact_phone}
-                        </div>
+                        <span className="flex items-center gap-1">
+                          <PhoneIcon size={12} /> {school.contact_phone}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -352,11 +347,11 @@ export const SchoolsPage = () => {
                     <div className="text-xs text-gray-500">Visits</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-blue-600">{school.students_reached}</div>
+                    <div className="text-lg font-bold text-blue-700">{school.students_reached}</div>
                     <div className="text-xs text-gray-500">Students</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-bold text-green-600">{school.leads_generated}</div>
+                    <div className="text-lg font-bold text-purple-700">{school.leads_generated}</div>
                     <div className="text-xs text-gray-500">Leads</div>
                   </div>
                 </div>
@@ -364,18 +359,21 @@ export const SchoolsPage = () => {
                 {/* Last Visit */}
                 <div className="mb-4 text-sm">
                   <div className="flex items-center justify-between text-gray-600">
-                    <span>Last visit:</span>
-                    <span className={needsAttention ? 'text-orange-600 font-medium' : ''}>
-                      {school.last_visit 
+                    <span>
+                      Last Visit:{' '}
+                      {school.last_visit
                         ? new Date(school.last_visit).toLocaleDateString()
-                        : 'Never'
-                      }
+                        : 'Never'}
                     </span>
+                    {daysSinceLastVisit !== null && (
+                      <span>
+                        {daysSinceLastVisit} day{daysSinceLastVisit !== 1 ? 's' : ''} ago
+                      </span>
+                    )}
                   </div>
-                  {daysSinceLastVisit && (
-                    <div className="text-xs text-gray-500 mt-1 text-right">
-                      {daysSinceLastVisit} days ago
-                      {needsAttention && ' ⚠️'}
+                  {needsAttention && (
+                    <div className="mt-1 text-xs text-orange-600 font-semibold">
+                      Needs attention: No visit in over 30 days
                     </div>
                   )}
                 </div>
@@ -407,9 +405,13 @@ export const SchoolsPage = () => {
                     <EyeIcon size={14} />
                   </button>
                   {school.contact_phone && (
-                    <button className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                    <a
+                      href={`tel:${school.contact_phone}`}
+                      className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                      title="Call contact"
+                    >
                       <PhoneIcon size={14} />
-                    </button>
+                    </a>
                   )}
                 </div>
               </div>
@@ -431,7 +433,7 @@ export const SchoolsPage = () => {
         </div>
       )}
 
-      {/* Visit Modal - You'll need to implement this component */}
+      {/* Visit Modal */}
       {isVisitModalOpen && selectedSchool && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">

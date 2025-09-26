@@ -148,4 +148,4 @@ INSERT INTO notifications (id, user_id, title, message, type, category, priority
 
 INSERT INTO reports (id, title, description, type, sub_type, format, parameters, filters, file_url, file_size, status, generated_by, downloads, expires_at, error_message, generation_time, scheduled_for, is_recurring, recurring_pattern) VALUES
 ('gg0e8400-e29b-41d4-a716-446655440000', 'Monthly School Visits Report', 'Summary of all school visits conducted in January 2024', 'visits', 'monthly', 'pdf', '{"date_range": {"start": "2024-01-01", "end": "2024-01-31"}}', '{"country": "NGA", "status": "completed"}', 'https://reports.afroscholarhub.com/monthly_visits_jan_2024.pdf', 245760, 'ready', '550e8400-e29b-41d4-a716-446655440001', 15, NULL, NULL, '00:02:30', NULL, true, 'monthly'),
-('gg0e8400-e29b-41d4-a716-446655440001', 'Ambassador Performance Report
+('gg0e8400-e29b-41d4-a716-446655440001', 'Ambassador

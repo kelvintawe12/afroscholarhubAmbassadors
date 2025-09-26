@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
+import { AuthProvider } from './contexts/AuthContext';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
 // Lazy load all components for code splitting
@@ -27,7 +28,7 @@ const ReportsPage = React.lazy(() => import('./components/dashboards/country-lea
 // Ambassador Dashboard Components
 const AmbassadorDashboard = React.lazy(() => import('./components/dashboards/ambassador/AmbassadorDashboard').then(module => ({ default: module.AmbassadorDashboard })));
 const TasksPage = React.lazy(() => import('./components/dashboards/ambassador/TasksPage').then(module => ({ default: module.TasksPage })));
-const AmbassadorSchoolsPage = React.lazy(() => import('./components/dashboards/ambassador/SchoolsPage').then(module => ({ default: module.AmbassadorSchoolsPage })));
+const AmbassadorSchoolsPage = React.lazy(() => import('./components/dashboards/ambassador/SchoolsPage').then(module => ({ default: module.SchoolsPage })));
 const ActivityLogPage = React.lazy(() => import('./components/dashboards/ambassador/ActivityLogPage').then(module => ({ default: module.ActivityLogPage })));
 const AmbassadorResourcesPage = React.lazy(() => import('./components/dashboards/ambassador/ResourcesPage').then(module => ({ default: module.AmbassadorResourcesPage })));
 const ImpactPage = React.lazy(() => import('./components/dashboards/ambassador/ImpactPage').then(module => ({ default: module.ImpactPage })));
@@ -80,10 +81,10 @@ function App() {
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <>
-          <PWAInstallPrompt />
+        <AuthProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Suspense fallback={<LoadingFallback />}>
+              <PWAInstallPrompt />
               <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
@@ -93,7 +94,7 @@ function App() {
                 element={
                   <DashboardLayout>
                     <ManagementDashboard />
-                  </DashboardLayout>
+                 u </DashboardLayout>
                 }
               />
               <Route
@@ -446,7 +447,7 @@ function App() {
             </Routes>
             </Suspense>
           </Router>
-        </>
+        </AuthProvider>
       </ToastProvider>
     </ErrorBoundary>
   );
