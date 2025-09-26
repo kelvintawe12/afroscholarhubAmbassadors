@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { CheckSquareIcon, ClockIcon, CalendarIcon, AlertCircleIcon, PlusIcon, FilterIcon, CheckIcon, XIcon, FlagIcon, ChevronDownIcon, SearchIcon, MoreHorizontalIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
 import { getAmbassadorTasks, updateTask } from '../../../api/ambassador';
+import { useAuth } from '../../../contexts/AuthContext';
+import { Task } from '../../../utils/supabase';
 export const TasksPage = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<any[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,149 +15,36 @@ export const TasksPage = () => {
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   useEffect(() => {
     const fetchTasks = async () => {
+      if (!user?.id) return;
+
       try {
         setIsLoading(true);
-        // In a real app, this would use the API client
-        // const data = await getAmbassadorTasks('current-user-id')
-        // For now, use mock data
-        const mockData = [{
-          id: 1,
-          title: 'Submit Monthly Report',
-          description: 'Complete and submit the monthly activity report with metrics and outcomes',
-          school: 'All Schools',
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'High',
-          status: 'In Progress',
-          progress: 75,
-          createdAt: '2024-04-01T10:00:00Z',
-          tags: ['report', 'monthly'],
-          assignedBy: 'Aisha Mohammed',
-          notes: 'Include details on all school visits and student engagement metrics'
-        }, {
-          id: 2,
-          title: 'Follow up with Lagos Model School',
-          description: 'Contact the principal about the partnership agreement and next steps',
-          school: 'Lagos Model School',
-          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'High',
-          status: 'Pending',
-          progress: 0,
-          createdAt: '2024-04-02T14:30:00Z',
-          tags: ['follow-up', 'partnership'],
-          assignedBy: 'Aisha Mohammed',
-          notes: 'Principal was interested in scholarship opportunities'
-        }, {
-          id: 3,
-          title: 'Prepare for Career Day',
-          description: 'Create presentation and materials for the upcoming career day event',
-          school: 'ABC Academy',
-          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'Medium',
-          status: 'In Progress',
-          progress: 30,
-          createdAt: '2024-04-03T09:15:00Z',
-          tags: ['event', 'presentation'],
-          assignedBy: 'Self',
-          notes: 'Focus on STEM careers and scholarship opportunities'
-        }, {
-          id: 4,
-          title: 'Update School Contact Information',
-          description: 'Verify and update contact details for all assigned schools in the system',
-          school: 'All Schools',
-          dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'Low',
-          status: 'Pending',
-          progress: 0,
-          createdAt: '2024-04-04T11:45:00Z',
-          tags: ['admin', 'contacts'],
-          assignedBy: 'System',
-          notes: 'Ensure all email addresses and phone numbers are current'
-        }, {
-          id: 5,
-          title: 'Submit Visit Report - XYZ High School',
-          description: "Complete the visit report with photos and metrics from yesterday's school visit",
-          school: 'XYZ High School',
-          dueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'High',
-          status: 'Pending',
-          progress: 0,
-          createdAt: '2024-04-05T08:00:00Z',
-          tags: ['report', 'visit'],
-          assignedBy: 'System',
-          notes: 'Include student feedback and photos from the workshop',
-          isOverdue: true
-        }, {
-          id: 6,
-          title: 'Collect Student Feedback Forms',
-          description: 'Gather feedback forms from the workshop participants and compile results',
-          school: 'Unity College',
-          dueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'Medium',
-          status: 'Pending',
-          progress: 0,
-          createdAt: '2024-04-06T13:20:00Z',
-          tags: ['feedback', 'workshop'],
-          assignedBy: 'Aisha Mohammed',
-          notes: 'Need to analyze responses for the quarterly report',
-          isOverdue: true
-        }, {
-          id: 7,
-          title: 'Schedule Principal Meeting',
-          description: 'Arrange meeting with the new principal at Heritage Academy',
-          school: 'Heritage Academy',
-          dueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'High',
-          status: 'Completed',
-          progress: 100,
-          createdAt: '2024-04-07T10:30:00Z',
-          completedAt: '2024-04-08T14:45:00Z',
-          tags: ['meeting', 'principal'],
-          assignedBy: 'Self',
-          notes: 'Meeting scheduled for next Tuesday at 2pm'
-        }, {
-          id: 8,
-          title: 'Order New Brochures',
-          description: 'Request new marketing materials for school visits from headquarters',
-          school: 'All Schools',
-          dueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'Medium',
-          status: 'Completed',
-          progress: 100,
-          createdAt: '2024-04-08T09:00:00Z',
-          completedAt: '2024-04-09T11:30:00Z',
-          tags: ['materials', 'marketing'],
-          assignedBy: 'System',
-          notes: 'Ordered 500 brochures and 100 posters'
-        }, {
-          id: 9,
-          title: 'Review Student Applications',
-          description: 'Review and provide feedback on scholarship applications from multiple schools',
-          school: 'Multiple Schools',
-          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          priority: 'Medium',
-          status: 'Pending',
-          progress: 0,
-          createdAt: '2024-04-09T15:45:00Z',
-          tags: ['scholarship', 'review'],
-          assignedBy: 'Aisha Mohammed',
-          notes: '15 applications need review before the committee meeting'
-        }, {
-          id: 10,
-          title: 'Attend Weekly Team Meeting',
-          description: 'Virtual team sync with country lead and other ambassadors',
-          school: 'N/A',
-          dueDate: new Date().toISOString(),
-          priority: 'High',
-          status: 'Pending',
-          progress: 0,
-          createdAt: '2024-04-10T08:30:00Z',
-          tags: ['meeting', 'team'],
-          assignedBy: 'Aisha Mohammed',
-          notes: 'Meeting at 3pm via Zoom, prepare weekly updates',
-          isDueToday: true
-        }];
-        setTasks(mockData);
-        setFilteredTasks(mockData);
+        const data = await getAmbassadorTasks(user.id);
+        const transformedData = data.map((task: Task) => {
+          const dueDate = task.due_date ? new Date(task.due_date) : null;
+          const now = new Date();
+          const isOverdue = dueDate && dueDate < now && task.status !== 'Completed';
+          const isDueToday = dueDate && dueDate.toDateString() === now.toDateString() && task.status !== 'Completed';
+
+          return {
+            id: task.id,
+            title: task.title,
+            description: task.description || '',
+            school: 'N/A',
+            dueDate: task.due_date || '',
+            priority: task.priority,
+            status: task.status,
+            progress: 0,
+            createdAt: task.created_at,
+            tags: [],
+            assignedBy: task.created_by,
+            notes: '',
+            isOverdue,
+            isDueToday,
+          };
+        });
+        setTasks(transformedData);
+        setFilteredTasks(transformedData);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -162,7 +52,7 @@ export const TasksPage = () => {
       }
     };
     fetchTasks();
-  }, []);
+  }, [user?.id]);
   useEffect(() => {
     // Filter and sort tasks
     let filtered = [...tasks];
@@ -225,11 +115,10 @@ export const TasksPage = () => {
       setSortDirection('asc');
     }
   };
-  const handleStatusChange = async (taskId: number, newStatus: string) => {
+  const handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
-      // In a real app, this would call the API
-      // await updateTask(taskId, { status: newStatus })
-      // For now, update locally
+      await updateTask(taskId, { status: newStatus as 'Pending' | 'In Progress' | 'Completed' });
+      // Update locally
       const updatedTasks = tasks.map(task => {
         if (task.id === taskId) {
           return {
