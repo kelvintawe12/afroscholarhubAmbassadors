@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarIcon, DownloadIcon, FilterIcon, PlusIcon, SettingsIcon, BarChart3Icon, PieChartIcon, FileTextIcon, TrendingUpIcon, UsersIcon, SchoolIcon, MapPinIcon, TargetIcon, SearchIcon, XIcon } from 'lucide-react';
 import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
@@ -6,6 +6,9 @@ import { PieChart } from '../../../ui/widgets/PieChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
 import CreateReportModal from './CreateReportModal';
 import { Button } from '../../../ui/Button';
+import { getReports, generateReportMetrics } from '../../../../api/reports';
+import { LoadingSpinner } from '../../../LoadingSpinner';
+import toast from 'react-hot-toast';
 
 export const CustomReportsPage = () => {
   const [activeTab, setActiveTab] = useState('builder');
@@ -23,12 +26,24 @@ export const CustomReportsPage = () => {
     metrics: ['students', 'partnerships']
   });
   const [reportName, setReportName] = useState('');
-  const [savedReports, setSavedReports] = useState([
-    { id: 1, name: 'Student Engagement Q1', type: 'Performance', lastRun: '2024-01-15', status: 'completed' },
-    { id: 2, name: 'Partnership Growth Analysis', type: 'Growth', lastRun: '2024-01-10', status: 'completed' },
-    { id: 3, name: 'Regional Performance', type: 'Geographic', lastRun: '2024-01-08', status: 'completed' }
-  ]);
+  const [savedReports, setSavedReports] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [reportData, setReportData] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const reports = await getReports();
+        setSavedReports(reports);
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+        toast.error('Failed to load reports');
+      }
+    };
+
+    fetchReports();
+  }, []);
 
   const availableFilters = {
     countries: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
@@ -58,8 +73,8 @@ export const CustomReportsPage = () => {
   const savedReportsColumns = [
     { header: 'Report Name', accessor: 'name' },
     { header: 'Type', accessor: 'type' },
-    { header: 'Last Run', accessor: 'lastRun' },
-    { header: 'Status', accessor: 'status' }
+    { header: 'Created', accessor: 'created_at', format: (value: string) => new Date(value).toLocaleDateString() },
+    { header: 'Status', accessor: 'status', format: (value: string) => value.charAt(0).toUpperCase() + value.slice(1) }
   ];
 
   type FilterType = 'countries' | 'schools' | 'ambassadors' | 'metrics';
@@ -73,20 +88,72 @@ export const CustomReportsPage = () => {
     }));
   };
 
-  const generateReport = () => {
-    console.log('Generating custom report with filters:', selectedFilters);
-    alert('Custom report generated successfully!');
+  const generateReport = async () => {
+    setLoading(true);
+    try {
+      // Calculate date range
+      const now = new Date();
+      let startDate: string;
+      let endDate = now.toISOString().split('T')[0];
+
+      switch (selectedFilters.dateRange) {
+        case 'last-7-days':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last-30-days':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last-90-days':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last-6-months':
+          startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()).toISOString().split('T')[0];
+          break;
+        case 'last-year':
+          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+          break;
+        default:
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      }
+
+      // Map metrics to API format
+      const apiMetrics = selectedFilters.metrics.map(metric => {
+        switch (metric) {
+          case 'students': return 'students_reached';
+          case 'partnerships': return 'partnerships';
+          case 'visits': return 'visits_count';
+          case 'engagement': return 'tasks_completed';
+          case 'growth': return 'events_organized';
+          default: return metric;
+        }
+      });
+
+      const data = await generateReportMetrics({
+        start_date: startDate,
+        end_date: endDate,
+        country_code: selectedFilters.countries.length === 1 ? selectedFilters.countries[0] : undefined,
+        metrics: apiMetrics
+      });
+
+      setReportData(data);
+      toast.success('Report generated successfully!');
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast.error('Failed to generate report');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReportCreated = () => {
-    // Refresh saved reports or add mock entry
-    setSavedReports(prev => [...prev, {
-      id: prev.length + 1,
-      name: 'New Custom Report',
-      type: 'Custom',
-      lastRun: new Date().toISOString().split('T')[0],
-      status: 'completed'
-    }]);
+  const handleReportCreated = async () => {
+    try {
+      const reports = await getReports();
+      setSavedReports(reports);
+      toast.success('Report created successfully!');
+    } catch (error) {
+      console.error('Error refreshing reports:', error);
+      toast.error('Report created but failed to refresh list');
+    }
     setIsModalOpen(false);
   };
 
@@ -237,42 +304,59 @@ export const CustomReportsPage = () => {
                 </div>
               </div>
 
-              {/* Sample Chart */}
-              <LineChart
-                title="Custom Report Preview"
-                data={customData}
-              />
-
-              {/* Sample Data Table */}
-              <div className="mt-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Sample Data:</h4>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Partnerships</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Growth</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Nigeria</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">1,250</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">15</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">+12%</td>
-                      </tr>
-                      <tr>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">Kenya</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">650</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">8</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">+8%</td>
-                      </tr>
-                    </tbody>
-                  </table>
+              {/* Report Data */}
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <LoadingSpinner />
+                  <span className="ml-2 text-sm text-gray-600">Generating report...</span>
                 </div>
-              </div>
+              ) : reportData ? (
+                <>
+                  <LineChart
+                    title="Custom Report Preview"
+                    data={{
+                      labels: ['Current Period'],
+                      datasets: [{
+                        label: 'Metrics',
+                        data: Object.values(reportData),
+                        borderColor: '#1A5F7A',
+                        backgroundColor: 'rgba(26, 95, 122, 0.1)'
+                      }]
+                    }}
+                  />
+
+                  {/* Report Data Table */}
+                  <div className="mt-6">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Report Data:</h4>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Metric</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Object.entries(reportData).map(([key, value]: [string, any]) => (
+                            <tr key={key}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">
+                                {key.replace(/_/g, ' ')}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {typeof value === 'number' ? value.toLocaleString() : value}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Click "Generate Report" to see data based on your selected filters</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

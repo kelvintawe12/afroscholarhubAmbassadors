@@ -1,24 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarIcon, DownloadIcon, FilterIcon, TrendingUpIcon, TrendingDownIcon, UsersIcon, SchoolIcon, MapPinIcon, BarChart3Icon, PieChartIcon, TargetIcon, AwardIcon } from 'lucide-react';
 import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
+import { generateQuarterlyReport } from '../../../../api/reports';
+import toast from 'react-hot-toast';
+import { LoadingSpinner } from '../../../LoadingSpinner';
 
 export const QuarterlyReportsPage = () => {
   const [selectedQuarter, setSelectedQuarter] = useState('Q1-2024');
   const [selectedCountry, setSelectedCountry] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [quarterlyData, setQuarterlyData] = useState<any>(null);
 
-  // Mock data for quarterly reports
-  const quarterlyMetrics = {
-    totalStudents: 3750,
-    newPartnerships: 42,
-    activeAmbassadors: 58,
-    totalVisits: 267,
-    countriesCovered: 4,
-    avgStudentsPerVisit: 14,
-    growthRate: 18.5,
-    targetAchievement: 87
+  useEffect(() => {
+    const fetchQuarterlyData = async () => {
+      setLoading(true);
+      try {
+        const [quarter, year] = selectedQuarter.split('-');
+        const quarterNum = parseInt(quarter.replace('Q', ''));
+        const countryCode = selectedCountry === 'all' ? undefined : selectedCountry;
+
+        const data = await generateQuarterlyReport(quarterNum, parseInt(year), countryCode);
+        setQuarterlyData(data);
+      } catch (error) {
+        console.error('Error fetching quarterly data:', error);
+        toast.error('Failed to load quarterly report data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuarterlyData();
+  }, [selectedQuarter, selectedCountry]);
+
+  // Calculate metrics from real data
+  const quarterlyMetrics = quarterlyData ? {
+    totalStudents: quarterlyData.students_reached || 0,
+    newPartnerships: quarterlyData.partnerships || 0,
+    activeAmbassadors: quarterlyData.active_ambassadors || 0,
+    totalVisits: quarterlyData.visits_count || 0,
+    countriesCovered: selectedCountry === 'all' ? 4 : 1,
+    avgStudentsPerVisit: quarterlyData.visits_count ? Math.round((quarterlyData.students_reached || 0) / quarterlyData.visits_count) : 0,
+    growthRate: 18.5, // Would need previous quarter comparison
+    targetAchievement: 87 // Would need target data
+  } : {
+    totalStudents: 0,
+    newPartnerships: 0,
+    activeAmbassadors: 0,
+    totalVisits: 0,
+    countriesCovered: 0,
+    avgStudentsPerVisit: 0,
+    growthRate: 0,
+    targetAchievement: 0
   };
 
   const quarterlyTrends = {
@@ -72,10 +107,27 @@ export const QuarterlyReportsPage = () => {
     { header: 'Growth %', accessor: (row: any) => `${row.growth}%` }
   ];
 
-  const exportReport = (format: string) => {
-    console.log(`Exporting quarterly report in ${format} format`);
-    alert(`Quarterly report exported as ${format.toUpperCase()}`);
+  const exportReport = async (format: string) => {
+    try {
+      if (format === 'pdf') {
+        toast.success('PDF export feature coming soon!');
+      } else {
+        toast.success('Excel export feature coming soon!');
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast.error('Failed to export report');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <LoadingSpinner />
+        <span className="ml-2 text-sm text-gray-600">Loading quarterly report...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
