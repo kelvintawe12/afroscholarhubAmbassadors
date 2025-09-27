@@ -135,7 +135,7 @@ export const getAmbassadorTasks = async (ambassadorId: string): Promise<TaskData
 
     return data?.map(task => ({
       ...task,
-      school_name: (task.schools as any)?.name || undefined
+      school_name: (task.schools as { name: string }[])?.[0]?.name || undefined
     })) || [];
   } catch (error) {
     console.error('Error fetching ambassador tasks:', error);
@@ -223,10 +223,10 @@ export const getCountryLeadKPIs = async (countryCode: string): Promise<Dashboard
 
     return {
       leadsGenerated: 0, // Will be calculated from visits
-      activeAmbassadors: teamCount || 0,
-      schoolsVisited: schoolsCount || 0,
       tasksCompleted: eventsCount || 0,
+      schoolsVisited: schoolsCount || 0,
       impactScore: goalProgress,
+      activeAmbassadors: teamCount || 0,
       conversionRate: 18 // Would calculate from actual conversion data
     };
   } catch (error) {
@@ -415,7 +415,7 @@ export const getCountryDistribution = async () => {
     if (error) throw error;
 
     const countryData = data?.reduce((acc: any, school) => {
-      const countryName = (school.countries as any)?.name || school.country_code;
+      const countryName = (school.countries as { name: string }[])?.[0]?.name || school.country_code;
       acc[countryName] = (acc[countryName] || 0) + 1;
       return acc;
     }, {});

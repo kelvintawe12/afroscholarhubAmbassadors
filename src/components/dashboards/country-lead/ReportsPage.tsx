@@ -508,7 +508,6 @@ const ReportsPage: React.FC = () => {
                 title={metric.title}
                 value={metric.value}
                 icon={metric.icon}
-                trend={metric.trend}
                 color={metric.color}
               />
             ))}

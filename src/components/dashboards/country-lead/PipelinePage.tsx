@@ -1,22 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  MapPin, 
-  School, 
-  Users, 
-  Award, 
-  TrendingUp, 
-  Calendar, 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Phone, 
-  Mail, 
-  CheckCircle, 
-  AlertTriangle,
-  Zap,
-  Building,
-  GraduationCap
+import {
+  MapPin, School, Users, Award, TrendingUp, Calendar, Plus, Search, Filter, Download, Phone, Mail, CheckCircle, AlertTriangle,
+  Zap, Building, GraduationCap
 } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
@@ -24,7 +9,6 @@ import { KpiCard } from '../../ui/widgets/KpiCard';
 import { LoadingSpinner } from '../../LoadingSpinner';
 import { useCountryLeadKPIs, useCountryAmbassadors, useRecentActivities, useDashboardData } from '../../../hooks/useDashboardData';
 import { getCountrySchools, getCountryMetrics } from '../../../api/country-lead';
-// import { PipelineChart } from '../../ui/widgets/PipelineChart'; // Assuming this exists
 
 // Types
 interface School {
@@ -93,158 +77,6 @@ const pipelineStats: PipelineStat[] = [
   }
 ];
 
-const schoolsData: School[] = [
-  {
-    id: '1',
-    name: 'Lagos Model College',
-    location: 'Ikeja, Lagos',
-    city: 'Lagos',
-    country: 'Nigeria',
-    flag: '🇳🇬',
-    type: 'secondary',
-    stage: 'partnered',
-    students: 1245,
-    ambassadors: 3,
-    scholarships: 45,
-    potential: 'High',
-    nextAction: 'Q1 Expansion',
-    lastContact: 'Dec 15, 2024',
-    assignedTo: 'Aisha Bello',
-    contact: {
-      name: 'Mrs. Fatima Adebayo',
-      email: 'principal@lagosmodel.edu.ng',
-      phone: '+234 801 234 5678'
-    },
-    notes: 'Excellent STEM program, strong alumni network',
-    score: 92,
-    conversionProbability: 100
-  },
-  {
-    id: '2',
-    name: 'Accra Technical University',
-    location: 'Teshie, Accra',
-    city: 'Accra',
-    country: 'Ghana',
-    flag: '🇬🇭',
-    type: 'polytechnic',
-    stage: 'proposal',
-    students: 3456,
-    ambassadors: 2,
-    scholarships: 0,
-    potential: 'Very High',
-    nextAction: 'Proposal Meeting - Dec 20',
-    lastContact: 'Dec 12, 2024',
-    assignedTo: 'Kwame Mensah',
-    contact: {
-      name: 'Dr. Emmanuel Osei',
-      email: 'registrar@atu.edu.gh',
-      phone: '+233 302 123 456'
-    },
-    notes: 'Strong engineering program, needs scholarship funding',
-    score: 87,
-    conversionProbability: 85
-  },
-  {
-    id: '3',
-    name: 'University of Nairobi',
-    location: 'Kikuyu Campus',
-    city: 'Nairobi',
-    country: 'Kenya',
-    flag: '🇰🇪',
-    type: 'university',
-    stage: 'visited',
-    students: 8234,
-    ambassadors: 1,
-    scholarships: 12,
-    potential: 'Medium',
-    nextAction: 'Follow-up Call',
-    lastContact: 'Dec 10, 2024',
-    assignedTo: 'James Otieno',
-    contact: {
-      name: 'Prof. Sarah Mwangi',
-      email: 'dean@university.ac.ke',
-      phone: '+254 711 234 567'
-    },
-    notes: 'Bureaucratic approval process',
-    score: 76,
-    conversionProbability: 65
-  },
-  {
-    id: '4',
-    name: 'Stellenbosch University',
-    location: 'Tygerberg Campus',
-    city: 'Cape Town',
-    country: 'South Africa',
-    flag: '🇿🇦',
-    type: 'university',
-    stage: 'contacted',
-    students: 2134,
-    ambassadors: 0,
-    scholarships: 0,
-    potential: 'High',
-    nextAction: 'Initial Outreach',
-    lastContact: 'Dec 8, 2024',
-    assignedTo: 'Thabo Mthembu',
-    contact: {
-      name: 'Dr. Lisa van der Merwe',
-      email: 'admissions@sun.ac.za',
-      phone: '+27 21 808 9111'
-    },
-    notes: 'Interested in medical scholarships',
-    score: 82,
-    conversionProbability: 72
-  },
-  {
-    id: '5',
-    name: 'Makerere University',
-    location: 'Wandegeya Campus',
-    city: 'Kampala',
-    country: 'Uganda',
-    flag: '🇺🇬',
-    type: 'university',
-    stage: 'prospect',
-    students: 5678,
-    ambassadors: 0,
-    scholarships: 0,
-    potential: 'Medium',
-    nextAction: 'Research Contact',
-    lastContact: 'Dec 5, 2024',
-    assignedTo: 'Sarah Nakato',
-    contact: {
-      name: 'Prof. John Mugabe',
-      email: 'vc@mak.ac.ug',
-      phone: '+256 414 531 468'
-    },
-    notes: 'Large student population, limited funding',
-    score: 68,
-    conversionProbability: 45
-  },
-  {
-    id: '6',
-    name: 'Cairo University',
-    location: 'Giza Campus',
-    city: 'Cairo',
-    country: 'Egypt',
-    flag: '🇪🇬',
-    type: 'university',
-    stage: 'inactive',
-    students: 12345,
-    ambassadors: 0,
-    scholarships: 0,
-    potential: 'Low',
-    nextAction: 'Re-engage Q2',
-    lastContact: 'Nov 20, 2024',
-    assignedTo: 'Ahmed Hassan',
-    contact: {
-      name: 'Dr. Fatima El-Sayed',
-      email: 'registrar@cu.edu.eg',
-      phone: '+20 2 3567 8000'
-    },
-    notes: 'Previous partnership failed due to bureaucracy',
-    score: 45,
-    conversionProbability: 20
-  }
-];
 
 // Stage configurations
 const stageConfig = {
@@ -508,9 +340,8 @@ const PipelineStageSummary: React.FC<{ stage: string; count: number; value: stri
 };
 
 const PipelinePage: React.FC = () => {
-  const SAMPLE_COUNTRY_CODE = 'NG'; // For demo purposes
+  const SAMPLE_COUNTRY_CODE = 'NG';
 
-  // All hooks must be called at the top, before any conditional returns
   const [activeTab, setActiveTab] = useState('pipeline');
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -526,15 +357,11 @@ const PipelinePage: React.FC = () => {
     () => getCountrySchools(SAMPLE_COUNTRY_CODE),
     [SAMPLE_COUNTRY_CODE]
   );
-  const { data: metricsData, loading: metricsLoading, error: metricsError } = useDashboardData(
-    () => getCountryMetrics(SAMPLE_COUNTRY_CODE),
-    [SAMPLE_COUNTRY_CODE]
-  );
   const { data: ambassadorsData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(SAMPLE_COUNTRY_CODE);
   const { data: activitiesData, loading: activitiesLoading, error: activitiesError } = useRecentActivities(6);
 
   // Show loading state
-  if (kpisLoading || schoolsLoading || metricsLoading || ambassadorsLoading || activitiesLoading) {
+  if (kpisLoading || schoolsLoading || ambassadorsLoading || activitiesLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <LoadingSpinner />
@@ -543,45 +370,77 @@ const PipelinePage: React.FC = () => {
   }
 
   // Show error state
-  if (kpisError || schoolsError || metricsError || ambassadorsError || activitiesError) {
+  if (kpisError || schoolsError || ambassadorsError || activitiesError) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <p className="text-red-600 mb-4">Error loading pipeline data</p>
           <p className="text-sm text-gray-500">
-            {kpisError || schoolsError || metricsError || ambassadorsError || activitiesError}
+            {kpisError || schoolsError || ambassadorsError || activitiesError}
           </p>
         </div>
       </div>
     );
   }
 
+  // Generate pipeline stats from real KPI data
+  const realPipelineStats = kpiData ? [
+    {
+      title: 'Total Schools',
+      value: kpiData.schoolsVisited?.toLocaleString() || '0',
+      icon: <School className="h-5 w-5 text-blue-600" />,
+      trend: `Conversion: ${kpiData.conversionRate || 0}%`,
+      color: 'from-blue-500 to-blue-600'
+    },
+    {
+      title: 'Active Pipeline',
+      value: kpiData.activePipeline?.toLocaleString() || '0',
+      icon: <TrendingUp className="h-5 w-5 text-green-600" />,
+      trend: `Conversion: ${kpiData.conversionRate || 0}%`,
+      color: 'from-green-500 to-green-600'
+    },
+    {
+      title: 'New Partners',
+      value: kpiData.newPartners?.toLocaleString() || '0',
+      icon: <CheckCircle className="h-5 w-5 text-purple-600" />,
+      trend: `+${kpiData.newPartnersThisMonth || 0} this month`,
+      color: 'from-purple-500 to-pink-500'
+    },
+    {
+      title: 'Pipeline Value',
+      value: `₦${(kpiData.pipelineValue || 0).toLocaleString()}`,
+      icon: <Award className="h-5 w-5 text-yellow-500" />,
+      trend: 'Potential impact',
+      color: 'from-yellow-400 to-orange-500'
+    }
+  ] : [];
+
+  // Calculate pipeline stage summary from real schools data
+  const stageSummary = (() => {
+    if (!schoolsData) return [];
+    const stages = ['prospect', 'contacted', 'visited', 'proposal', 'partnered'];
+    return stages.map(stage => {
+      const filtered = schoolsData.filter(s => (s.status || s.stage) === stage);
+      const totalStudents = filtered.reduce((sum, s) => sum + (s.student_count || s.students || 0), 0);
+      const avgValuePerStudent = 50000;
+      return {
+        stage,
+        count: filtered.length,
+        value: `₦${((totalStudents * avgValuePerStudent) / 1000000).toFixed(1)}M`,
+        color: stageConfig[stage as keyof typeof stageConfig]?.color || 'border-gray-300'
+      };
+    });
+  })();
+
+  // Tabs from real data
   const tabs = [
-    { id: 'pipeline', label: 'Pipeline (289)', icon: <TrendingUp className="h-4 w-4" /> },
-    { id: 'partners', label: 'Partners (67)', icon: <CheckCircle className="h-4 w-4" /> },
-    { id: 'prospects', label: 'New Prospects (45)', icon: <MapPin className="h-4 w-4" /> },
-    { id: 'inactive', label: 'Inactive (23)', icon: <AlertTriangle className="h-4 w-4" /> }
+    { id: 'pipeline', label: `Pipeline (${stageSummary.reduce((sum, s) => sum + s.count, 0)})`, icon: <TrendingUp className="h-4 w-4" /> },
+    { id: 'partners', label: `Partners (${stageSummary.find(s => s.stage === 'partnered')?.count || 0})`, icon: <CheckCircle className="h-4 w-4" /> },
+    { id: 'prospects', label: `New Prospects (${stageSummary.find(s => s.stage === 'prospect')?.count || 0})`, icon: <MapPin className="h-4 w-4" /> },
+    { id: 'inactive', label: `Inactive (${schoolsData?.filter(s => (s.status || s.stage) === 'inactive').length || 0})`, icon: <AlertTriangle className="h-4 w-4" /> }
   ];
 
-  const schoolTypes = [
-    { value: 'all', label: 'All Types' },
-    { value: 'public', label: 'Public Schools' },
-    { value: 'private', label: 'Private Schools' },
-    { value: 'university', label: 'Universities' },
-    { value: 'polytechnic', label: 'Polytechnics' },
-    { value: 'secondary', label: 'Secondary Schools' }
-  ];
-
-  const countries = [
-    { value: 'all', label: 'All Countries' },
-    { value: 'NG', label: 'Nigeria 🇳🇬' },
-    { value: 'GH', label: 'Ghana 🇬🇭' },
-    { value: 'KE', label: 'Kenya 🇰🇪' },
-    { value: 'ZA', label: 'South Africa 🇿🇦' },
-    { value: 'UG', label: 'Uganda 🇺🇬' },
-    { value: 'EG', label: 'Egypt 🇪🇬' }
-  ];
-
+  // Ambassadors from real data
   const ambassadors = ambassadorsData ? [
     { value: 'all', label: 'All Ambassadors' },
     ...ambassadorsData.map(ambassador => ({
@@ -592,69 +451,6 @@ const PipelinePage: React.FC = () => {
     { value: 'all', label: 'All Ambassadors' }
   ];
 
-  // Real pipeline stats from KPIs
-  const realPipelineStats: PipelineStat[] = kpiData ? [
-    {
-      title: 'Total Schools',
-      value: kpiData.schoolsVisited?.toLocaleString() || '0',
-      icon: <School className="h-5 w-5 text-blue-600" />,
-      trend: `Conversion: ${kpiData.conversionRate || 0}%`,
-      color: 'from-blue-500 to-blue-600'
-    },
-    {
-      title: 'Active Pipeline',
-      value: Math.floor((kpiData.schoolsVisited || 0) * 0.23).toString(), // Assuming 23% are active pipeline
-      icon: <TrendingUp className="h-5 w-5 text-green-600" />,
-      trend: `Conversion: ${kpiData.conversionRate || 0}%`,
-      color: 'from-green-500 to-green-600'
-    },
-    {
-      title: 'New Partners',
-      value: Math.floor((kpiData.schoolsVisited || 0) * (kpiData.conversionRate || 0) / 100).toString(),
-      icon: <CheckCircle className="h-5 w-5 text-purple-600" />,
-      trend: `+${Math.floor((kpiData.tasksCompleted || 0) / 30)} this month`,
-      color: 'from-purple-500 to-pink-500'
-    },
-    {
-      title: 'Pipeline Value',
-      value: `₦${((kpiData.schoolsVisited || 0) * 50000 / 1000000).toFixed(1)}M`, // Rough estimate
-      icon: <Award className="h-5 w-5 text-yellow-500" />,
-      trend: 'Potential impact',
-      color: 'from-yellow-400 to-orange-500'
-    }
-  ] : pipelineStats; // Fallback to mock data
-
-  // Calculate pipeline stage summary from real schools data
-  const stageSummary = (() => {
-    if (!schoolsData) {
-      return [
-        { stage: 'prospect', count: 0, value: '₦0M', color: 'border-gray-300' },
-        { stage: 'contacted', count: 0, value: '₦0M', color: 'border-blue-300' },
-        { stage: 'visited', count: 0, value: '₦0M', color: 'border-yellow-300' },
-        { stage: 'proposal', count: 0, value: '₦0M', color: 'border-purple-300' },
-        { stage: 'partnered', count: 0, value: '₦0M', color: 'border-green-300' }
-      ];
-    }
-
-    const data = schoolsData!;
-    const statusCounts = data.reduce((acc, school) => {
-      const status = school.status || 'unknown';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const totalStudents = data.reduce((sum, school) => sum + (school.student_count || 0), 0);
-    const avgValuePerStudent = 50000; // ₦50k per student potential
-
-    return [
-      { stage: 'prospect', count: statusCounts.prospect || 0, value: `₦${((statusCounts.prospect || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-gray-300' },
-      { stage: 'contacted', count: statusCounts.contacted || 0, value: `₦${((statusCounts.contacted || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-blue-300' },
-      { stage: 'visited', count: statusCounts.visited || 0, value: `₦${((statusCounts.visited || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-yellow-300' },
-      { stage: 'proposal', count: statusCounts.proposal || 0, value: `₦${((statusCounts.proposal || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-purple-300' },
-      { stage: 'partnered', count: statusCounts.partnered || 0, value: `₦${((statusCounts.partnered || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-green-300' }
-    ];
-  })();
-
   // Filter schools
   const filteredSchools = (schoolsData ?? []).filter(school => {
     const schoolStage = school.status || school.stage;
@@ -664,7 +460,7 @@ const PipelinePage: React.FC = () => {
                         activeTab === 'inactive' ? schoolStage === 'inactive' : true;
 
     const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         school.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         school.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (school.contact?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesType = filters.type === 'all' || school.type === filters.type;
@@ -675,7 +471,6 @@ const PipelinePage: React.FC = () => {
     return matchesTab && matchesSearch && matchesType && matchesCountry && matchesStage && matchesAssigned;
   });
 
-  // Use real activities data
   const recentActivities = activitiesData || [];
 
   return (
@@ -693,15 +488,11 @@ const PipelinePage: React.FC = () => {
             </div>
           </div>
         </div>
-        
         <div className="flex items-center gap-3">
-          {/* Export Button */}
           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
             <Download className="h-4 w-4" />
             Export Pipeline
           </button>
-          
-          {/* Add School Button */}
           <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl">
             <Plus className="h-4 w-4" />
             Add School
@@ -709,232 +500,169 @@ const PipelinePage: React.FC = () => {
         </div>
       </div>
 
-       {/* Quick Stats */}
-       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-         {realPipelineStats.map((stat, index) => (
-           <KpiCard
-             key={index}
-             title={stat.title}
-             value={stat.value}
-             icon={stat.icon}
-             trend={stat.trend}
-             color={stat.color}
-           />
-         ))}
-       </div>
-
-      {/* Pipeline Stage Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        {stageSummary.map((summary) => (
-          <PipelineStageSummary 
-            key={summary.stage}
-            stage={summary.stage}
-            count={summary.count}
-            value={summary.value}
-            color={`border-l-${summary.color.replace('300', '500')}`}
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {realPipelineStats.map((stat, index) => (
+          <KpiCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            icon={stat.icon}
+            color={stat.color}
           />
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <PipelineQuickAction
-          icon={<MapPin className="h-5 w-5 text-white" />}
-          title="New Prospect"
-          description="Add schools for initial outreach"
-          count={23}
-          onClick={() => console.log('Add new prospect')}
-          color="from-gray-500 to-gray-600"
-        />
-        <PipelineQuickAction
-          icon={<Phone className="h-5 w-5 text-white" />}
-          title="Initial Contact"
-          description="Phone calls and email outreach"
-          count={45}
-          onClick={() => console.log('Schedule contact')}
-          color="from-blue-500 to-blue-600"
-        />
-        <PipelineQuickAction
-          icon={<Building className="h-5 w-5 text-white" />}
-          title="Site Visits"
-          description="Schedule campus tours and meetings"
-          count={12}
-          onClick={() => console.log('Schedule visit')}
-          color="from-yellow-500 to-orange-500"
-        />
-        <PipelineQuickAction
-          icon={<GraduationCap className="h-5 w-5 text-white" />}
-          title="Proposals"
-          description="Send partnership proposals"
-          count={8}
-          onClick={() => console.log('Create proposal')}
-          color="from-purple-500 to-pink-500"
-        />
+      {/* Pipeline Stage Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        {stageSummary.map((summary) => (
+          <PipelineStageSummary
+            key={summary.stage}
+            stage={summary.stage}
+            count={summary.count}
+            value={summary.value}
+            color={`border-l-4 ${summary.color}`}
+          />
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Main Pipeline */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Tabs */}
-          <div className="flex flex-wrap gap-2 bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-ash-teal text-white shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-                onClick={() => setActiveTab(tab.id)}
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-2 bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+              activeTab === tab.id
+                ? 'bg-ash-teal text-white shadow-sm'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+            }`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Search & Filters */}
+      <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search schools, locations, or contacts..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
+              <Filter className="h-4 w-4 text-gray-500 mr-2" />
+              <select
+                className="bg-transparent text-sm border-none focus:outline-none"
+                value={filters.stage}
+                onChange={(e) => setFilters(prev => ({ ...prev, stage: e.target.value }))}
               >
-                {tab.icon}
-                <span>{tab.label}</span>
-              </button>
+                <option value="all">All Stages</option>
+                {Object.keys(stageConfig).map(stage => (
+                  <option key={stage} value={stage}>
+                    {stageConfig[stage as keyof typeof stageConfig].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
+              <select
+                className="bg-transparent text-sm border-none focus:outline-none"
+                value={filters.type}
+                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              >
+                <option value="all">All Types</option>
+                <option value="public">Public Schools</option>
+                <option value="private">Private Schools</option>
+                <option value="university">Universities</option>
+                <option value="polytechnic">Polytechnics</option>
+                <option value="secondary">Secondary Schools</option>
+              </select>
+            </div>
+            <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
+              <select
+                className="bg-transparent text-sm border-none focus:outline-none"
+                value={filters.country}
+                onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
+              >
+                <option value="all">All Countries</option>
+                <option value="NG">Nigeria 🇳🇬</option>
+                <option value="GH">Ghana 🇬🇭</option>
+                <option value="KE">Kenya 🇰🇪</option>
+                <option value="ZA">South Africa 🇿🇦</option>
+                <option value="UG">Uganda 🇺🇬</option>
+                <option value="EG">Egypt 🇪🇬</option>
+              </select>
+            </div>
+            <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
+              <select
+                className="bg-transparent text-sm border-none focus:outline-none"
+                value={filters.assignedTo}
+                onChange={(e) => setFilters(prev => ({ ...prev, assignedTo: e.target.value }))}
+              >
+                {ambassadors.map(ambassador => (
+                  <option key={ambassador.value} value={ambassador.value}>{ambassador.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Schools Grid */}
+      <div className="space-y-6">
+        {filteredSchools.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredSchools.slice(0, 6).map((school) => (
+              <SchoolCard
+                key={school.id}
+                school={school}
+                onClick={() => console.log('View school:', school.name)}
+              />
             ))}
           </div>
-
-          {/* Search & Filters */}
-          <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search schools, locations, or contacts..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ash-teal focus:border-transparent"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              {/* Filters */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
-                  <Filter className="h-4 w-4 text-gray-500 mr-2" />
-                  <select
-                    className="bg-transparent text-sm border-none focus:outline-none"
-                    value={filters.stage}
-                    onChange={(e) => setFilters(prev => ({ ...prev, stage: e.target.value }))}
-                  >
-                    {Object.keys(stageConfig).map(stage => (
-                      <option key={stage} value={stage}>
-                        {stageConfig[stage as keyof typeof stageConfig].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
-                  <select
-                    className="bg-transparent text-sm border-none focus:outline-none"
-                    value={filters.type}
-                    onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-                  >
-                    {schoolTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
-                  <select
-                    className="bg-transparent text-sm border-none focus:outline-none"
-                    value={filters.country}
-                    onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
-                  >
-                    {countries.map(country => (
-                      <option key={country.value} value={country.value}>{country.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
-                  <select
-                    className="bg-transparent text-sm border-none focus:outline-none"
-                    value={filters.assignedTo}
-                    onChange={(e) => setFilters(prev => ({ ...prev, assignedTo: e.target.value }))}
-                  >
-                    {ambassadors.map(ambassador => (
-                      <option key={ambassador.value} value={ambassador.value}>{ambassador.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
+        ) : (
+          <div className="text-center py-12">
+            <School className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No schools found</h3>
+            <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
+            <button className="flex items-center gap-2 px-4 py-2 bg-ash-teal text-white rounded-lg font-medium hover:bg-ash-teal/90 transition-colors mx-auto">
+              <Plus className="h-4 w-4" />
+              Add Your First School
+            </button>
           </div>
-
-          {/* Pipeline Chart */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Pipeline Overview</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">23% Conversion Rate</span>
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-              </div>
-            </div>
-            {/* <PipelineChart 
-              data={stageSummary} 
-              height={300}
-              className="w-full"
-            /> */}
+        )}
+        {filteredSchools.length > 6 && (
+          <div className="text-center">
+            <button className="text-ash-teal hover:text-ash-teal/80 font-medium text-sm flex items-center justify-center gap-1 mx-auto">
+              Load More Schools
+              <TrendingUp className="h-4 w-4" />
+            </button>
           </div>
-
-          {/* Schools Grid */}
-          <div className="space-y-6">
-            {filteredSchools.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredSchools.slice(0, 6).map((school) => (
-                  <SchoolCard 
-                    key={school.id} 
-                    school={school} 
-                    onClick={() => console.log('View school:', school.name)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <School className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No schools found</h3>
-                <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
-                <button className="flex items-center gap-2 px-4 py-2 bg-ash-teal text-white rounded-lg font-medium hover:bg-ash-teal/90 transition-colors mx-auto">
-                  <Plus className="h-4 w-4" />
-                  Add Your First School
-                </button>
-              </div>
-            )}
-            
-            {filteredSchools.length > 6 && (
-              <div className="text-center">
-                <button className="text-ash-teal hover:text-ash-teal/80 font-medium text-sm flex items-center justify-center gap-1 mx-auto">
-                  Load More Schools
-                  <TrendingUp className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Activity Feed */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-            Recent Activity
-            <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
-              Live
-            </span>
-          </h2>
-          
-          <ActivityFeed 
-            title="Recent Activity"
-            activities={recentActivities} 
-            maxItems={6}
-          />
-        </div>
+        )}
       </div>
 
-      {/* Floating Action Button for Mobile */}
-      <div className="fixed bottom-6 right-6 bg-gradient-to-r from-ash-teal to-ash-gold text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-40 md:hidden">
-        <Plus className="h-6 w-6" />
+      {/* Activity Feed */}
+      <div className="space-y-6">
+        <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+          Recent Activity
+          <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">
+            Live
+          </span>
+        </h2>
+        <ActivityFeed
+          title="Recent Activity"
+          activities={recentActivities}
+          maxItems={6}
+        />
       </div>
     </div>
   );

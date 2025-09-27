@@ -341,3 +341,90 @@ export interface UseApiReturn<T> {
   execute: (...args: any[]) => Promise<T | null>;
   reset: () => void;
 }
+
+// Escalation Types
+export interface Escalation {
+  id: string;
+  ticket_number: string;
+  title: string;
+  description: string;
+  priority: 'Low' | 'Medium' | 'High' | 'Critical';
+  status: 'Open' | 'Assigned' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed' | 'Reopened';
+  category: 'school_issue' | 'ambassador_issue' | 'technical' | 'compliance' | 'finance' | 'partnership' | 'training';
+  sub_category?: string;
+  urgency: 'Low' | 'Medium' | 'High' | 'Critical';
+  impact: 'Low' | 'Medium' | 'High' | 'Critical';
+  escalated_by: string;
+  assigned_to?: string;
+  escalated_to?: string;
+  school_id?: string;
+  task_id?: string;
+  team_id?: string;
+  due_date?: string;
+  resolution_notes?: string;
+  resolution_time_hours?: number;
+  customer_satisfaction?: number;
+  tags?: string[];
+  attachments?: string[];
+  watchers?: string[];
+  created_at: string;
+  updated_at: string;
+  assigned_at?: string;
+  resolved_at?: string;
+  closed_at?: string;
+  // Joined data
+  escalated_by_user?: {
+    full_name: string;
+    email: string;
+    country_code?: string;
+  };
+  assigned_to_user?: {
+    full_name: string;
+    email: string;
+  };
+  school?: {
+    name: string;
+    location: string;
+    country_code: string;
+  };
+  team?: {
+    name: string;
+  };
+}
+
+export interface EscalationStat {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  trend: string;
+  color: string;
+}
+
+export interface EscalationComment {
+  id: string;
+  escalation_id: string;
+  user_id: string;
+  comment: string;
+  is_internal: boolean;
+  attachments?: string[];
+  created_at: string;
+  updated_at: string;
+  user?: {
+    full_name: string;
+    email: string;
+  };
+}
+
+export interface EscalationActivity {
+  id: string;
+  type: 'escalation_created' | 'escalation_assigned' | 'escalation_resolved' | 'escalation_commented' | 'escalation_updated';
+  title: string;
+  description: string;
+  timestamp: string;
+  user: {
+    name: string;
+    avatar?: string;
+  };
+  escalation_id: string;
+  metadata?: Record<string, any>;
+}
