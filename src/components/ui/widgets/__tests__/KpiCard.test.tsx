@@ -39,7 +39,13 @@ describe('KpiCard', () => {
   });
 
   it('renders without change value', () => {
-    const propsWithoutChange = { ...mockProps };
+    const propsWithoutChange: {
+      title: string;
+      value: string;
+      change?: number;
+      icon: JSX.Element;
+      color: string;
+    } = { ...mockProps };
     delete propsWithoutChange.change;
 
     render(<KpiCard {...propsWithoutChange} />);

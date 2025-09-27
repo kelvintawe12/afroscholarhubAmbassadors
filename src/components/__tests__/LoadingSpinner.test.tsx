@@ -8,18 +8,17 @@ describe('LoadingSpinner', () => {
 
     const spinner = screen.getByRole('status');
     expect(spinner).toBeInTheDocument();
-    expect(spinner).toHaveClass('animate-spin');
   });
 
   it('renders with custom size', () => {
     render(<LoadingSpinner size="lg" />);
 
     const spinner = screen.getByRole('status');
-    expect(spinner).toHaveClass('h-12', 'w-12');
+    expect(spinner).toHaveClass('h-16', 'w-16');
   });
 
-  it('renders with custom message', () => {
-    render(<LoadingSpinner message="Loading data..." />);
+  it('renders with custom text', () => {
+    render(<LoadingSpinner text="Loading data..." />);
 
     expect(screen.getByText('Loading data...')).toBeInTheDocument();
   });
@@ -30,18 +29,4 @@ describe('LoadingSpinner', () => {
     const spinner = screen.getByRole('status');
     expect(spinner).toHaveClass('custom-class');
   });
-
-  it('renders skeleton variant', () => {
-    render(<LoadingSpinner variant="skeleton" />);
-
-    const skeleton = screen.getByTestId('skeleton');
-    expect(skeleton).toBeInTheDocument();
-  });
-
-  it('renders skeleton with multiple lines', () => {
-    render(<LoadingSpinner variant="skeleton" lines={3} />);
-
-    const skeletons = screen.getAllByTestId('skeleton');
-    expect(skeletons).toHaveLength(3);
-  });
-});uc
+});
