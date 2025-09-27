@@ -28,7 +28,6 @@ export const WeeklyReportsPage = () => {
         const metrics = await generateWeeklyReport(weekStart, countryCode);
 
         // Transform metrics to match component structure
-        // Note: For full implementation, additional queries for topPerformers, schoolVisits, etc., would be needed
         const reportData = {
           weekNumber: getWeekNumber(now),
           dateRange: `${weekStart} - ${new Date(weekStart).setDate(monday.getDate() + 6)}`, // Approximate
@@ -50,12 +49,11 @@ export const WeeklyReportsPage = () => {
             totalTasks: 120, // Mock for now
             completedTasks: Math.round(120 * 0.85)
           },
-          // topPerformers, countryPerformance, schoolVisits, weeklyTrends would require additional API calls or keep mock for now
-          topPerformers: [], // Fetch from users/visits aggregate
-          countryPerformance: [], // Aggregate by country
-          schoolVisits: [], // Fetch from visits table
+          topPerformers: [],
+          countryPerformance: [],
+          schoolVisits: [],
           weeklyTrends: {
-            schoolVisits: [], // Previous weeks data
+            schoolVisits: [],
             studentsReached: [],
             leadsGenerated: []
           }

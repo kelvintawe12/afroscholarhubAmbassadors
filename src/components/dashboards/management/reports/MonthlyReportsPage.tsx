@@ -4,15 +4,73 @@ import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
-import { generateReportMetrics, generateMonthlyReport } from '../../../../api/reports';
+import { generateReportMetrics, generateMonthlyReport, getCountries } from '../../../../api/reports';
 import { LoadingSpinner } from '../../../LoadingSpinner';
 import toast from 'react-hot-toast';
 
 export const MonthlyReportsPage = () => {
-  const [selectedMonth, setSelectedMonth] = useState('2024-01');
+  // Generate array of last 3 months (current and previous 2)
+  const generateMonthsArray = () => {
+    const months = [];
+    const currentDate = new Date();
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth() + 1;
+
+    // Add current month
+    const currentMonthStr = currentMonth.toString().padStart(2, '0');
+    const currentValue = `${currentYear}-${currentMonthStr}`;
+    const currentMonthName = currentDate.toLocaleString('default', { month: 'long' });
+    months.push({ value: currentValue, label: `${currentMonthName} ${currentYear}` });
+
+    // Add previous month
+    currentMonth--;
+    if (currentMonth === 0) {
+      currentMonth = 12;
+      currentYear--;
+    }
+    const prevMonthStr = currentMonth.toString().padStart(2, '0');
+    const prevValue = `${currentYear}-${prevMonthStr}`;
+    const prevMonthName = new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' });
+    months.push({ value: prevValue, label: `${prevMonthName} ${currentYear}` });
+
+    // Add month before previous
+    currentMonth--;
+    if (currentMonth === 0) {
+      currentMonth = 12;
+      currentYear--;
+    }
+    const prev2MonthStr = currentMonth.toString().padStart(2, '0');
+    const prev2Value = `${currentYear}-${prev2MonthStr}`;
+    const prev2MonthName = new Date(currentYear, currentMonth - 1).toLocaleString('default', { month: 'long' });
+    months.push({ value: prev2Value, label: `${prev2MonthName} ${currentYear}` });
+
+    return months;
+  };
+
+  const monthsArray = generateMonthsArray();
+  const [selectedMonth, setSelectedMonth] = useState(monthsArray[0]?.value || '2024-01');
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [loading, setLoading] = useState(false);
   const [monthlyData, setMonthlyData] = useState<any>(null);
+  const [countries, setCountries] = useState<any[]>([]);
+  const [countriesLoading, setCountriesLoading] = useState(true);
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const countriesData = await getCountries();
+        setCountries(countriesData);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+        toast.error('Failed to load countries');
+      } finally {
+        setCountriesLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
 
   useEffect(() => {
     const fetchMonthlyData = async () => {
@@ -55,37 +113,31 @@ export const MonthlyReportsPage = () => {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [{
       label: 'Students Reached',
-      data: [850, 920, 1100, 1250, 1400, 1350, 1500, 1650, 1800, 1950, 2100, 2250],
+      data: [],
       borderColor: '#1A5F7A',
       backgroundColor: 'rgba(26, 95, 122, 0.1)'
     }]
   };
 
   const countryPerformance = {
-    labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
+    labels: [],
     datasets: [{
       label: 'Students Reached',
-      data: [650, 320, 180, 100],
-      backgroundColor: ['rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(38, 162, 105, 0.8)', 'rgba(108, 92, 231, 0.8)']
+      data: [],
+      backgroundColor: []
     }]
   };
 
   const ambassadorLeaderboard = {
-    labels: ['Aisha N.', 'John K.', 'Grace M.', 'Samuel O.', 'Elizabeth A.'],
+    labels: [],
     datasets: [{
       label: 'Students Reached',
-      data: [180, 165, 150, 140, 135],
+      data: [],
       backgroundColor: 'rgba(26, 95, 122, 0.8)'
     }]
   };
 
-  const recentActivities = [
-    { id: 1, activity: 'New partnership signed', school: 'Lagos Model School', ambassador: 'Aisha Mohammed', date: '2024-01-15' },
-    { id: 2, activity: 'School visit completed', school: 'Nairobi Secondary', ambassador: 'John Kimani', date: '2024-01-14' },
-    { id: 3, activity: 'Workshop conducted', school: 'Accra Academy', ambassador: 'Grace Mensah', date: '2024-01-13' },
-    { id: 4, activity: 'Student outreach', school: 'Cape Town High', ambassador: 'Samuel Okafor', date: '2024-01-12' },
-    { id: 5, activity: 'Partnership renewed', school: 'Abuja Grammar', ambassador: 'Elizabeth Adebayo', date: '2024-01-11' }
-  ];
+  const recentActivities: any[] = [];
 
   const activityColumns = [
     { header: 'Activity', accessor: 'activity' },
@@ -132,20 +184,24 @@ export const MonthlyReportsPage = () => {
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
           >
-            <option value="2024-01">January 2024</option>
-            <option value="2023-12">December 2023</option>
-            <option value="2023-11">November 2023</option>
+            {monthsArray.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
           </select>
           <select
             className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
+            disabled={countriesLoading}
           >
             <option value="all">All Countries</option>
-            <option value="ng">Nigeria</option>
-            <option value="ke">Kenya</option>
-            <option value="gh">Ghana</option>
-            <option value="za">South Africa</option>
+            {countries.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.flag_emoji} {country.name}
+              </option>
+            ))}
           </select>
           <button
             onClick={() => exportReport('pdf')}
@@ -174,10 +230,6 @@ export const MonthlyReportsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">Students Reached</p>
               <h3 className="text-2xl font-bold text-gray-900">{monthlyMetrics.totalStudents.toLocaleString()}</h3>
-              <p className="text-sm text-green-600 flex items-center">
-                <TrendingUpIcon size={14} className="mr-1" />
-                +12% from last month
-              </p>
             </div>
           </div>
         </div>
@@ -189,10 +241,6 @@ export const MonthlyReportsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">New Partnerships</p>
               <h3 className="text-2xl font-bold text-gray-900">{monthlyMetrics.newPartnerships}</h3>
-              <p className="text-sm text-green-600 flex items-center">
-                <TrendingUpIcon size={14} className="mr-1" />
-                +8% from last month
-              </p>
             </div>
           </div>
         </div>
@@ -204,7 +252,6 @@ export const MonthlyReportsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">Active Ambassadors</p>
               <h3 className="text-2xl font-bold text-gray-900">{monthlyMetrics.activeAmbassadors}</h3>
-              <p className="text-sm text-gray-600">+2 new this month</p>
             </div>
           </div>
         </div>
@@ -216,10 +263,6 @@ export const MonthlyReportsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">Total Visits</p>
               <h3 className="text-2xl font-bold text-gray-900">{monthlyMetrics.totalVisits}</h3>
-              <p className="text-sm text-green-600 flex items-center">
-                <TrendingUpIcon size={14} className="mr-1" />
-                +15% from last month
-              </p>
             </div>
           </div>
         </div>
@@ -231,7 +274,6 @@ export const MonthlyReportsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">Countries Covered</p>
               <h3 className="text-2xl font-bold text-gray-900">{monthlyMetrics.countriesCovered}</h3>
-              <p className="text-sm text-gray-600">All target countries</p>
             </div>
           </div>
         </div>
@@ -243,10 +285,6 @@ export const MonthlyReportsPage = () => {
             <div>
               <p className="text-sm font-medium text-gray-500">Avg Students/Visit</p>
               <h3 className="text-2xl font-bold text-gray-900">{monthlyMetrics.avgStudentsPerVisit}</h3>
-              <p className="text-sm text-green-600 flex items-center">
-                <TrendingUpIcon size={14} className="mr-1" />
-                +3 from last month
-              </p>
             </div>
           </div>
         </div>
@@ -285,50 +323,7 @@ export const MonthlyReportsPage = () => {
         />
       </div>
 
-      {/* Report Summary */}
-      <div className="rounded-lg bg-white p-6 shadow-sm">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Summary</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Key Achievements</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                Successfully reached 1,250 students across 4 countries
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                Established 15 new school partnerships
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                Conducted 89 school visits with average 14 students per visit
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-green-500"></div>
-                Maintained 52 active ambassadors across all regions
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium text-gray-900 mb-2">Areas for Improvement</h4>
-            <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-yellow-500"></div>
-                South Africa region showing lower engagement - needs focus
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-yellow-500"></div>
-                Workshop attendance could be improved with better promotion
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-yellow-500"></div>
-                Ambassador training completion rate at 78% - target 85%
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
+
     </div>
   );
 };

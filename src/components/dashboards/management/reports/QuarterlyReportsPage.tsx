@@ -43,8 +43,8 @@ export const QuarterlyReportsPage = () => {
     totalVisits: quarterlyData.visits_count || 0,
     countriesCovered: selectedCountry === 'all' ? 4 : 1,
     avgStudentsPerVisit: quarterlyData.visits_count ? Math.round((quarterlyData.students_reached || 0) / quarterlyData.visits_count) : 0,
-    growthRate: 18.5, // Would need previous quarter comparison
-    targetAchievement: 87 // Would need target data
+    growthRate: 0, // Would need previous quarter comparison
+    targetAchievement: 0 // Would need target data
   } : {
     totalStudents: 0,
     newPartnerships: 0,
@@ -60,18 +60,18 @@ export const QuarterlyReportsPage = () => {
     labels: ['Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024'],
     datasets: [{
       label: 'Students Reached',
-      data: [2850, 3200, 3450, 3650, 3750],
+      data: [],
       borderColor: '#1A5F7A',
       backgroundColor: 'rgba(26, 95, 122, 0.1)'
     }]
   };
 
   const countryPerformance = {
-    labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
+    labels: [],
     datasets: [{
       label: 'Students Reached',
-      data: [1950, 920, 540, 340],
-      backgroundColor: ['rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(38, 162, 105, 0.8)', 'rgba(108, 92, 231, 0.8)']
+      data: [],
+      backgroundColor: []
     }]
   };
 
@@ -79,25 +79,14 @@ export const QuarterlyReportsPage = () => {
     labels: ['Q1 2023', 'Q2 2023', 'Q3 2023', 'Q4 2023', 'Q1 2024'],
     datasets: [{
       label: 'New Partnerships',
-      data: [28, 32, 38, 41, 42],
+      data: [],
       backgroundColor: 'rgba(26, 95, 122, 0.8)'
     }]
   };
 
-  const quarterlyGoals = [
-    { goal: 'Student Reach Target', current: 3750, target: 4000, percentage: 94, status: 'on-track' },
-    { goal: 'New Partnerships', current: 42, target: 45, percentage: 93, status: 'on-track' },
-    { goal: 'Country Expansion', current: 4, target: 5, percentage: 80, status: 'at-risk' },
-    { goal: 'Ambassador Training', current: 78, target: 85, percentage: 92, status: 'on-track' }
-  ];
+  const quarterlyGoals: any[] = [];
 
-  const topSchools = [
-    { id: 1, name: 'Lagos Model School', students: 450, partnerships: 3, region: 'Southwest Nigeria', growth: 25 },
-    { id: 2, name: 'Nairobi Secondary', students: 380, partnerships: 2, region: 'Nairobi County', growth: 18 },
-    { id: 3, name: 'Accra International Academy', students: 320, partnerships: 2, region: 'Greater Accra', growth: 22 },
-    { id: 4, name: 'Cape Town High School', students: 280, partnerships: 1, region: 'Western Cape', growth: 15 },
-    { id: 5, name: 'Abuja Grammar School', students: 350, partnerships: 2, region: 'Federal Capital', growth: 20 }
-  ];
+  const topSchools: any[] = [];
 
   const schoolColumns = [
     { header: 'School Name', accessor: 'name' },
@@ -273,38 +262,7 @@ export const QuarterlyReportsPage = () => {
           title="Partnership Growth Over Quarters"
           data={partnershipGrowth}
         />
-        <div className="rounded-lg bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Performance Insights</h3>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                <TrendingUpIcon size={16} className="text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Strong Growth in Nigeria</p>
-                <p className="text-sm text-gray-500">52% increase in student reach compared to last quarter</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <TargetIcon size={16} className="text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">Partnership Target Exceeded</p>
-                <p className="text-sm text-gray-500">42 partnerships formed, 7% above quarterly target</p>
-              </div>
-            </div>
-            <div className="flex items-start space-x-3">
-              <div className="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                <TrendingDownIcon size={16} className="text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900">South Africa Needs Attention</p>
-                <p className="text-sm text-gray-500">Student engagement 15% below regional average</p>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </div>
 
       {/* Top Performing Schools */}
