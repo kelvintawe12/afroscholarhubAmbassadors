@@ -300,6 +300,8 @@ const ReportsPage: React.FC = () => {
   const [regionalData, setRegionalData] = useState<any>(regionalPerformanceData);
   const [scholarshipTrends, setScholarshipTrends] = useState<any>(scholarshipTrendsData);
 
+  const [previousKPIs, setPreviousKPIs] = useState<any>(null);
+
   useEffect(() => {
     const fetchAdditionalData = async () => {
       if (!countryCode) return;
@@ -308,8 +310,8 @@ const ReportsPage: React.FC = () => {
         // Fetch total students reached
         const { data: visitData } = await supabase
           .from('visits')
-          .select('students_reached')
-          .eq('country_code', countryCode);
+          .select('students_reached, schools!inner(country_code)')
+          .eq('schools.country_code', countryCode);
         const students = visitData?.reduce((sum: number, v: any) => sum + (v.students_reached || 0), 0) || 0;
         setTotalStudents(students);
 
@@ -336,9 +338,9 @@ const ReportsPage: React.FC = () => {
         // Avg resolution time
         const { data: taskData } = await supabase
           .from('tasks')
-          .select('created_at, completed_date, updated_at')
+          .select('created_at, completed_date, updated_at, users!inner(country_code)')
           .eq('status', 'Completed')
-          .eq('country_code', countryCode);
+          .eq('users.country_code', countryCode);
         if (taskData && taskData.length > 0) {
           const avgDays = taskData.reduce((sum: number, t: any) => {
             const start = new Date(t.created_at);
@@ -416,6 +418,45 @@ const ReportsPage: React.FC = () => {
             }]
           });
         }
+
+        // Fetch previous month KPIs for comparison
+        const now = new Date();
+        const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+        // Previous leads
+        const { data: prevLeadsData } = await supabase
+          .from('visits')
+          .select('leads_generated, schools!inner(country_code)')
+          .gte('visit_date', previousMonthStart.toISOString())
+          .lte('visit_date', previousMonthEnd.toISOString())
+          .eq('schools.country_code', countryCode);
+        const prevLeads = prevLeadsData?.reduce((sum, v: any) => sum + (v.leads_generated || 0), 0) || 0;
+
+        // Previous tasks completed
+        const { count: prevTasksCount } = await supabase
+          .from('tasks')
+          .select('id, users!inner(country_code)', { count: 'exact', head: true })
+          .eq('status', 'Completed')
+          .gte('updated_at', previousMonthStart.toISOString())
+          .lte('updated_at', previousMonthEnd.toISOString())
+          .eq('users.country_code', countryCode);
+
+        // Previous new partnered schools (count new partnerships in previous month)
+        const { count: prevPartneredSchools } = await supabase
+          .from('schools')
+          .select('id', { count: 'exact', head: true })
+          .eq('status', 'partnered')
+          .gte('partnership_date', previousMonthStart.toISOString())
+          .lte('partnership_date', previousMonthEnd.toISOString())
+          .eq('country_code', countryCode);
+
+        setPreviousKPIs({
+          leadsGenerated: prevLeads,
+          tasksCompleted: prevTasksCount || 0,
+          scholarshipsFunded: prevPartneredSchools || 0,
+          successRate: 0 // Would need more complex calculation
+        });
       } catch (error) {
         console.error('Error fetching additional data:', error);
       }
@@ -469,45 +510,33 @@ const ReportsPage: React.FC = () => {
     return matchesSearch;
   });
 
-  // Recent activities
-  const recentActivities = [
-    {
-      id: '1',
-      type: 'report',
-      title: 'Q4 Impact Report Generated',
-      description: 'Comprehensive analysis of 2,847 scholarships funded',
-      timestamp: '2 hours ago',
-      user: { name: 'Analytics System' },
-      icon: <FileText className="h-4 w-4 text-blue-600" />
-    },
-    {
-      id: '2',
-      type: 'download',
-      title: 'Nigeria Operations Report Downloaded',
-      description: 'Financial Director accessed Q4 financial summary',
-      timestamp: '4 hours ago',
-      user: { name: 'Fatima Ahmed' },
-      icon: <Download className="h-4 w-4 text-green-600" />
-    },
-    {
-      id: '3',
-      type: 'schedule',
-      title: 'Monthly Ambassador Report Scheduled',
-      description: 'Automated report delivery set for 1st of each month',
-      timestamp: 'Yesterday 10:30 AM',
-      user: { name: 'Sarah Nakato' },
-      icon: <Calendar className="h-4 w-4 text-purple-600" />
-    },
-    {
-      id: '4',
-      type: 'analytics',
-      title: 'STEM Conversion Rate Improved',
-      description: 'Success rate increased from 82% to 89% in Q4',
-      timestamp: '2 days ago',
-      user: { name: 'Data Team' },
-      icon: <TrendingUp className="h-4 w-4 text-emerald-600" />
-    }
-  ];
+  // Map activities to include icons
+  const mappedActivities = React.useMemo(() => {
+    if (!activities) return [];
+
+    return activities.map((activity: any) => {
+      const getIcon = (type: string) => {
+        switch (type) {
+          case 'visit':
+            return <MapPin className="h-4 w-4 text-blue-600" />;
+          case 'task':
+            return <Award className="h-4 w-4 text-green-600" />;
+          case 'partnership':
+            return <Building className="h-4 w-4 text-purple-600" />;
+          case 'note':
+            return <FileText className="h-4 w-4 text-gray-600" />;
+          default:
+            return <Activity className="h-4 w-4 text-gray-600" />;
+        }
+      };
+
+      return {
+        ...activity,
+        icon: getIcon(activity.type),
+        timestamp: new Date(activity.timestamp).toLocaleString()
+      };
+    });
+  }, [activities]);
 
   return (
     <div className="space-y-8">
@@ -568,6 +597,7 @@ const ReportsPage: React.FC = () => {
                 key={index}
                 title={metric.title}
                 value={metric.value}
+                trend={metric.trend}
                 icon={metric.icon}
                 color={metric.color}
               />
@@ -645,7 +675,7 @@ const ReportsPage: React.FC = () => {
               </div>
               <BarChart
                 title="Ambassador Performance"
-                data={ambassadorPerformanceData}
+                data={ambPerformance}
                 height={300}
               />
             </div>
@@ -793,12 +823,53 @@ const ReportsPage: React.FC = () => {
                   { header: 'Change', accessor: 'change', sortable: true },
                   { header: 'Target', accessor: 'target' }
                 ]}
-                data={[
-                  { id: 1, metric: 'Scholarships Funded', current: '2,847', previous: '2,412', change: '+18%', target: '3,000' },
-                  { id: 2, metric: 'Funding Disbursed', current: '₦12.4B', previous: '₦10.2B', change: '+24%', target: '₦15B' },
-                  { id: 3, metric: 'Ambassador Activity', current: '1,247', previous: '1,112', change: '+12%', target: '1,500' },
-                  { id: 4, metric: 'Success Rate', current: '89%', previous: '86%', change: '+3%', target: '85%' }
-                ]}
+                data={React.useMemo(() => {
+                  if (!kpis || !previousKPIs) return [];
+
+                  const calculateChange = (current: number, previous: number) => {
+                    if (previous === 0) return '+∞%';
+                    const change = ((current - previous) / previous * 100);
+                    return `${change > 0 ? '+' : ''}${change.toFixed(1)}%`;
+                  };
+
+                  const partneredSchools = schoolsByStatus?.partnered || kpis.schoolsVisited || 0;
+                  const prevPartnered = previousKPIs.scholarshipsFunded || 0;
+
+                  return [
+                    { 
+                      id: 1, 
+                      metric: 'Scholarships Funded', 
+                      current: partneredSchools.toLocaleString(), 
+                      previous: prevPartnered.toLocaleString(), 
+                      change: calculateChange(partneredSchools, prevPartnered), 
+                      target: '3,000' 
+                    },
+                    { 
+                      id: 2, 
+                      metric: 'Funding Disbursed', 
+                      current: `₦${(totalFunding / 1000000000).toFixed(1)}B`, 
+                      previous: '₦10.2B', 
+                      change: '+24%', 
+                      target: '₦15B' 
+                    },
+                    { 
+                      id: 3, 
+                      metric: 'Ambassador Activity', 
+                      current: kpis.tasksCompleted?.toLocaleString() || '0', 
+                      previous: previousKPIs.tasksCompleted?.toLocaleString() || '0', 
+                      change: calculateChange(kpis.tasksCompleted || 0, previousKPIs.tasksCompleted || 0), 
+                      target: '1,500' 
+                    },
+                    { 
+                      id: 4, 
+                      metric: 'Success Rate', 
+                      current: `${kpis.conversionRate || 0}%`, 
+                      previous: `${previousKPIs.successRate || 0}%`, 
+                      change: calculateChange(kpis.conversionRate || 0, previousKPIs.successRate || 0), 
+                      target: '85%' 
+                    }
+                  ];
+                }, [kpis, previousKPIs, schoolsByStatus, totalFunding])}
                 keyField="id"
                 rowsPerPage={10}
               />
@@ -816,7 +887,7 @@ const ReportsPage: React.FC = () => {
           </h2>
           
           <div className="space-y-3">
-            {recentActivities.map((activity) => (
+            {mappedActivities.map((activity) => (
               <div key={activity.id} className="p-4 bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
                 <div className="flex items-start space-x-3">
                   <div className="flex-shrink-0 pt-0.5">
