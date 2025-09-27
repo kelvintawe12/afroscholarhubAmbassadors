@@ -74,6 +74,10 @@ export const SchoolProspectsPage = () => {
   const [selectedProspectId, setSelectedProspectId] = useState<string | null>(null);
   const [selectedAmbassadorId, setSelectedAmbassadorId] = useState<string>('');
 
+  // Follow-up state
+  const [followupDate, setFollowupDate] = useState('');
+  const [followupNotes, setFollowupNotes] = useState('');
+
   useEffect(() => {
     const fetchProspects = async () => {
       setIsLoading(true);
@@ -786,9 +790,25 @@ export const SchoolProspectsPage = () => {
             <form
               onSubmit={async e => {
                 e.preventDefault();
-                // Implement your follow-up scheduling logic here
-                alert('Follow-up scheduling logic goes here.');
+                if (!selectedProspectId || !followupDate) {
+                  alert('Please select a prospect and date.');
+                  return;
+                }
+                const { error } = await supabase
+                  .from('followups')
+                  .insert([{
+                    school_id: selectedProspectId,
+                    followup_date: followupDate,
+                    notes: followupNotes
+                  }]);
+                if (error) {
+                  alert('Failed to schedule follow-up: ' + error.message);
+                  return;
+                }
                 setShowScheduleFollowupModal(false);
+                setSelectedProspectId(null);
+                setFollowupDate('');
+                setFollowupNotes('');
               }}
               className="space-y-4"
             >
@@ -811,6 +831,8 @@ export const SchoolProspectsPage = () => {
                   type="date"
                   className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
                   required
+                  value={followupDate}
+                  onChange={e => setFollowupDate(e.target.value)}
                 />
               </div>
               <div>
@@ -818,6 +840,8 @@ export const SchoolProspectsPage = () => {
                 <textarea
                   className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
                   rows={3}
+                  value={followupNotes}
+                  onChange={e => setFollowupNotes(e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -840,7 +864,7 @@ export const SchoolProspectsPage = () => {
         </div>
       )}
 
-      {/* Reassign Prospects Modal */}
+      {/* Reassign Prospect Modal */}
       {showReassignModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
           <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
@@ -860,10 +884,9 @@ export const SchoolProspectsPage = () => {
                   alert('Please select a prospect and an ambassador.');
                   return;
                 }
-                // Update the prospect's ambassador_id in Supabase
                 const { error } = await supabase
                   .from('schools')
-                  .update({ ambassador_id: selectedAmbassadorId })
+                  .update({ assigned_to: selectedAmbassadorId })
                   .eq('id', selectedProspectId);
                 if (error) {
                   alert('Failed to reassign prospect: ' + error.message);
@@ -872,7 +895,6 @@ export const SchoolProspectsPage = () => {
                 setShowReassignModal(false);
                 setSelectedProspectId(null);
                 setSelectedAmbassadorId('');
-                // Optionally, refresh prospects list here
               }}
               className="space-y-4"
             >
