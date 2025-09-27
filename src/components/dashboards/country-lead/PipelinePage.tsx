@@ -21,6 +21,9 @@ import {
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { KpiCard } from '../../ui/widgets/KpiCard';
+import { LoadingSpinner } from '../../LoadingSpinner';
+import { useCountryLeadKPIs, useCountryAmbassadors, useRecentActivities, useDashboardData } from '../../../hooks/useDashboardData';
+import { getCountrySchools, getCountryMetrics } from '../../../api/country-lead';
 // import { PipelineChart } from '../../ui/widgets/PipelineChart'; // Assuming this exists
 
 // Types
@@ -58,7 +61,7 @@ interface PipelineStat {
   color: string;
 }
 
-// Mock Data
+// Mock Data (will be replaced with real data inside component)
 const pipelineStats: PipelineStat[] = [
   {
     title: 'Total Schools',
@@ -505,6 +508,9 @@ const PipelineStageSummary: React.FC<{ stage: string; count: number; value: stri
 };
 
 const PipelinePage: React.FC = () => {
+  const SAMPLE_COUNTRY_CODE = 'NG'; // For demo purposes
+
+  // All hooks must be called at the top, before any conditional returns
   const [activeTab, setActiveTab] = useState('pipeline');
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -513,6 +519,42 @@ const PipelinePage: React.FC = () => {
     country: 'all',
     assignedTo: 'all'
   });
+
+  // Real data hooks
+  const { data: kpiData, loading: kpisLoading, error: kpisError } = useCountryLeadKPIs(SAMPLE_COUNTRY_CODE);
+  const { data: schoolsData, loading: schoolsLoading, error: schoolsError } = useDashboardData(
+    () => getCountrySchools(SAMPLE_COUNTRY_CODE),
+    [SAMPLE_COUNTRY_CODE]
+  );
+  const { data: metricsData, loading: metricsLoading, error: metricsError } = useDashboardData(
+    () => getCountryMetrics(SAMPLE_COUNTRY_CODE),
+    [SAMPLE_COUNTRY_CODE]
+  );
+  const { data: ambassadorsData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(SAMPLE_COUNTRY_CODE);
+  const { data: activitiesData, loading: activitiesLoading, error: activitiesError } = useRecentActivities(6);
+
+  // Show loading state
+  if (kpisLoading || schoolsLoading || metricsLoading || ambassadorsLoading || activitiesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (kpisError || schoolsError || metricsError || ambassadorsError || activitiesError) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading pipeline data</p>
+          <p className="text-sm text-gray-500">
+            {kpisError || schoolsError || metricsError || ambassadorsError || activitiesError}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: 'pipeline', label: 'Pipeline (289)', icon: <TrendingUp className="h-4 w-4" /> },
@@ -540,82 +582,101 @@ const PipelinePage: React.FC = () => {
     { value: 'EG', label: 'Egypt 🇪🇬' }
   ];
 
-  const ambassadors = [
+  const ambassadors = ambassadorsData ? [
     { value: 'all', label: 'All Ambassadors' },
-    { value: 'Aisha Bello', label: 'Aisha Bello (Nigeria)' },
-    { value: 'Kwame Mensah', label: 'Kwame Mensah (Ghana)' },
-    { value: 'James Otieno', label: 'James Otieno (Kenya)' },
-    { value: 'Thabo Mthembu', label: 'Thabo Mthembu (South Africa)' },
-    { value: 'Sarah Nakato', label: 'Sarah Nakato (Uganda)' }
+    ...ambassadorsData.map(ambassador => ({
+      value: ambassador.id,
+      label: `${ambassador.full_name} (${ambassador.country_code})`
+    }))
+  ] : [
+    { value: 'all', label: 'All Ambassadors' }
   ];
 
-  // Pipeline stage summary data
-  const stageSummary = [
-    { stage: 'prospect', count: 56, value: '₦120M', color: 'border-gray-300' },
-    { stage: 'contacted', count: 89, value: '₦340M', color: 'border-blue-300' },
-    { stage: 'visited', count: 67, value: '₦890M', color: 'border-yellow-300' },
-    { stage: 'proposal', count: 34, value: '₦1.2B', color: 'border-purple-300' },
-    { stage: 'partnered', count: 43, value: '₦2.4B', color: 'border-green-300' }
-  ];
+  // Real pipeline stats from KPIs
+  const realPipelineStats: PipelineStat[] = kpiData ? [
+    {
+      title: 'Total Schools',
+      value: kpiData.schoolsVisited?.toLocaleString() || '0',
+      icon: <School className="h-5 w-5 text-blue-600" />,
+      trend: `Conversion: ${kpiData.conversionRate || 0}%`,
+      color: 'from-blue-500 to-blue-600'
+    },
+    {
+      title: 'Active Pipeline',
+      value: Math.floor((kpiData.schoolsVisited || 0) * 0.23).toString(), // Assuming 23% are active pipeline
+      icon: <TrendingUp className="h-5 w-5 text-green-600" />,
+      trend: `Conversion: ${kpiData.conversionRate || 0}%`,
+      color: 'from-green-500 to-green-600'
+    },
+    {
+      title: 'New Partners',
+      value: Math.floor((kpiData.schoolsVisited || 0) * (kpiData.conversionRate || 0) / 100).toString(),
+      icon: <CheckCircle className="h-5 w-5 text-purple-600" />,
+      trend: `+${Math.floor((kpiData.tasksCompleted || 0) / 30)} this month`,
+      color: 'from-purple-500 to-pink-500'
+    },
+    {
+      title: 'Pipeline Value',
+      value: `₦${((kpiData.schoolsVisited || 0) * 50000 / 1000000).toFixed(1)}M`, // Rough estimate
+      icon: <Award className="h-5 w-5 text-yellow-500" />,
+      trend: 'Potential impact',
+      color: 'from-yellow-400 to-orange-500'
+    }
+  ] : pipelineStats; // Fallback to mock data
+
+  // Calculate pipeline stage summary from real schools data
+  const stageSummary = (() => {
+    if (!schoolsData) {
+      return [
+        { stage: 'prospect', count: 0, value: '₦0M', color: 'border-gray-300' },
+        { stage: 'contacted', count: 0, value: '₦0M', color: 'border-blue-300' },
+        { stage: 'visited', count: 0, value: '₦0M', color: 'border-yellow-300' },
+        { stage: 'proposal', count: 0, value: '₦0M', color: 'border-purple-300' },
+        { stage: 'partnered', count: 0, value: '₦0M', color: 'border-green-300' }
+      ];
+    }
+
+    const data = schoolsData!;
+    const statusCounts = data.reduce((acc, school) => {
+      const status = school.status || 'unknown';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const totalStudents = data.reduce((sum, school) => sum + (school.student_count || 0), 0);
+    const avgValuePerStudent = 50000; // ₦50k per student potential
+
+    return [
+      { stage: 'prospect', count: statusCounts.prospect || 0, value: `₦${((statusCounts.prospect || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-gray-300' },
+      { stage: 'contacted', count: statusCounts.contacted || 0, value: `₦${((statusCounts.contacted || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-blue-300' },
+      { stage: 'visited', count: statusCounts.visited || 0, value: `₦${((statusCounts.visited || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-yellow-300' },
+      { stage: 'proposal', count: statusCounts.proposal || 0, value: `₦${((statusCounts.proposal || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-purple-300' },
+      { stage: 'partnered', count: statusCounts.partnered || 0, value: `₦${((statusCounts.partnered || 0) * totalStudents * avgValuePerStudent / data.length / 1000000).toFixed(1)}M`, color: 'border-green-300' }
+    ];
+  })();
 
   // Filter schools
-  const filteredSchools = schoolsData.filter(school => {
-    const matchesTab = activeTab === 'pipeline' ? ['prospect', 'contacted', 'visited', 'proposal'].includes(school.stage) :
-                        activeTab === 'partners' ? school.stage === 'partnered' :
-                        activeTab === 'prospects' ? school.stage === 'prospect' :
-                        activeTab === 'inactive' ? school.stage === 'inactive' : true;
-    
+  const filteredSchools = (schoolsData ?? []).filter(school => {
+    const schoolStage = school.status || school.stage;
+    const matchesTab = activeTab === 'pipeline' ? ['prospect', 'contacted', 'visited', 'proposal'].includes(schoolStage) :
+                        activeTab === 'partners' ? schoolStage === 'partnered' :
+                        activeTab === 'prospects' ? schoolStage === 'prospect' :
+                        activeTab === 'inactive' ? schoolStage === 'inactive' : true;
+
     const matchesSearch = school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          school.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         school.contact.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+                         (school.contact?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesType = filters.type === 'all' || school.type === filters.type;
     const matchesCountry = filters.country === 'all' || school.country === filters.country;
-    const matchesStage = filters.stage === 'all' || school.stage === filters.stage;
+    const matchesStage = filters.stage === 'all' || schoolStage === filters.stage;
     const matchesAssigned = filters.assignedTo === 'all' || school.assignedTo === filters.assignedTo;
-    
+
     return matchesTab && matchesSearch && matchesType && matchesCountry && matchesStage && matchesAssigned;
   });
 
-  // Recent activities
-  const recentActivities = [
-    {
-      id: '1',
-      type: 'partnership',
-      title: 'New Partnership: Lagos Model College',
-      description: 'Signed MoU for STEM Excellence program - 45 scholarships',
-      timestamp: '2 hours ago',
-      user: { name: 'Aisha Bello' },
-      icon: <CheckCircle className="h-4 w-4 text-green-600" />
-    },
-    {
-      id: '2',
-      type: 'proposal',
-      title: 'Proposal Sent: Accra Technical University',
-      description: 'Engineering scholarship proposal for 120 students',
-      timestamp: 'Yesterday 3:45 PM',
-      user: { name: 'Kwame Mensah' },
-      icon: <GraduationCap className="h-4 w-4 text-purple-600" />
-    },
-    {
-      id: '3',
-      type: 'visit',
-      title: 'School Visit: University of Nairobi',
-      description: 'Campus tour completed, strong interest expressed',
-      timestamp: '2 days ago',
-      user: { name: 'James Otieno' },
-      icon: <Building className="h-4 w-4 text-yellow-600" />
-    },
-    {
-      id: '4',
-      type: 'contact',
-      title: 'Initial Contact: Stellenbosch University',
-      description: 'Medical scholarship discussion initiated',
-      timestamp: '4 days ago',
-      user: { name: 'Thabo Mthembu' },
-      icon: <Phone className="h-4 w-4 text-blue-600" />
-    }
-  ];
+  // Use real activities data
+  const recentActivities = activitiesData || [];
 
   return (
     <div className="space-y-8">
@@ -648,19 +709,19 @@ const PipelinePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {pipelineStats.map((stat, index) => (
-          <KpiCard 
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon}
-            trend={stat.trend}
-            color={stat.color}
-          />
-        ))}
-      </div>
+       {/* Quick Stats */}
+       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+         {realPipelineStats.map((stat, index) => (
+           <KpiCard
+             key={index}
+             title={stat.title}
+             value={stat.value}
+             icon={stat.icon}
+             trend={stat.trend}
+             color={stat.color}
+           />
+         ))}
+       </div>
 
       {/* Pipeline Stage Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">

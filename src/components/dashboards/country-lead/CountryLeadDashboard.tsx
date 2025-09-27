@@ -5,7 +5,9 @@ import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { LoadingSpinner } from '../../LoadingSpinner';
 import { UsersIcon, SchoolIcon, CalendarIcon, CheckCircleIcon, PlusIcon, MessageSquareIcon } from 'lucide-react';
-import { useCountryLeadKPIs, useCountryAmbassadors } from '../../../hooks/useDashboardData';
+import { useCountryLeadKPIs, useCountryAmbassadors, useRecentActivities } from '../../../hooks/useDashboardData';
+import { useDashboardData } from '../../../hooks/useDashboardData';
+import { getCountrySchools } from '../../../api/country-lead';
 
 // For demo purposes, using Nigeria as sample country
 // In a real app, this would come from authentication context
@@ -14,9 +16,14 @@ const SAMPLE_COUNTRY_CODE = 'NG';
 export const CountryLeadDashboard = () => {
   const { data: kpiData, loading: kpisLoading, error: kpisError } = useCountryLeadKPIs(SAMPLE_COUNTRY_CODE);
   const { data: ambassadorData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(SAMPLE_COUNTRY_CODE);
+  const { data: activitiesData, loading: activitiesLoading, error: activitiesError } = useRecentActivities(4);
+  const { data: schoolsData, loading: schoolsLoading, error: schoolsError } = useDashboardData(
+    () => getCountrySchools(SAMPLE_COUNTRY_CODE),
+    [SAMPLE_COUNTRY_CODE]
+  );
 
   // Show loading state
-  if (kpisLoading || ambassadorsLoading) {
+  if (kpisLoading || ambassadorsLoading || activitiesLoading || schoolsLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <LoadingSpinner />
@@ -25,13 +32,13 @@ export const CountryLeadDashboard = () => {
   }
 
   // Show error state
-  if (kpisError || ambassadorsError) {
+  if (kpisError || ambassadorsError || activitiesError || schoolsError) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <p className="text-red-600 mb-4">Error loading dashboard data</p>
           <p className="text-sm text-gray-500">
-            {kpisError || ambassadorsError}
+            {kpisError || ambassadorsError || activitiesError || schoolsError}
           </p>
         </div>
       </div>
@@ -72,73 +79,62 @@ export const CountryLeadDashboard = () => {
     lastActivity: ambassador.last_activity
   })) : [];
 
-  // Mock data for charts (would be calculated from real data)
-  const impactMetricsData = {
-    labels: ['Urban Schools', 'Rural Schools', 'Semi-Urban Schools'],
-    datasets: [{
-      data: [60, 25, 15],
-      backgroundColor: ['rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(38, 162, 105, 0.8)']
-    }]
+  // Calculate chart data from real schools data
+  const impactMetricsData = schoolsData ? (() => {
+    const typeCounts = schoolsData.reduce((acc, school) => {
+      const type = school.type || 'unknown';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const labels = Object.keys(typeCounts);
+    const data = Object.values(typeCounts);
+
+    return {
+      labels: labels.map(label => label.charAt(0).toUpperCase() + label.slice(1) + ' Schools'),
+      datasets: [{
+        data: data as number[],
+        backgroundColor: [
+          'rgba(26, 95, 122, 0.8)', // ash-teal
+          'rgba(244, 196, 48, 0.8)', // ash-gold
+          'rgba(38, 162, 105, 0.8)', // green
+          'rgba(99, 102, 241, 0.8)', // blue
+          'rgba(236, 72, 153, 0.8)'  // pink
+        ]
+      }]
+    };
+  })() : {
+    labels: [],
+    datasets: [{ data: [] as number[] }]
   };
 
-  // Mock data for activity feed (would come from real activities)
-  const activities = [{
-    id: 1,
-    type: 'visit',
-    title: 'School Visit: Lagos Model School',
-    description: 'Jamal conducted a visit and generated 40 leads',
-    timestamp: '2 hours ago',
-    user: {
-      name: 'Jamal Ibrahim'
-    }
-  }, {
-    id: 2,
-    type: 'partnership',
-    title: 'New Partnership: Abuja Grammar School',
-    description: 'Amina finalized partnership agreement',
-    timestamp: 'Yesterday',
-    user: {
-      name: 'Amina Yusuf'
-    }
-  }, {
-    id: 3,
-    type: 'task',
-    title: 'Training Session Completed',
-    description: 'Kwame completed the required training modules',
-    timestamp: '3 days ago',
-    user: {
-      name: 'Kwame Osei'
-    },
-    status: 'completed'
-  }, {
-    id: 4,
-    type: 'note',
-    title: 'Resource Request: Flyers for Lagos Tour',
-    description: 'Fatima requested marketing materials',
-    timestamp: '1 week ago',
-    user: {
-      name: 'Fatima Mohammed'
-    },
-    status: 'pending'
-  }];
+  // Use real activities data
+  const activities = activitiesData || [];
 
-  // School pipeline data (would be calculated from real school statuses)
-  const pipelineStages = [{
-    name: 'Prospect',
-    count: 12
-  }, {
-    name: 'Contacted',
-    count: 10
-  }, {
-    name: 'Visited',
-    count: 5
-  }, {
-    name: 'Partnered',
-    count: 3
-  }, {
-    name: 'Inactive',
-    count: 0
-  }];
+  // Calculate pipeline stages from real school data
+  const pipelineStages = schoolsData ? (() => {
+    const statusCounts = schoolsData.reduce((acc, school) => {
+      const status = school.status || 'unknown';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return [
+      { name: 'Prospect', count: statusCounts.prospect || 0 },
+      { name: 'Contacted', count: statusCounts.contacted || 0 },
+      { name: 'Visited', count: statusCounts.visited || 0 },
+      { name: 'Proposal', count: statusCounts.proposal || 0 },
+      { name: 'Partnered', count: statusCounts.partnered || 0 },
+      { name: 'Inactive', count: statusCounts.inactive || 0 }
+    ];
+  })() : [
+    { name: 'Prospect', count: 0 },
+    { name: 'Contacted', count: 0 },
+    { name: 'Visited', count: 0 },
+    { name: 'Proposal', count: 0 },
+    { name: 'Partnered', count: 0 },
+    { name: 'Inactive', count: 0 }
+  ];
 
   return (
     <div>

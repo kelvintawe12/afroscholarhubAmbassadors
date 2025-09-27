@@ -14,7 +14,12 @@ export const getAmbassadorSchools = async (ambassadorId: string) => {
   const {
     data,
     error
-  } = await supabase.from('schools').select('*').eq('ambassador_id', ambassadorId).order('name', {
+  } = await supabase.from('schools').select(`
+    *,
+    visit_count:visits(count),
+    students_reached:visits(sum(students_reached)),
+    leads_generated:visits(sum(leads_generated))
+  `).eq('ambassador_id', ambassadorId).order('name', {
     ascending: true
   });
   if (error) throw error;
