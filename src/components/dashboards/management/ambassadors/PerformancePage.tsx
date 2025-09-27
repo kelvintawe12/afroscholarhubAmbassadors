@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { UsersIcon, TrendingUpIcon, FilterIcon, DownloadIcon, SearchIcon, CheckCircleIcon, AlertTriangleIcon, XCircleIcon, BarChart3Icon, ArrowUpIcon, ArrowDownIcon, CalendarIcon, ChevronDownIcon } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUpIcon, FilterIcon, DownloadIcon, SearchIcon, CheckCircleIcon, AlertTriangleIcon, XCircleIcon, BarChart3Icon, ArrowUpIcon, ArrowDownIcon, CalendarIcon, ChevronDownIcon } from 'lucide-react';
 import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
@@ -235,8 +235,8 @@ export const AmbassadorPerformancePage = () => {
       </div>
 
       {/* Time range selector */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             className={`rounded-md px-3 py-1.5 text-sm font-medium ${
               timeRange === 'month' ? 'bg-ash-teal text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
@@ -261,21 +261,21 @@ export const AmbassadorPerformancePage = () => {
           >
             Year
           </button>
-          <div className="ml-4 flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700">
+          <div className="ml-0 sm:ml-4 flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 mt-2 sm:mt-0">
             <CalendarIcon size={16} className="mr-2 text-gray-400" />
             <span>Q2 2025</span>
             <ChevronDownIcon size={16} className="ml-2 text-gray-400" />
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:gap-2 w-full sm:w-auto">
           <button
-            className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
             onClick={() => setShowFilters(!showFilters)}
           >
             <FilterIcon size={16} className="mr-2" />
             Filter
           </button>
-          <button className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <button className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto">
             <DownloadIcon size={16} className="mr-2" />
             Export
           </button>
