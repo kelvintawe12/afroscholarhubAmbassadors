@@ -126,7 +126,7 @@ export const getAmbassadorTasks = async (ambassadorId: string): Promise<TaskData
         due_date,
         progress,
         school_id,
-        schools:school_id (name)
+        schools!inner (name)
       `)
       .eq('ambassador_id', ambassadorId)
       .order('due_date', { ascending: true });
@@ -135,7 +135,7 @@ export const getAmbassadorTasks = async (ambassadorId: string): Promise<TaskData
 
     return data?.map(task => ({
       ...task,
-      school_name: Array.isArray(task.schools) ? task.schools[0]?.name : task.schools?.name || undefined
+      school_name: (task.schools as any)?.name || undefined
     })) || [];
   } catch (error) {
     console.error('Error fetching ambassador tasks:', error);
@@ -409,13 +409,13 @@ export const getCountryDistribution = async () => {
   try {
     const { data, error } = await supabase
       .from('schools')
-      .select('country_code, countries:country_code (name)')
+      .select('country_code, countries!inner (name)')
       .eq('status', 'partnered');
 
     if (error) throw error;
 
     const countryData = data?.reduce((acc: any, school) => {
-      const countryName = Array.isArray(school.countries) ? school.countries[0]?.name : school.countries?.name || school.country_code;
+      const countryName = (school.countries as any)?.name || school.country_code;
       acc[countryName] = (acc[countryName] || 0) + 1;
       return acc;
     }, {});

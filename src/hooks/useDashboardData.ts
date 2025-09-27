@@ -200,7 +200,7 @@ export const useAmbassadorTasks = (ambassadorId: string) => {
 
       return data?.map(task => ({
         ...task,
-        school_name: Array.isArray(task.schools) ? task.schools[0]?.name : task.schools?.name || undefined
+        school_name: Array.isArray(task.schools) ? (task.schools[0] as any)?.name : (task.schools as any)?.name || undefined
       })) || [];
     },
     [ambassadorId]
@@ -574,6 +574,97 @@ export const useAllSchools = () => {
   );
 };
 
+// Chart data hooks
+export const useLeadGenerationTrends = () => {
+  return useDashboardData(
+    async () => {
+      const { data, error } = await supabase
+        .from('visits')
+        .select('leads_generated, visit_date')
+        .order('visit_date', { ascending: true });
+
+      if (error) throw error;
+
+      // Group by month
+      const monthlyData = data?.reduce((acc: any, visit) => {
+        const month = new Date(visit.visit_date).toLocaleDateString('en-US', { month: 'short' });
+        acc[month] = (acc[month] || 0) + (visit.leads_generated || 0);
+        return acc;
+      }, {});
+
+      return {
+        labels: Object.keys(monthlyData || {}),
+        datasets: [{
+          label: 'Leads Generated',
+          data: Object.values(monthlyData || {}),
+          borderColor: '#1A5F7A',
+          backgroundColor: 'rgba(26, 95, 122, 0.1)'
+        }]
+      };
+    },
+    []
+  );
+};
+
+export const useCountryDistribution = () => {
+  return useDashboardData(
+    async () => {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('country_code')
+        .eq('status', 'partnered');
+
+      if (error) throw error;
+
+      const countryData = data?.reduce((acc: any, school) => {
+        acc[school.country_code] = (acc[school.country_code] || 0) + 1;
+        return acc;
+      }, {});
+
+      return {
+        labels: Object.keys(countryData || {}),
+        datasets: [{
+          data: Object.values(countryData || {}),
+          backgroundColor: [
+            'rgba(26, 95, 122, 0.8)',
+            'rgba(244, 196, 48, 0.8)',
+            'rgba(38, 162, 105, 0.8)',
+            'rgba(108, 92, 231, 0.8)',
+            'rgba(225, 112, 85, 0.8)'
+          ]
+        }]
+      };
+    },
+    []
+  );
+};
+
+export const useAmbassadorPerformance = () => {
+  return useDashboardData(
+    async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('full_name, performance_score')
+        .eq('role', 'ambassador')
+        .eq('status', 'active')
+        .order('performance_score', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      return {
+        labels: data?.map(user => user.full_name.split(' ')[0]) || [],
+        datasets: [{
+          label: 'Performance Score',
+          data: data?.map(user => user.performance_score || 0) || [],
+          backgroundColor: 'rgba(26, 95, 122, 0.8)'
+        }]
+      };
+    },
+    []
+  );
+};
+
 // Activity feed hook
 export const useRecentActivities = (limit: number = 10) => {
   return useDashboardData<ActivityData[]>(
@@ -620,11 +711,11 @@ export const useRecentActivities = (limit: number = 10) => {
         activities.push({
           id: `visit-${visit.id}`,
           type: 'visit',
-          title: `School Visit: ${visit.schools?.name || 'Unknown School'}`,
+          title: `School Visit: ${(visit.schools as any)?.name || 'Unknown School'}`,
           description: visit.notes || 'School visit completed',
           timestamp: visit.visit_date,
           user: {
-            name: visit.users?.full_name || 'Unknown User'
+            name: (visit.users as any)?.full_name || 'Unknown User'
           },
           status: 'completed'
         });
@@ -639,7 +730,7 @@ export const useRecentActivities = (limit: number = 10) => {
           description: task.title,
           timestamp: task.updated_at,
           user: {
-            name: task.users?.full_name || 'Unknown User'
+            name: (task.users as any)?.full_name || 'Unknown User'
           },
           status: 'completed'
         });

@@ -418,7 +418,7 @@ export const SchoolsPage = () => {
             <h3 className="mb-4 text-base font-medium text-gray-700">
               School Distribution
             </h3>
-            <PieChart data={schoolStatusData} height={250} showLegend={true} />
+            <PieChart title="School Status Distribution" data={schoolStatusData} height={250} showLegend={true} />
             <div className="mt-4 space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
