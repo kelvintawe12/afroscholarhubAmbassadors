@@ -1,271 +1,71 @@
 import React, { useState } from 'react';
 import { 
-  AlertTriangle, 
-  User, 
-  MessageSquare, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  TrendingUp, 
-  Download, 
-  Plus, 
-  Search, 
-  Filter, 
-  Phone, 
-  Mail, 
-  Shield,
-  Zap,
-  Award,
-  Building
+  AlertTriangle, User, MessageSquare, Clock, CheckCircle, XCircle, TrendingUp, Download, Plus, Search, Filter, Phone, Mail, Shield, Zap, Award, Building
 } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { KpiCard } from '../../ui/widgets/KpiCard';
-
-// Types
-interface Escalation {
-  id: string;
-  ticketId: string;
-  category: 'scholarship' | 'compliance' | 'technical' | 'ambassador' | 'partner' | 'system';
-  subCategory: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'new' | 'in-progress' | 'escalated' | 'resolved' | 'closed';
-  title: string;
-  description: string;
-  ambassador: {
-    name: string;
-    email: string;
-    country: string;
-    flag: string;
-    phone?: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-  dueDate?: string;
-  assignedTo?: string;
-  resolutionNotes?: string;
-  attachments?: string[];
-  impact: 'single-student' | 'multiple-students' | 'regional' | 'national' | 'system-wide';
-}
-
-interface EscalationStat {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  trend: string;
-  color: string;
-}
-
-// Mock Data
-const escalationStats: EscalationStat[] = [
-  {
-    title: 'Open Escalations',
-    value: '23',
-    icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
-    trend: '+4 this week',
-    color: 'from-red-400 to-red-600'
-  },
-  {
-    title: 'Avg Resolution Time',
-    value: '2.3 days',
-    icon: <Clock className="h-5 w-5 text-yellow-600" />,
-    trend: 'Target: 48hrs',
-    color: 'from-yellow-400 to-orange-500'
-  },
-  {
-    title: 'Satisfaction Rate',
-    value: '92%',
-    icon: <CheckCircle className="h-5 w-5 text-green-600" />,
-    trend: '+3% from last month',
-    color: 'from-green-500 to-green-600'
-  },
-  {
-    title: 'Critical Issues',
-    value: '2',
-    icon: <Shield className="h-5 w-5 text-purple-600" />,
-    trend: '0 new today',
-    color: 'from-purple-500 to-pink-500'
-  }
-];
-
-const escalationsData: Escalation[] = [
-  {
-    id: '1',
-    ticketId: '#ESC-001',
-    category: 'scholarship',
-    subCategory: 'Payment Delay',
-    priority: 'critical',
-    status: 'escalated',
-    title: 'Scholarship payment delayed for 45 STEM recipients',
-    description: 'Bank transfer issue affecting Q4 disbursements for Lagos STEM Excellence program. Students facing tuition deadlines.',
-    ambassador: {
-      name: 'Aisha Bello',
-      email: 'aisha@afroscholarhub.org',
-      country: 'Nigeria',
-      flag: '🇳🇬',
-      phone: '+234 801 234 5678'
-    },
-    createdAt: '2024-12-15T09:30:00Z',
-    updatedAt: '2024-12-16T14:22:00Z',
-    dueDate: '2024-12-17T18:00:00Z',
-    assignedTo: 'Fatima Ahmed - Finance',
-    impact: 'regional'
-  },
-  {
-    id: '2',
-    ticketId: '#ESC-002',
-    category: 'compliance',
-    subCategory: 'Documentation',
-    priority: 'high',
-    status: 'in-progress',
-    title: 'Missing KYC documents for 23 Ghana scholars',
-    description: 'Regulatory compliance issue - students cannot receive funding without complete documentation. Risk of program suspension.',
-    ambassador: {
-      name: 'Kwame Mensah',
-      email: 'kwame@afroscholarhub.org',
-      country: 'Ghana',
-      flag: '🇬🇭'
-    },
-    createdAt: '2024-12-14T16:45:00Z',
-    updatedAt: '2024-12-16T10:15:00Z',
-    dueDate: '2024-12-18T12:00:00Z',
-    assignedTo: 'Legal Team',
-    impact: 'multiple-students'
-  },
-  {
-    id: '3',
-    ticketId: '#ESC-003',
-    category: 'technical',
-    subCategory: 'Portal Access',
-    priority: 'medium',
-    status: 'new',
-    title: 'Application portal down in East Africa',
-    description: 'Technical outage affecting Kenya, Uganda, and Tanzania. 156 students unable to submit applications before deadline.',
-    ambassador: {
-      name: 'James Otieno',
-      email: 'james@afroscholarhub.org',
-      country: 'Kenya',
-      flag: '🇰🇪'
-    },
-    createdAt: '2024-12-16T08:20:00Z',
-    updatedAt: '2024-12-16T08:20:00Z',
-    impact: 'regional'
-  },
-  {
-    id: '4',
-    ticketId: '#ESC-004',
-    category: 'ambassador',
-    subCategory: 'Performance',
-    priority: 'low',
-    status: 'resolved',
-    title: 'Ambassador training completion issue',
-    description: 'Lagos team members unable to access final certification module. Resolved by IT support.',
-    ambassador: {
-      name: 'Chidi Okonkwo',
-      email: 'chidi@afroscholarhub.org',
-      country: 'Nigeria',
-      flag: '🇳🇬'
-    },
-    createdAt: '2024-12-12T11:10:00Z',
-    updatedAt: '2024-12-15T09:45:00Z',
-    resolutionNotes: 'Module access restored. All 12 ambassadors certified.',
-    impact: 'single-student'
-  },
-  {
-    id: '5',
-    ticketId: '#ESC-005',
-    category: 'partner',
-    subCategory: 'Funding',
-    priority: 'high',
-    status: 'in-progress',
-    title: 'MTN Foundation funding shortfall',
-    description: 'Partner reduced Q4 contribution by 35% due to budget cuts. Need to find alternative funding for 67 scholarships.',
-    ambassador: {
-      name: 'National Director',
-      email: 'director@afroscholarhub.org',
-      country: 'Nigeria',
-      flag: '🇳🇬'
-    },
-    createdAt: '2024-12-13T14:30:00Z',
-    updatedAt: '2024-12-16T11:00:00Z',
-    dueDate: '2024-12-20T12:00:00Z',
-    assignedTo: 'Partnerships Team',
-    impact: 'national'
-  },
-  {
-    id: '6',
-    ticketId: '#ESC-006',
-    category: 'system',
-    subCategory: 'Reporting',
-    priority: 'medium',
-    status: 'closed',
-    title: 'Q3 impact report generation error',
-    description: 'Automated reporting system failed to generate country-level impact metrics. Manual report created as workaround.',
-    ambassador: {
-      name: 'Data Team',
-      email: 'data@afroscholarhub.org',
-      country: 'Pan-Africa',
-      flag: '🌍'
-    },
-    createdAt: '2024-12-10T09:15:00Z',
-    updatedAt: '2024-12-14T16:30:00Z',
-    resolutionNotes: 'Bug fixed in reporting module v2.3.1',
-    impact: 'system-wide'
-  }
-];
+import { useCountryEscalations, useEscalationStatsFormatted, useEscalationActivities } from '../../../hooks/useEscalations';
+import { LoadingSpinner } from '../../LoadingSpinner';
+import { Escalation, EscalationStat, EscalationActivity } from '../../../types';
 
 // Category configurations
 const categoryConfig = {
-  scholarship: { 
-    color: 'text-orange-600 bg-orange-50 border-orange-200', 
-    icon: <Award className="h-4 w-4" /> 
+  school_issue: {
+    color: 'text-orange-600 bg-orange-50 border-orange-200',
+    icon: <Award className="h-4 w-4" />
   },
-  compliance: { 
-    color: 'text-red-600 bg-red-50 border-red-200', 
-    icon: <Shield className="h-4 w-4" /> 
+  ambassador_issue: {
+    color: 'text-red-600 bg-red-50 border-red-200',
+    icon: <Shield className="h-4 w-4" />
   },
-  technical: { 
-    color: 'text-blue-600 bg-blue-50 border-blue-200', 
-    icon: <Zap className="h-4 w-4" /> 
+  technical: {
+    color: 'text-blue-600 bg-blue-50 border-blue-200',
+    icon: <Zap className="h-4 w-4" />
   },
-  ambassador: { 
-    color: 'text-green-600 bg-green-50 border-green-200', 
-    icon: <User className="h-4 w-4" /> 
+  compliance: {
+    color: 'text-green-600 bg-green-50 border-green-200',
+    icon: <User className="h-4 w-4" />
   },
-  partner: { 
-    color: 'text-purple-600 bg-purple-50 border-purple-200', 
-    icon: <Building className="h-4 w-4" /> 
+  finance: {
+    color: 'text-purple-600 bg-purple-50 border-purple-200',
+    icon: <Building className="h-4 w-4" />
   },
-  system: { 
-    color: 'text-gray-600 bg-gray-50 border-gray-200', 
-    icon: <TrendingUp className="h-4 w-4" /> 
+  partnership: {
+    color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+    icon: <TrendingUp className="h-4 w-4" />
+  },
+  training: {
+    color: 'text-gray-600 bg-gray-50 border-gray-200',
+    icon: <Award className="h-4 w-4" />
   }
 };
 
 // Priority colors
 const priorityConfig = {
-  low: { color: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
-  medium: { color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
-  high: { color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
-  critical: { color: 'bg-red-100 text-red-800', dot: 'bg-red-500' }
+  Low: { color: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
+  Medium: { color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
+  High: { color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
+  Critical: { color: 'bg-red-100 text-red-800', dot: 'bg-red-500' }
 };
 
 // Status colors
 const statusConfig = {
-  new: { color: 'bg-gray-100 text-gray-800', label: 'New' },
-  'in-progress': { color: 'bg-blue-100 text-blue-800', label: 'In Progress' },
-  escalated: { color: 'bg-yellow-100 text-yellow-800', label: 'Escalated' },
-  resolved: { color: 'bg-green-100 text-green-800', label: 'Resolved' },
-  closed: { color: 'bg-gray-200 text-gray-600', label: 'Closed' }
+  Open: { color: 'bg-gray-100 text-gray-800', label: 'Open' },
+  Assigned: { color: 'bg-blue-100 text-blue-800', label: 'Assigned' },
+  'In Progress': { color: 'bg-yellow-100 text-yellow-800', label: 'In Progress' },
+  Pending: { color: 'bg-orange-100 text-orange-800', label: 'Pending' },
+  Resolved: { color: 'bg-green-100 text-green-800', label: 'Resolved' },
+  Closed: { color: 'bg-gray-200 text-gray-600', label: 'Closed' },
+  Reopened: { color: 'bg-purple-100 text-purple-800', label: 'Reopened' }
 };
 
 // Impact levels
 const impactConfig = {
-  'single-student': { label: 'Single Student', color: 'text-gray-600' },
-  'multiple-students': { label: 'Multiple Students', color: 'text-blue-600' },
-  regional: { label: 'Regional', color: 'text-purple-600' },
-  national: { label: 'National', color: 'text-orange-600' },
-  'system-wide': { label: 'System-wide', color: 'text-red-600' }
+  Low: { label: 'Low Impact', color: 'text-gray-600' },
+  Medium: { label: 'Medium Impact', color: 'text-blue-600' },
+  High: { label: 'High Impact', color: 'text-purple-600' },
+  Critical: { label: 'Critical Impact', color: 'text-red-600' }
 };
 
 // Components
@@ -274,7 +74,7 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
   const priority = priorityConfig[escalation.priority];
   const status = statusConfig[escalation.status];
   const impact = impactConfig[escalation.impact];
-  
+
   const timeAgo = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
@@ -283,10 +83,10 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
     return days === 0 ? 'Today' : days === 1 ? '1 day ago' : `${days} days ago`;
   };
 
-  const isOverdue = escalation.dueDate && new Date(escalation.dueDate) < new Date();
+  const isOverdue = escalation.due_date && new Date(escalation.due_date) < new Date();
 
   return (
-    <div 
+    <div
       className="group relative bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden cursor-pointer"
       onClick={onClick}
     >
@@ -327,11 +127,11 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
               <span className="flex items-center">
                 <span className="flex items-center mr-4">
                   <User className="h-3 w-3 mr-1" />
-                  {escalation.ambassador.name}
+                  {escalation.escalated_by_user?.full_name || 'Unknown User'}
                 </span>
                 <span className="flex items-center">
-                  <span className="mr-1">{escalation.ambassador.flag}</span>
-                  <span className="truncate">{escalation.ambassador.country}</span>
+                  <span className="mr-1">🇳🇬</span>
+                  <span className="truncate">{escalation.escalated_by_user?.country_code || 'Unknown'}</span>
                 </span>
               </span>
             </div>
@@ -343,19 +143,19 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
           <div className="flex items-center justify-between text-sm">
             <span className="flex items-center gap-1 text-gray-600">
               <Clock className="h-3 w-3" />
-              {timeAgo(escalation.updatedAt)}
+              {timeAgo(escalation.updated_at)}
             </span>
             <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
               {status.label}
             </span>
           </div>
-          {escalation.dueDate && (
+          {escalation.due_date && (
             <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-              <span>Due: {new Date(escalation.dueDate).toLocaleDateString()}</span>
-              {escalation.assignedTo && (
+              <span>Due: {new Date(escalation.due_date).toLocaleDateString()}</span>
+              {escalation.assigned_to && (
                 <span className="flex items-center gap-1">
                   <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                  {escalation.assignedTo}
+                  {escalation.assigned_to_user?.full_name || escalation.assigned_to}
                 </span>
               )}
             </div>
@@ -366,7 +166,7 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
         <div className="mb-4">
           <div className="flex items-center justify-between text-sm mb-2">
             <span className={`font-medium ${impact.color}`}>{impact.label}</span>
-            <span className="text-xs text-gray-500">#{escalation.ticketId}</span>
+            <span className="text-xs text-gray-500">#{escalation.ticket_number}</span>
           </div>
           <p className="text-sm text-gray-600 line-clamp-2">{escalation.description}</p>
         </div>
@@ -376,16 +176,10 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
           <div className="flex items-center text-sm text-gray-500 space-x-4">
             <button className="flex items-center gap-1 hover:text-ash-teal transition-colors">
               <Mail className="h-3 w-3" />
-              <span>{escalation.ambassador.email}</span>
+              <span>{escalation.escalated_by_user?.email || 'No email'}</span>
             </button>
-            {escalation.ambassador.phone && (
-              <button className="flex items-center gap-1 hover:text-ash-teal transition-colors">
-                <Phone className="h-3 w-3" />
-                <span className="truncate">{escalation.ambassador.phone}</span>
-              </button>
-            )}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <MessageSquare className="h-4 w-4" />
@@ -455,22 +249,56 @@ const EscalationsPage: React.FC = () => {
     country: 'all'
   });
 
-  const tabs = [
-    { id: 'open', label: 'Open (12)', icon: <AlertTriangle className="h-4 w-4" /> },
-    { id: 'in-progress', label: 'In Progress (7)', icon: <Clock className="h-4 w-4" /> },
-    { id: 'critical', label: 'Critical (2)', icon: <Shield className="h-4 w-4" /> },
-    { id: 'resolved', label: 'Resolved (45)', icon: <CheckCircle className="h-4 w-4" /> },
-    { id: 'all', label: 'All (67)', icon: <TrendingUp className="h-4 w-4" /> }
+  // Fetch real data from backend
+  const { data: escalationStats, loading: statsLoading, error: statsError } = useEscalationStatsFormatted('NG'); // Using Nigeria as example
+  const { data: escalationsData, loading: escalationsLoading, error: escalationsError } = useCountryEscalations('NG');
+  const { data: recentActivities, loading: activitiesLoading, error: activitiesError } = useEscalationActivities('NG');
+
+  if (statsLoading || escalationsLoading || activitiesLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (statsError || escalationsError || activitiesError) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error loading escalation data</p>
+          <p className="text-sm text-gray-500">
+            {statsError || escalationsError || activitiesError}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Tabs: dynamically count from real data
+  interface TabConfig {
+    id: string;
+    label: string;
+    icon: React.ReactNode;
+  }
+
+  const tabs: TabConfig[] = [
+    { id: 'open', label: `Open (${escalationsData?.filter((e: Escalation) => ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length || 0})`, icon: <AlertTriangle className="h-4 w-4" /> },
+    { id: 'in-progress', label: `In Progress (${escalationsData?.filter((e: Escalation) => e.status === 'In Progress').length || 0})`, icon: <Clock className="h-4 w-4" /> },
+    { id: 'critical', label: `Critical (${escalationsData?.filter((e: Escalation) => e.priority === 'Critical').length || 0})`, icon: <Shield className="h-4 w-4" /> },
+    { id: 'resolved', label: `Resolved (${escalationsData?.filter((e: Escalation) => ['Resolved', 'Closed'].includes(e.status)).length || 0})`, icon: <CheckCircle className="h-4 w-4" /> },
+    { id: 'all', label: `All (${escalationsData?.length || 0})`, icon: <TrendingUp className="h-4 w-4" /> }
   ];
 
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'scholarship', label: 'Scholarship Issues' },
-    { value: 'compliance', label: 'Compliance' },
+    { value: 'school_issue', label: 'School Issues' },
+    { value: 'ambassador_issue', label: 'Ambassador Issues' },
     { value: 'technical', label: 'Technical' },
-    { value: 'ambassador', label: 'Ambassador' },
-    { value: 'partner', label: 'Partners' },
-    { value: 'system', label: 'System' }
+    { value: 'compliance', label: 'Compliance' },
+    { value: 'finance', label: 'Finance' },
+    { value: 'partnership', label: 'Partnership' },
+    { value: 'training', label: 'Training' }
   ];
 
   const priorities = [
@@ -490,66 +318,34 @@ const EscalationsPage: React.FC = () => {
     { value: 'multi', label: 'Multi-country 🌍' }
   ];
 
-  // Filter escalations
-  const filteredEscalations = escalationsData.filter(escalation => {
-    const matchesTab = activeTab === 'open' ? ['new', 'in-progress', 'escalated'].includes(escalation.status) :
-                      activeTab === 'critical' ? escalation.priority === 'critical' :
-                      activeTab === 'resolved' ? ['resolved', 'closed'].includes(escalation.status) :
-                      activeTab === 'in-progress' ? escalation.status === 'in-progress' : true;
-    
-    const matchesSearch = escalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  // Filter escalations from real data
+  interface Filters {
+    category: string;
+    priority: string;
+    status: string;
+    country: string;
+  }
+
+  const filteredEscalations: Escalation[] = (escalationsData || []).filter((escalation: Escalation) => {
+    const matchesTab: boolean = activeTab === 'open' ? ['Open', 'Assigned', 'In Progress', 'Pending'].includes(escalation.status) :
+                      activeTab === 'critical' ? escalation.priority === 'Critical' :
+                      activeTab === 'resolved' ? ['Resolved', 'Closed'].includes(escalation.status) :
+                      activeTab === 'in-progress' ? escalation.status === 'In Progress' : true;
+
+    const matchesSearch: boolean = escalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          escalation.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         escalation.ambassador.name.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = filters.category === 'all' || escalation.category === filters.category;
-    const matchesPriority = filters.priority === 'all' || escalation.priority === filters.priority;
-    const matchesStatus = filters.status === 'all' || escalation.status === filters.status;
-    const matchesCountry = filters.country === 'all' || 
-                          escalation.ambassador.country === filters.country ||
-                          (filters.country === 'multi' && escalation.ambassador.country === 'Pan-Africa');
-    
+                         escalation.escalated_by_user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         false;
+
+    const matchesCategory: boolean = filters.category === 'all' || escalation.category === filters.category;
+    const matchesPriority: boolean = filters.priority === 'all' || escalation.priority === filters.priority;
+    const matchesStatus: boolean = filters.status === 'all' || escalation.status === filters.status;
+    const matchesCountry: boolean = filters.country === 'all' ||
+                          escalation.escalated_by_user?.country_code === filters.country ||
+                          false;
+
     return matchesTab && matchesSearch && matchesCategory && matchesPriority && matchesStatus && matchesCountry;
   });
-
-  // Recent activities
-  const recentActivities = [
-    {
-      id: '1',
-      type: 'assignment',
-      title: 'Payment delay assigned to Finance',
-      description: 'Critical scholarship payment issue escalated to Fatima Ahmed',
-      timestamp: '30 minutes ago',
-      user: { name: 'Escalation System' },
-      icon: <Shield className="h-4 w-4 text-red-600" />
-    },
-    {
-      id: '2',
-      type: 'update',
-      title: 'KYC documentation progress',
-      description: '15/23 documents received from Ghana team',
-      timestamp: '2 hours ago',
-      user: { name: 'Legal Team' },
-      icon: <CheckCircle className="h-4 w-4 text-green-600" />
-    },
-    {
-      id: '3',
-      type: 'resolution',
-      title: 'Portal outage resolved',
-      description: 'East Africa application system back online',
-      timestamp: '4 hours ago',
-      user: { name: 'IT Support' },
-      icon: <Zap className="h-4 w-4 text-blue-600" />
-    },
-    {
-      id: '4',
-      type: 'escalation',
-      title: 'MTN funding issue escalated',
-      description: 'National Director flagged partner funding shortfall',
-      timestamp: 'Yesterday 11:30 AM',
-      user: { name: 'National Director' },
-      icon: <AlertTriangle className="h-4 w-4 text-orange-600" />
-    }
-  ];
 
   return (
     <div className="space-y-8">
@@ -584,13 +380,12 @@ const EscalationsPage: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {escalationStats.map((stat, index) => (
+        {escalationStats.map((stat: EscalationStat, index: number) => (
           <KpiCard 
             key={index}
             title={stat.title}
             value={stat.value}
             icon={stat.icon}
-            trend={stat.trend}
             color={stat.color}
           />
         ))}
@@ -600,50 +395,50 @@ const EscalationsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <EscalationQuickAction
           icon={<Award className="h-5 w-5 text-white" />}
-          title="Scholarship Issues"
-          description="Payment delays, eligibility disputes, funding gaps"
-          onClick={() => console.log('Filter scholarship issues')}
+          title="School Issues"
+          description="School partnerships, student enrollment, academic programs"
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'school_issue' }))}
           color="from-orange-500 to-red-500"
-          badge="12 Open"
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'school_issue' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<Shield className="h-5 w-5 text-white" />}
           title="Compliance Alerts"
           description="KYC, regulatory, documentation requirements"
-          onClick={() => console.log('Filter compliance issues')}
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'compliance' }))}
           color="from-red-500 to-pink-500"
-          badge="5 Open"
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'compliance' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<Zap className="h-5 w-5 text-white" />}
           title="Technical Support"
           description="Portal outages, system errors, access issues"
-          onClick={() => console.log('Filter technical issues')}
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'technical' }))}
           color="from-blue-500 to-cyan-500"
-          badge="3 Open"
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'technical' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<User className="h-5 w-5 text-white" />}
-          title="Ambassador Support"
+          title="Ambassador Issues"
           description="Training, performance, regional challenges"
-          onClick={() => console.log('Filter ambassador issues')}
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'ambassador_issue' }))}
           color="from-green-500 to-emerald-500"
-          badge="2 Open"
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'ambassador_issue' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<Building className="h-5 w-5 text-white" />}
-          title="Partner Relations"
-          description="Funding commitments, contract disputes"
-          onClick={() => console.log('Filter partner issues')}
+          title="Finance"
+          description="Funding commitments, payments, financial reporting"
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'finance' }))}
           color="from-purple-500 to-violet-500"
-          badge="1 Open"
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'finance' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<TrendingUp className="h-5 w-5 text-white" />}
-          title="System Operations"
-          description="Reporting, analytics, infrastructure issues"
-          onClick={() => console.log('Filter system issues')}
-          color="from-gray-500 to-gray-600"
+          title="Partnership"
+          description="Partner relations, contract disputes, collaborations"
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'partnership' }))}
+          color="from-indigo-500 to-blue-600"
         />
       </div>
 
@@ -733,7 +528,7 @@ const EscalationsPage: React.FC = () => {
                   <EscalationCard 
                     key={escalation.id} 
                     escalation={escalation} 
-                    onClick={() => console.log('View escalation:', escalation.ticketId)}
+                    onClick={() => console.log('View escalation:', escalation.ticket_number)}
                   />
                 ))}
               </div>
@@ -769,9 +564,9 @@ const EscalationsPage: React.FC = () => {
             </span>
           </h2>
           
-          <ActivityFeed 
+          <ActivityFeed
             title="Recent Activity"
-            activities={recentActivities} 
+            activities={recentActivities || []}
             maxItems={6}
           />
         </div>

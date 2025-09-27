@@ -1,4 +1,5 @@
 import { supabase, User, School, Event } from '../utils/supabase';
+import { Escalation, EscalationStat, EscalationActivity } from '../types';
 // Country Lead API functions
 export const getCountryAmbassadors = async (countryCode: string) => {
   const {

@@ -3,6 +3,10 @@ import { supabase } from '../utils/supabase';
 
 // Types for dashboard data
 export interface DashboardKPIs {
+  activePipeline: any;
+  newPartners: any;
+  newPartnersThisMonth: number;
+  pipelineValue: number;
   leadsGenerated: number;
   tasksCompleted: number;
   schoolsVisited: number;
