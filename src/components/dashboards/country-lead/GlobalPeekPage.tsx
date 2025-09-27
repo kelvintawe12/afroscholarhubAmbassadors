@@ -1,187 +1,18 @@
-import React, { useState } from 'react';
-import { 
-  Users, 
-  MapPin, 
-  Award, 
-  TrendingUp, 
-  Calendar, 
-  BarChart3, 
-  Filter, 
+import React, { useState, useEffect } from 'react';
+import {
+  Users,
+  MapPin,
+  Award,
+  TrendingUp,
+  Calendar,
+  BarChart3,
+  Filter,
   Download,
   Globe,
   Clock
 } from 'lucide-react';
-
-// Types
-interface CountryStats {
-  id: string;
-  name: string;
-  code: string;
-  ambassadors: number;
-  scholarships: number;
-  funding: string;
-  growth: number;
-  status: 'excellent' | 'good' | 'developing' | 'needs-attention';
-  color: string;
-}
-
-interface QuickStat {
-  title: string;
-  value: string;
-  change: string;
-  icon: React.ReactNode;
-  trend: 'up' | 'down' | 'stable';
-}
-
-interface RecentActivity {
-  id: string;
-  type: 'scholarship' | 'partnership' | 'expansion' | 'milestone';
-  title: string;
-  country: string;
-  timestamp: string;
-  impact: string;
-  icon: React.ReactNode;
-}
-
-// Mock Data
-const countries: CountryStats[] = [
-  {
-    id: 'NG',
-    name: 'Nigeria',
-    code: 'NG',
-    ambassadors: 127,
-    scholarships: 342,
-    funding: '₦2.7B',
-    growth: 24,
-    status: 'excellent',
-    color: 'from-red-500 to-red-600'
-  },
-  {
-    id: 'GH',
-    name: 'Ghana',
-    code: 'GH',
-    ambassadors: 89,
-    scholarships: 214,
-    funding: '₵1.8B',
-    growth: 18,
-    status: 'excellent',
-    color: 'from-yellow-500 to-yellow-600'
-  },
-  {
-    id: 'KE',
-    name: 'Kenya',
-    code: 'KE',
-    ambassadors: 76,
-    scholarships: 189,
-    funding: 'KSh 2.3B',
-    growth: 15,
-    status: 'good',
-    color: 'from-green-500 to-green-600'
-  },
-  {
-    id: 'ZA',
-    name: 'South Africa',
-    code: 'ZA',
-    ambassadors: 98,
-    scholarships: 267,
-    funding: 'R1.9B',
-    growth: 12,
-    status: 'good',
-    color: 'from-blue-500 to-blue-600'
-  },
-  {
-    id: 'ET',
-    name: 'Ethiopia',
-    code: 'ET',
-    ambassadors: 45,
-    scholarships: 98,
-    funding: 'ETB 1.2B',
-    growth: 32,
-    status: 'developing',
-    color: 'from-purple-500 to-purple-600'
-  },
-  {
-    id: 'MA',
-    name: 'Morocco',
-    code: 'MA',
-    ambassadors: 34,
-    scholarships: 76,
-    funding: 'MAD 890M',
-    growth: 8,
-    status: 'developing',
-    color: 'from-indigo-500 to-indigo-600'
-  }
-];
-
-const quickStats: QuickStat[] = [
-  {
-    title: 'Total Ambassadors',
-    value: '549',
-    change: '+18%',
-    icon: <Users className="h-5 w-5" />,
-    trend: 'up'
-  },
-  {
-    title: 'Scholarships Funded',
-    value: '1,456',
-    change: '+22%',
-    icon: <Award className="h-5 w-5" />,
-    trend: 'up'
-  },
-  {
-    title: 'Total Impact',
-    value: '$12.4M',
-    change: '+19%',
-    icon: <TrendingUp className="h-5 w-5" />,
-    trend: 'up'
-  },
-  {
-    title: 'Active Countries',
-    value: '12/54',
-    change: '+2',
-    icon: <MapPin className="h-5 w-5" />,
-    trend: 'up'
-  }
-];
-
-const recentActivities: RecentActivity[] = [
-  {
-    id: '1',
-    type: 'scholarship',
-    title: 'STEM Excellence Program',
-    country: 'Nigeria',
-    timestamp: '2 hours ago',
-    impact: '₦450M funded for 120 students',
-    icon: <Award className="h-4 w-4 text-yellow-500" />
-  },
-  {
-    id: '2',
-    type: 'partnership',
-    title: 'MTN Foundation Partnership',
-    country: 'Ghana',
-    timestamp: '1 day ago',
-    impact: '₵320M for digital literacy',
-    icon: <Users className="h-4 w-4 text-blue-500" />
-  },
-  {
-    id: '3',
-    type: 'expansion',
-    title: 'New Region Launch',
-    country: 'Ethiopia',
-    timestamp: '3 days ago',
-    impact: '25 new ambassadors onboarded',
-    icon: <MapPin className="h-4 w-4 text-green-500" />
-  },
-  {
-    id: '4',
-    type: 'milestone',
-    title: '1,000th Scholarship',
-    country: 'Kenya',
-    timestamp: '5 days ago',
-    impact: 'Celebration event held in Nairobi',
-    icon: <TrendingUp className="h-4 w-4 text-purple-500" />
-  }
-];
+import { getGlobalCountriesStats, getGlobalQuickStats, getGlobalRecentActivities, CountryStats, QuickStat, RecentActivity } from '../../../api/global-peek';
+import { LoadingSpinner } from '../../LoadingSpinner';
 
 // Components
 const CountryCard: React.FC<{ country: CountryStats }> = ({ country }) => {
@@ -281,7 +112,7 @@ const QuickStatCard: React.FC<{ stat: QuickStat }> = ({ stat }) => {
         </div>
         <div className="flex items-center">
           <span className={`text-sm font-semibold ${
-            stat.trend === 'up' ? 'text-green-600' : 
+            stat.trend === 'up' ? 'text-green-600' :
             stat.trend === 'down' ? 'text-red-600' : 'text-gray-500'
           }`}>
             {stat.change}
@@ -300,7 +131,9 @@ const ActivityCard: React.FC<{ activity: RecentActivity }> = ({ activity }) => {
     scholarship: 'bg-yellow-50 border-yellow-200 text-yellow-800',
     partnership: 'bg-blue-50 border-blue-200 text-blue-800',
     expansion: 'bg-green-50 border-green-200 text-green-800',
-    milestone: 'bg-purple-50 border-purple-200 text-purple-800'
+    milestone: 'bg-purple-50 border-purple-200 text-purple-800',
+    event: 'bg-green-50 border-green-200 text-green-800',
+    visit: 'bg-blue-50 border-blue-200 text-blue-800'
   };
 
   return (
@@ -329,8 +162,81 @@ const ActivityCard: React.FC<{ activity: RecentActivity }> = ({ activity }) => {
 const GlobalPeekPage: React.FC = () => {
   const [timeRange, setTimeRange] = useState('30D');
   const [view, setView] = useState('overview');
+  const [countries, setCountries] = useState<CountryStats[]>([]);
+  const [quickStats, setQuickStats] = useState<QuickStat[]>([]);
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const timeRanges = ['7D', '30D', '90D', 'YTD', '12M'];
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [countriesData, quickStatsData, activitiesData] = await Promise.all([
+          getGlobalCountriesStats(),
+          getGlobalQuickStats(),
+          getGlobalRecentActivities()
+        ]);
+
+        // Add icons to quick stats
+        const quickStatsWithIcons = quickStatsData.map(stat => ({
+          ...stat,
+          icon: stat.title.includes('Ambassadors') ? <Users className="h-5 w-5" /> :
+                stat.title.includes('Scholarships') ? <Award className="h-5 w-5" /> :
+                stat.title.includes('Impact') ? <TrendingUp className="h-5 w-5" /> :
+                <MapPin className="h-5 w-5" />
+        }));
+
+        // Add icons to activities
+        const activitiesWithIcons = activitiesData.map(activity => ({
+          ...activity,
+          icon: activity.type === 'event' ? <Calendar className="h-4 w-4 text-green-500" /> :
+                activity.type === 'partnership' ? <Users className="h-4 w-4 text-blue-500" /> :
+                activity.type === 'visit' ? <MapPin className="h-4 w-4 text-purple-500" /> :
+                <Award className="h-4 w-4 text-yellow-500" />
+        }));
+
+        setCountries(countriesData);
+        setQuickStats(quickStatsWithIcons);
+        setRecentActivities(activitiesWithIcons);
+      } catch (err) {
+        console.error('Error fetching global peek data:', err);
+        setError('Failed to load data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -347,7 +253,7 @@ const GlobalPeekPage: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="mt-6 sm:mt-0 flex items-center gap-4">
           {/* Time Range Selector */}
           <div className="flex items-center bg-white rounded-lg shadow-sm border border-gray-200 px-1 py-1">
@@ -453,7 +359,7 @@ const GlobalPeekPage: React.FC = () => {
             <Clock className="h-5 w-5 mr-2 text-ash-gold" />
             Recent Activity
           </h2>
-          
+
           <div className="space-y-3">
             {recentActivities.map((activity) => (
               <ActivityCard key={activity.id} activity={activity} />
@@ -474,11 +380,11 @@ const GlobalPeekPage: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <div className="text-4xl font-bold mb-2">1,456</div>
+              <div className="text-4xl font-bold mb-2">{quickStats.find(s => s.title.includes('Scholarships'))?.value || '0'}</div>
               <div className="text-ash-light text-lg">Students Transformed</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">$12.4M</div>
+              <div className="text-4xl font-bold mb-2">{quickStats.find(s => s.title.includes('Impact'))?.value || '$0'}</div>
               <div className="text-ash-light text-lg">Total Investment</div>
             </div>
             <div>
@@ -486,10 +392,10 @@ const GlobalPeekPage: React.FC = () => {
               <div className="text-ash-light text-lg">Success Rate</div>
             </div>
           </div>
-          
+
           <div className="mt-8 text-center">
             <p className="text-ash-light text-lg mb-6 max-w-2xl mx-auto">
-              We're building the future of African education, one scholarship at a time. 
+              We're building the future of African education, one scholarship at a time.
               Join us in creating opportunities that change lives.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
