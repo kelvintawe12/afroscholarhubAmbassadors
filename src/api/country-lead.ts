@@ -28,11 +28,23 @@ export const getCountryEvents = async (countryCode: string) => {
   const {
     data,
     error
-  } = await supabase.from('events').select('*').eq('country_code', countryCode).order('event_date', {
+  } = await supabase.from('events').select(`
+    *,
+    created_by_user:created_by (id, full_name)
+  `).eq('country_code', countryCode).order('event_date', {
     ascending: false
   });
   if (error) throw error;
-  return data as Event[];
+  return data;
+};
+
+export const createEvent = async (eventData: Omit<Event, 'id' | 'created_at'>) => {
+  const {
+    data,
+    error
+  } = await supabase.from('events').insert(eventData).select().single();
+  if (error) throw error;
+  return data as Event;
 };
 export const getCountryPipeline = async (countryCode: string) => {
   const {

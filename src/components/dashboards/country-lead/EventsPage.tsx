@@ -1,28 +1,33 @@
-import React, { useState } from 'react';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Award, 
-  Clock, 
-  Plus, 
-  Search, 
-  Filter, 
-  Download, 
-  Mail, 
+import React, { useState, useEffect } from 'react';
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Award,
+  Clock,
+  Plus,
+  Search,
+  Filter,
+  Download,
+  Mail,
   Phone,
   MessageSquare,
   Zap,
   CheckCircle,
   X,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { KpiCard } from '../../ui/widgets/KpiCard';
+import { useAuth } from '../../../hooks/useAuth';
+import { getCountryEvents, createEvent } from '../../../api/country-lead';
+import { Event as DBEvent } from '../../../utils/supabase';
+import { toast } from 'react-hot-toast';
 
 // Types
-interface Event {
+interface EventCardData {
   id: string;
   title: string;
   type: 'workshop' | 'training' | 'school_visit' | 'webinar' | 'community' | 'milestone';
@@ -48,6 +53,16 @@ interface QuickEventStat {
   icon: React.ReactNode;
   trend: string;
   color: string;
+}
+
+interface CreateEventFormData {
+  name: string;
+  description: string;
+  event_date: string;
+  location: string;
+  region: string;
+  expected_attendance: number;
+  budget: number;
 }
 
 // Mock Data
@@ -82,122 +97,7 @@ const quickStats: QuickEventStat[] = [
   }
 ];
 
-const eventsData: Event[] = [
-  {
-    id: '1',
-    title: 'STEM Excellence Workshop - Lagos',
-    type: 'workshop',
-    date: '2024-12-18',
-    startTime: '09:00 AM',
-    endTime: '12:00 PM',
-    location: 'Lagos Model College, Ikeja',
-    country: 'Nigeria',
-    flag: '🇳🇬',
-    status: 'published',
-    attendees: 45,
-    capacity: 60,
-    rsvps: 52,
-    leads: 28,
-    organizer: 'Aisha Bello',
-    contact: 'aisha@afroscholarhub.org',
-    color: 'bg-blue-50 border-blue-200'
-  },
-  {
-    id: '2',
-    title: 'Ambassador Training Bootcamp',
-    type: 'training',
-    date: '2024-12-20',
-    startTime: '02:00 PM',
-    endTime: '05:30 PM',
-    location: 'Virtual (Zoom)',
-    country: 'Multi-country',
-    flag: '🌍',
-    status: 'live',
-    attendees: 89,
-    capacity: 120,
-    rsvps: 112,
-    leads: 67,
-    organizer: 'Fatima Ahmed',
-    contact: '+234 801 234 5678',
-    color: 'bg-green-50 border-green-200'
-  },
-  {
-    id: '3',
-    title: 'Scholarship Fair - Accra',
-    type: 'school_visit',
-    date: '2024-12-15',
-    startTime: '10:00 AM',
-    endTime: '03:00 PM',
-    location: 'Accra Technical University',
-    country: 'Ghana',
-    flag: '🇬🇭',
-    status: 'completed',
-    attendees: 156,
-    capacity: 200,
-    rsvps: 178,
-    leads: 89,
-    organizer: 'Kwame Mensah',
-    contact: 'kwame@afroscholarhub.org',
-    color: 'bg-purple-50 border-purple-200'
-  },
-  {
-    id: '4',
-    title: 'Women in Tech Webinar',
-    type: 'webinar',
-    date: '2024-12-22',
-    startTime: '06:00 PM',
-    endTime: '07:30 PM',
-    location: 'Virtual (YouTube Live)',
-    country: 'Pan-Africa',
-    flag: '🌍',
-    status: 'draft',
-    attendees: 0,
-    capacity: 500,
-    rsvps: 34,
-    leads: 0,
-    organizer: 'Sarah Nakato',
-    contact: 'sarah@afroscholarhub.org',
-    color: 'bg-gray-50 border-gray-200'
-  },
-  {
-    id: '5',
-    title: 'Community Impact Day - Nairobi',
-    type: 'community',
-    date: '2024-12-28',
-    startTime: '08:00 AM',
-    endTime: '04:00 PM',
-    location: 'Kibera Community Center',
-    country: 'Kenya',
-    flag: '🇰🇪',
-    status: 'published',
-    attendees: 67,
-    capacity: 100,
-    rsvps: 89,
-    leads: 45,
-    organizer: 'James Otieno',
-    contact: 'james@afroscholarhub.org',
-    color: 'bg-yellow-50 border-yellow-200'
-  },
-  {
-    id: '6',
-    title: 'Q4 Milestone Celebration',
-    type: 'milestone',
-    date: '2024-12-31',
-    startTime: '07:00 PM',
-    endTime: '10:00 PM',
-    location: 'Hybrid (Lagos & Virtual)',
-    country: 'Nigeria',
-    flag: '🇳🇬',
-    status: 'published',
-    attendees: 234,
-    capacity: 300,
-    rsvps: 267,
-    leads: 156,
-    organizer: 'National Team',
-    contact: 'events@afroscholarhub.org',
-    color: 'bg-indigo-50 border-indigo-200'
-  }
-];
+// Mock data removed - using real data from API
 
 // Event type colors and icons
 const eventTypeConfig = {
@@ -219,7 +119,7 @@ const statusConfig = {
 };
 
 // Components
-const EventCard: React.FC<{ event: Event; onClick: () => void }> = ({ event, onClick }) => {
+const EventCard: React.FC<{ event: EventCardData; onClick: () => void }> = ({ event, onClick }) => {
   const typeConfig = eventTypeConfig[event.type];
   const statusConfigItem = statusConfig[event.status];
   
@@ -358,6 +258,7 @@ const EventQuickAction: React.FC<{ icon: React.ReactNode; title: string; descrip
 };
 
 const EventsPage: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -365,13 +266,152 @@ const EventsPage: React.FC = () => {
     country: 'all',
     status: 'all'
   });
+  const [events, setEvents] = useState<EventCardData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [creatingEvent, setCreatingEvent] = useState(false);
+  const [formData, setFormData] = useState<CreateEventFormData>({
+    name: '',
+    description: '',
+    event_date: '',
+    location: '',
+    region: '',
+    expected_attendance: 0,
+    budget: 0
+  });
 
-  const tabs = [
-    { id: 'upcoming', label: 'Upcoming (23)', icon: <Calendar className="h-4 w-4" /> },
-    { id: 'live', label: 'Live (2)', icon: <Zap className="h-4 w-4" /> },
-    { id: 'completed', label: 'Completed (89)', icon: <CheckCircle className="h-4 w-4" /> },
-    { id: 'draft', label: 'Drafts (3)', icon: <X className="h-4 w-4" /> }
-  ];
+  // Fetch events on mount
+  useEffect(() => {
+    if (user?.country_code) {
+      fetchEvents();
+    }
+  }, [user?.country_code]);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const data = await getCountryEvents(user!.country_code!);
+      const mappedEvents = data.map((dbEvent: any) => ({
+        id: dbEvent.id,
+        title: dbEvent.name,
+        type: 'workshop' as const, // Default, since no type in DB
+        date: dbEvent.event_date,
+        startTime: '', // Not in DB
+        endTime: '', // Not in DB
+        location: dbEvent.location,
+        country: user!.country_code!,
+        flag: '', // Can add country flag logic later
+        status: (dbEvent.status === 'planned' ? 'published' :
+                dbEvent.status === 'in-progress' ? 'live' :
+                dbEvent.status === 'completed' ? 'completed' :
+                'draft') as 'draft' | 'published' | 'live' | 'completed' | 'cancelled',
+        attendees: dbEvent.actual_attendance || dbEvent.expected_attendance || 0,
+        capacity: dbEvent.expected_attendance || 0,
+        rsvps: dbEvent.actual_attendance || 0,
+        leads: 0, // Not in DB
+        organizer: dbEvent.created_by_user?.full_name || 'Country Lead',
+        contact: '', // Not in DB
+        color: dbEvent.status === 'planned' ? '#3B82F6' :
+               dbEvent.status === 'in-progress' ? '#F59E0B' :
+               dbEvent.status === 'completed' ? '#10B981' : '#EF4444'
+      }));
+      setEvents(mappedEvents);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      toast.error('Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateEvent = async () => {
+    if (!user?.country_code || !user?.id) return;
+
+    try {
+      setCreatingEvent(true);
+      await createEvent({
+        ...formData,
+        country_code: user.country_code,
+        created_by: user.id,
+        status: 'planned'
+      });
+
+      toast.success('Event created successfully!');
+      setIsCreateModalOpen(false);
+      setFormData({
+        name: '',
+        description: '',
+        event_date: '',
+        location: '',
+        region: '',
+        expected_attendance: 0,
+        budget: 0
+      });
+      fetchEvents(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating event:', error);
+      toast.error('Failed to create event');
+    } finally {
+      setCreatingEvent(false);
+    }
+  };
+
+  // Calculate stats from real data
+  const calculateStats = (): QuickEventStat[] => {
+    const totalEvents = events.length;
+    const upcomingEvents = events.filter(event =>
+      new Date(event.date) > new Date() && event.status === 'published'
+    ).length;
+    const totalExpectedAttendance = events.reduce((sum, event) => sum + event.capacity, 0);
+    const completedEvents = events.filter(event => event.status === 'completed').length;
+
+    return [
+      {
+        title: 'Total Events',
+        value: totalEvents.toString(),
+        icon: <Calendar className="h-5 w-5 text-blue-600" />,
+        trend: 'All time',
+        color: 'from-blue-500 to-blue-600'
+      },
+      {
+        title: 'Upcoming',
+        value: upcomingEvents.toString(),
+        icon: <Clock className="h-5 w-5 text-yellow-500" />,
+        trend: 'Next 30 days',
+        color: 'from-yellow-400 to-orange-500'
+      },
+      {
+        title: 'Expected Attendees',
+        value: totalExpectedAttendance.toString(),
+        icon: <Users className="h-5 w-5 text-green-600" />,
+        trend: 'Across all events',
+        color: 'from-green-500 to-green-600'
+      },
+      {
+        title: 'Completed Events',
+        value: completedEvents.toString(),
+        icon: <CheckCircle className="h-5 w-5 text-purple-600" />,
+        trend: 'Successfully held',
+        color: 'from-purple-500 to-pink-500'
+      }
+    ];
+  };
+
+  const getTabs = () => {
+    const upcomingCount = events.filter(event =>
+      new Date(event.date) > new Date() && event.status === 'published'
+    ).length;
+    const liveCount = events.filter(event => event.status === 'live').length;
+    const completedCount = events.filter(event => event.status === 'completed').length;
+    const draftCount = events.filter(event => event.status === 'draft').length;
+
+    return [
+      { id: 'upcoming', label: `Upcoming (${upcomingCount})`, icon: <Calendar className="h-4 w-4" /> },
+      { id: 'live', label: `Live (${liveCount})`, icon: <Zap className="h-4 w-4" /> },
+      { id: 'completed', label: `Completed (${completedCount})`, icon: <CheckCircle className="h-4 w-4" /> },
+      { id: 'draft', label: `Drafts (${draftCount})`, icon: <X className="h-4 w-4" /> }
+    ];
+  };
 
   const eventTypes = [
     { value: 'all', label: 'All Types' },
@@ -402,64 +442,32 @@ const EventsPage: React.FC = () => {
   ];
 
   // Filter events based on active tab and filters
-  const filteredEvents = eventsData.filter(event => {
-    const matchesTab = activeTab === 'upcoming' ? event.status === 'published' :
+  const filteredEvents = events.filter(event => {
+    const matchesTab = activeTab === 'upcoming' ? (event.status === 'published' && new Date(event.date) > new Date()) :
                       activeTab === 'live' ? event.status === 'live' :
                       activeTab === 'completed' ? event.status === 'completed' :
                       activeTab === 'draft' ? event.status === 'draft' : true;
-    
+
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         event.organizer.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesType = filters.type === 'all' || event.type === filters.type;
-    const matchesCountry = filters.country === 'all' || 
-                          (filters.country === 'multi' ? event.country === 'Multi-country' || event.country === 'Pan-Africa' : 
-                          event.country === filters.country);
+                         event.location.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = filters.status === 'all' || event.status === filters.status;
-    
-    return matchesTab && matchesSearch && matchesType && matchesCountry && matchesStatus;
+
+    return matchesTab && matchesSearch && matchesStatus;
   });
 
-  // Recent event activities
-  const recentActivities = [
-    {
-      id: '1',
-      type: 'rsvp',
-      title: 'New RSVPs for STEM Workshop',
-      description: '12 new students registered for Lagos event',
-      timestamp: '15 minutes ago',
-      user: { name: 'Aisha Bello' },
-      icon: <Users className="h-4 w-4 text-green-600" />
-    },
-    {
-      id: '2',
-      type: 'update',
-      title: 'Event Location Updated',
-      description: 'Accra Technical University - New venue confirmed',
-      timestamp: '2 hours ago',
-      user: { name: 'Kwame Mensah' },
-      icon: <MapPin className="h-4 w-4 text-blue-600" />
-    },
-    {
-      id: '3',
-      type: 'lead',
-      title: '45 New Leads Generated',
-      description: 'From yesterday\'s Scholarship Fair in Accra',
-      timestamp: 'Yesterday 4:30 PM',
-      user: { name: 'Event System' },
-      icon: <Award className="h-4 w-4 text-yellow-500" />
-    },
-    {
-      id: '4',
-      type: 'feedback',
-      title: 'Event Feedback Received',
-      description: '95% satisfaction rating from STEM Workshop attendees',
-      timestamp: '2 days ago',
-      user: { name: 'Fatima Ahmed' },
-      icon: <CheckCircle className="h-4 w-4 text-purple-600" />
-    }
-  ];
+  // Recent event activities - using real data or empty for now
+  const recentActivities = events.slice(0, 4).map((event, index) => ({
+    id: event.id,
+    type: 'event' as const,
+    title: event.title,
+    description: `${event.status === 'completed' ? 'Event completed' : event.status === 'live' ? 'Event in progress' : 'Event scheduled'} - ${event.location}`,
+    timestamp: new Date(event.date).toLocaleDateString(),
+    user: { name: event.organizer },
+    icon: event.status === 'completed' ? <CheckCircle className="h-4 w-4 text-green-600" /> :
+          event.status === 'live' ? <Zap className="h-4 w-4 text-yellow-600" /> :
+          <Calendar className="h-4 w-4 text-blue-600" />
+  }));
 
   return (
     <div className="space-y-8">
@@ -485,7 +493,10 @@ const EventsPage: React.FC = () => {
           </button>
           
           {/* Create Event Button */}
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl"
+          >
             <Plus className="h-4 w-4" />
             Create Event
           </button>
@@ -494,8 +505,8 @@ const EventsPage: React.FC = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {quickStats.map((stat, index) => (
-          <KpiCard 
+        {calculateStats().map((stat, index) => (
+          <KpiCard
             key={index}
             title={stat.title}
             value={stat.value}
@@ -543,7 +554,7 @@ const EventsPage: React.FC = () => {
         <div className="lg:col-span-3 space-y-6">
           {/* Tabs */}
           <div className="flex flex-wrap gap-2 bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
-            {tabs.map((tab) => (
+            {getTabs().map((tab) => (
               <button
                 key={tab.id}
                 className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -672,6 +683,133 @@ const EventsPage: React.FC = () => {
       <div className="fixed bottom-6 right-6 bg-gradient-to-r from-ash-teal to-ash-gold text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-40 md:hidden">
         <Plus className="h-6 w-6" />
       </div>
+
+      {/* Create Event Modal */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">Create New Event</h2>
+              <p className="text-gray-600 mt-1">Fill in the details for your new outreach event</p>
+            </div>
+
+            <div className="p-6">
+              <form onSubmit={(e) => { e.preventDefault(); handleCreateEvent(); }} className="space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                      placeholder="e.g., Coding Workshop for Secondary Schools"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Event Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.event_date}
+                      onChange={(e) => setFormData(prev => ({ ...prev, event_date: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.location}
+                      onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                      placeholder="e.g., Lagos Tech Hub, Victoria Island"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Region</label>
+                    <input
+                      type="text"
+                      value={formData.region}
+                      onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                      placeholder="e.g., Lagos State"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                    placeholder="Brief description of the event..."
+                  />
+                </div>
+
+                {/* Attendance & Budget */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Expected Attendance</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.expected_attendance}
+                      onChange={(e) => setFormData(prev => ({ ...prev, expected_attendance: parseInt(e.target.value) || 0 }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Budget (USD)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.budget}
+                      onChange={(e) => setFormData(prev => ({ ...prev, budget: parseFloat(e.target.value) || 0 }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    disabled={creatingEvent}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingEvent}
+                    className="px-6 py-2 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg hover:from-ash-teal/90 hover:to-ash-gold/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {creatingEvent && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {creatingEvent ? 'Creating...' : 'Create Event'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
