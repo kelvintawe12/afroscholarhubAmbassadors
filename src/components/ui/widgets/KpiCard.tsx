@@ -6,13 +6,15 @@ export interface KpiCardProps {
   icon: React.ReactNode;
   color?: string;
   change?: number;
+  trend?: string;
 }
 export const KpiCard = ({
   title,
   value,
   icon,
   color,
-  change
+  change,
+  trend
 }: KpiCardProps) => {
   return <div className="rounded-lg bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md">
       <div className="flex items-center">
@@ -31,6 +33,7 @@ export const KpiCard = ({
                     {change}%
                   </>}
               </span>}
+            {trend && !change && <span className="ml-2 text-sm text-gray-500">{trend}</span>}
           </div>
         </div>
       </div>
