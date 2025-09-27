@@ -12,7 +12,6 @@ import {
   Search,
   Plus,
   Shield,
-  Zap,
   GraduationCap,
   Activity,
   Clock,
@@ -27,7 +26,7 @@ import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { LineChart } from '../../../ui/widgets/LineChart';
-import { getAmbassadorsData, getCountries, createCountry, createAmbassador, assignCountryLead, assignCountryToAmbassador } from '../../../../api/management';
+import { getAmbassadorsData, getCountries, createAmbassador, assignCountryLead, assignCountryToAmbassador } from '../../../../api/management';
 
 // Types
 interface Ambassador {
@@ -60,13 +59,6 @@ interface Ambassador {
   bio?: string;
 }
 
-interface AmbassadorMetric {
-  title: string;
-  value: string;
-  trend: string;
-  icon: React.ReactNode;
-  color: string;
-}
 
 // Chart Data
 const performanceByCountryData = {
@@ -82,18 +74,6 @@ const performanceByCountryData = {
   }]
 };
 
-const roleDistributionData = {
-  labels: ['Lead', 'Coordinator', 'Field', 'Trainee'],
-  datasets: [{
-    data: [12, 34, 56, 18],
-    backgroundColor: [
-      'rgba(26, 95, 122, 0.8)',
-      'rgba(244, 196, 48, 0.8)',
-      'rgba(38, 162, 105, 0.8)',
-      'rgba(147, 51, 234, 0.8)'
-    ]
-  }]
-};
 
 const activityTrendsData = {
   labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -390,6 +370,12 @@ const AmbassadorsPage: React.FC = () => {
   const [countries, setCountries] = useState<any[]>([]);
   const [countriesList, setCountriesList] = useState<string[]>([]);
 
+  // New states for lead assignment feature
+  const [selectedLeadId, setSelectedLeadId] = useState<string>('');
+  const [leadSearch, setLeadSearch] = useState('');
+  const [leadCountryFilter, setLeadCountryFilter] = useState('');
+  const [allAmbassadors, setAllAmbassadors] = useState<Ambassador[]>([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -427,6 +413,43 @@ const AmbassadorsPage: React.FC = () => {
         .filter((country: any): country is string => typeof country === 'string');
       setCountriesList(Array.from<string>(new Set(countryCodes)));
     }
+  }, [dashboardData]);
+
+  // Map API data to component expected format
+  const ambassadorsRaw = dashboardData?.ambassadors || [];
+  const mappedAmbassadors: Ambassador[] = ambassadorsRaw.map((a: any) => ({
+    id: a.id,
+    name: a.name,
+    email: a.email,
+    phone: '', // Not available in API
+    country: a.country,
+    flag: '', // Not available, can add mapping if needed
+    region: a.region,
+    role: 'ambassador' as const,
+    status: a.status as any,
+    joinDate: new Date().toISOString().split('T')[0], // Approximate - API doesn't provide join date
+    lastActivity: a.lastActivity,
+    performanceScore: a.performance,
+    certifications: 0, // Mock, can add if available
+    schoolsReached: a.schoolsCount || 0,
+    scholarshipsGenerated: 0, // Mock
+    leadsGenerated: a.leadsGenerated || 0,
+    conversionRate: 0, // Mock
+    avgResponseTime: '', // Mock
+    trainingCompletion: 0, // Mock
+    satisfactionRating: 0, // Mock
+    assignedRegion: a.region,
+    contact: {
+      email: a.email,
+      phone: ''
+    },
+    profilePicture: a.avatar,
+    bio: '' // Mock
+  }));
+
+  // Populate allAmbassadors when data loads
+  useEffect(() => {
+    setAllAmbassadors(mappedAmbassadors);
   }, [dashboardData]);
 
   const refreshData = async () => {
@@ -487,23 +510,20 @@ const AmbassadorsPage: React.FC = () => {
           .slice(0, 3);
 
         const countryData = { code: generatedCode, name: newCountryName };
-        const newCountry = await createCountry(countryData);
 
-        // Auto-assign country lead if there are ambassadors in this country
-        const ambassadorsInCountry = mappedAmbassadors.filter(a => a.country === generatedCode);
-        if (ambassadorsInCountry.length > 0) {
-          // Find the ambassador with highest performance score
-          const bestAmbassador = ambassadorsInCountry.reduce((best, current) =>
-            current.performanceScore > best.performanceScore ? current : best
-          );
-          await assignCountryLead(generatedCode, bestAmbassador.id);
-          alert(`Country ${newCountryName} added and ${bestAmbassador.name} assigned as Country Lead!`);
+        // Assign selected lead if chosen
+        if (selectedLeadId) {
+          await assignCountryLead(generatedCode, selectedLeadId);
+          alert(`Country ${newCountryName} added and lead assigned!`);
         } else {
           alert(`Country ${newCountryName} added!`);
         }
 
         setNewCountryCode('');
         setNewCountryName('');
+        setSelectedLeadId('');
+        setLeadSearch('');
+        setLeadCountryFilter('');
         const fetchedCountries = await getCountries();
         setCountries(fetchedCountries);
         await refreshData();
@@ -550,12 +570,11 @@ const AmbassadorsPage: React.FC = () => {
     );
   }
 
-  const ambassadors = dashboardData?.ambassadors || [];
   const metrics = dashboardData?.metrics || [];
   const charts = dashboardData?.charts || {};
 
   const tabs = [
-    { id: 'directory', label: `Directory (${ambassadors.length})`, icon: <Users className="h-4 w-4" /> },
+    { id: 'directory', label: `Directory (${ambassadorsRaw.length})`, icon: <Users className="h-4 w-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="h-4 w-4" /> },
     { id: 'performance', label: 'Performance', icon: <Award className="h-4 w-4" /> },
     { id: 'training', label: 'Training', icon: <GraduationCap className="h-4 w-4" /> }
@@ -577,37 +596,6 @@ const AmbassadorsPage: React.FC = () => {
     { value: 'inactive', label: 'Inactive' },
     { value: 'training', label: 'Training' }
   ];
-
-  // Map API data to component expected format
-  const mappedAmbassadors: Ambassador[] = ambassadors.map((a: any) => ({
-    id: a.id,
-    name: a.name,
-    email: a.email,
-    phone: '', // Not available in API
-    country: a.country,
-    flag: '', // Not available, can add mapping if needed
-    region: a.region,
-    role: 'ambassador' as const,
-    status: a.status as any,
-    joinDate: new Date().toISOString().split('T')[0], // Approximate - API doesn't provide join date
-    lastActivity: a.lastActivity,
-    performanceScore: a.performance,
-    certifications: 0, // Mock, can add if available
-    schoolsReached: a.schoolsCount || 0,
-    scholarshipsGenerated: 0, // Mock
-    leadsGenerated: a.leadsGenerated || 0,
-    conversionRate: 0, // Mock
-    avgResponseTime: '', // Mock
-    trainingCompletion: 0, // Mock
-    satisfactionRating: 0, // Mock
-    assignedRegion: a.region,
-    contact: {
-      email: a.email,
-      phone: ''
-    },
-    profilePicture: a.avatar,
-    bio: '' // Mock
-  }));
 
   // Filter ambassadors
   const filteredAmbassadors = mappedAmbassadors.filter((ambassador: Ambassador) => {
@@ -666,6 +654,14 @@ const AmbassadorsPage: React.FC = () => {
     }
   ];
 
+  const filteredLeadOptions = allAmbassadors.filter(a => {
+    const matchesCountry = !leadCountryFilter || a.country === leadCountryFilter;
+    const matchesSearch =
+      a.name.toLowerCase().includes(leadSearch.toLowerCase()) ||
+      a.email.toLowerCase().includes(leadSearch.toLowerCase());
+    return matchesCountry && matchesSearch;
+  });
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -700,7 +696,7 @@ const AmbassadorsPage: React.FC = () => {
 
           {/* Manage Countries Button */}
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             onClick={() => setShowCountryModal(true)}
           >
             <MapPin className="h-4 w-4" />
@@ -901,7 +897,7 @@ const AmbassadorsPage: React.FC = () => {
                   header: 'Ambassador', 
                   accessor: (row: Ambassador) => (
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ash-teal to-ash-gold flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ash-teal to-ash-gold flex items-center justify-center text-white text-sm font-semibold">
                         {row.name.charAt(0)}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -922,7 +918,7 @@ const AmbassadorsPage: React.FC = () => {
                 },
                 { 
                   header: 'Role', 
-                  accessor: (row: Ambassador) => (
+                  accessor: () => (
                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800`}>
                       Ambassador
                     </span>
@@ -1049,14 +1045,14 @@ const AmbassadorsPage: React.FC = () => {
                   <Users className="h-5 w-5 mr-2 text-green-600" />
                   Role Distribution
                 </h3>
-                <span className="text-sm text-gray-500">Total: {ambassadors.length}</span>
+                <span className="text-sm text-gray-500">Total: {allAmbassadors.length}</span>
               </div>
               <PieChart
                 title="Role Distribution"
                 data={{
                   labels: ['Ambassador'],
                   datasets: [{
-                    data: [ambassadors.length],
+                    data: [ambassadorsRaw.length],
                     backgroundColor: ['rgba(26, 95, 122, 0.8)']
                   }]
                 }}
@@ -1231,17 +1227,6 @@ const AmbassadorsPage: React.FC = () => {
                   <Plus className="h-5 w-5 mr-2 text-ash-teal" />
                   Add New Country
                 </h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="p-1 bg-blue-100 rounded">
-                      <Shield className="h-4 w-4 text-blue-600" />
-                    </div>
-                    <div className="text-sm text-blue-800">
-                      <p className="font-medium">Auto-Assignment Feature</p>
-                      <p className="mt-1">Country code will be auto-generated from the name. If ambassadors exist in this country, the highest-performing one will be automatically assigned as Country Lead.</p>
-                    </div>
-                  </div>
-                </div>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1256,13 +1241,49 @@ const AmbassadorsPage: React.FC = () => {
                     />
                     <p className="text-xs text-gray-500 mt-1">Full country name - code will be auto-generated</p>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Assign Country Lead <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <div className="flex gap-2 mb-2">
+                      <select
+                        className="border rounded px-2 py-1 text-sm"
+                        value={leadCountryFilter}
+                        onChange={e => setLeadCountryFilter(e.target.value)}
+                      >
+                        <option value="">All Countries</option>
+                        {countries.map(c => (
+                          <option key={c.code} value={c.code}>{c.name}</option>
+                        ))}
+                      </select>
+                      <input
+                        className="border rounded px-2 py-1 text-sm flex-1"
+                        placeholder="Search ambassador..."
+                        value={leadSearch}
+                        onChange={e => setLeadSearch(e.target.value)}
+                      />
+                    </div>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      value={selectedLeadId}
+                      onChange={e => setSelectedLeadId(e.target.value)}
+                    >
+                      <option value="">No Lead</option>
+                      {filteredLeadOptions.map(a => (
+                        <option key={a.id} value={a.id}>
+                          {a.name} ({a.email}) {a.country}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">Choose an ambassador to assign as lead for this country.</p>
+                  </div>
                   <button
                     className="w-full bg-gradient-to-r from-ash-teal to-ash-gold text-white py-3 px-4 rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleAddCountry}
                     disabled={!newCountryName.trim()}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Country & Auto-Assign Lead
+                    Add Country & Assign Lead
                   </button>
                 </div>
               </div>
