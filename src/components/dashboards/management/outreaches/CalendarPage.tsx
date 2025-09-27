@@ -637,6 +637,35 @@ export const CalendarPage: React.FC = () => {
           getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
         />
       )}
+
+      {/* Create Event Modal (Newly Added) */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Create New Event</h2>
+            <p className="text-gray-600 text-sm">Plan and schedule your next outreach event</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <button
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+              onClick={() => {
+                setShowEventModal(true);
+                // Additional logic for creating a new event can be added here
+              }}
+            >
+              Create Event
+            </button>
+            <button
+              className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition"
+              onClick={() => {
+                // Logic for viewing a sample report can be added here
+              }}
+            >
+              View Sample Report
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1356,7 +1385,7 @@ const EventModal: React.FC<EventModalProps> = ({
     );
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
