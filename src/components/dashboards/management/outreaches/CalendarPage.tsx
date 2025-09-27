@@ -438,28 +438,28 @@ export const CalendarPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-2 sm:p-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Calendar className="h-8 w-8 text-blue-600" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <Calendar className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600" />
             Outreach Calendar
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 mt-1 text-sm sm:text-base">
             {currentMonthEvents.length} events • {todayEvents.length} today
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
           {/* View Mode Toggle */}
-          <div className="hidden sm:flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+          <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1 w-full sm:w-auto">
             {VIEW_MODES.map(mode => (
               <button
                 key={mode.id}
                 onClick={() => setViewMode(mode.id as any)}
                 className={`
-                  flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all
+                  flex items-center gap-2 px-2 py-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all w-full sm:w-auto
                   ${viewMode === mode.id 
                     ? 'bg-blue-600 text-white shadow-sm' 
                     : 'text-gray-700 hover:bg-gray-50'
@@ -473,31 +473,32 @@ export const CalendarPage: React.FC = () => {
           </div>
 
           {/* Actions */}
-          <button
-            onClick={createNewEvent}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg transition-all"
-          >
-            <Plus size={16} />
-            <span className="hidden sm:inline">Add Event</span>
-          </button>
-
-          <button className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <Download size={16} />
-            <span className="hidden sm:inline">Export</span>
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={createNewEvent}
+              className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg transition-all w-full sm:w-auto"
+            >
+              <Plus size={16} />
+              <span className="hidden sm:inline">Add Event</span>
+            </button>
+            <button className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto">
+              <Download size={16} />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-        <div className="flex flex-wrap gap-3 items-center">
+      <div className="bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-200">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-3 items-stretch sm:items-center">
           {/* Type Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Type:</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Type:</span>
             <select
               value={filters.type}
               onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Types</option>
               {Object.entries(EVENT_TYPE_CONFIG).map(([key, config]) => (
@@ -508,11 +509,11 @@ export const CalendarPage: React.FC = () => {
 
           {/* Status Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Status:</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Status:</span>
             <select
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Statuses</option>
               {Object.entries(STATUS_CONFIG).map(([key, config]) => (
@@ -523,11 +524,11 @@ export const CalendarPage: React.FC = () => {
 
           {/* Country Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Country:</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Country:</span>
             <select
               value={filters.country}
               onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Countries</option>
               {countries.map(country => (
@@ -541,11 +542,11 @@ export const CalendarPage: React.FC = () => {
 
           {/* Priority Filter */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">Priority:</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-700">Priority:</span>
             <select
               value={filters.priority}
               onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
-              className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-xs sm:text-sm border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Priorities</option>
               {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
@@ -557,7 +558,7 @@ export const CalendarPage: React.FC = () => {
           {/* Clear Filters */}
           <button
             onClick={() => setFilters({ type: 'all', status: 'all', country: 'all', priority: 'all' })}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             Clear Filters
           </button>
@@ -671,10 +672,10 @@ const MonthView: React.FC<MonthViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Month Navigation */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-0 min-w-0">
         <button
           onClick={() => navigateMonth('prev')}
-          className="group flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all"
+          className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex-shrink-0"
         >
           <ChevronLeft size={20} className="group-hover:text-blue-500 transition-colors" />
           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-500">
@@ -682,8 +683,8 @@ const MonthView: React.FC<MonthViewProps> = ({
           </span>
         </button>
         
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-900">
+        <div className="flex-1 min-w-0 text-center">
+          <h2 className="text-base sm:text-xl font-bold text-gray-900 truncate">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h2>
           <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mt-1">
@@ -695,7 +696,7 @@ const MonthView: React.FC<MonthViewProps> = ({
         
         <button
           onClick={() => navigateMonth('next')}
-          className="group flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all"
+          className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-all flex-shrink-0"
         >
           <span className="text-sm font-medium text-gray-700 group-hover:text-blue-500">
             Next
@@ -715,9 +716,9 @@ const MonthView: React.FC<MonthViewProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-gray-200">
         {/* Weekday Headers */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-7 min-w-[560px] bg-gray-50 border-b border-gray-200">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="p-3 text-center">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">{day}</div>
@@ -726,7 +727,7 @@ const MonthView: React.FC<MonthViewProps> = ({
         </div>
 
         {/* Days Grid */}
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-7 min-w-[560px]">
           {calendarDays.map((dayObj, index) => {
             const { date, isCurrentMonth, isToday } = dayObj;
             const dayEvents = date ? getEventsForDay(date) : [];
@@ -881,9 +882,9 @@ const WeekView: React.FC<WeekViewProps> = ({
       </div>
 
       {/* Week Grid */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-gray-200">
         {/* Weekday Headers */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-7 min-w-[560px] bg-gray-50 border-b border-gray-200">
           {days.map((day, index) => (
             <div key={index} className="p-3 text-center border-r border-gray-200 last:border-r-0">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -901,7 +902,7 @@ const WeekView: React.FC<WeekViewProps> = ({
         </div>
 
         {/* Events */}
-        <div className="grid grid-cols-7 h-96 overflow-y-auto">
+        <div className="grid grid-cols-7 min-w-[560px] h-96 overflow-y-auto">
           {weekEvents.map((dayEvents, index) => (
             <div 
               key={index}
@@ -1041,9 +1042,9 @@ const DayView: React.FC<DayViewProps> = ({
       </div>
 
       {/* Timeline View */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm overflow-x-auto border border-gray-200">
         {/* Time Slots */}
-        <div className="grid grid-cols-[60px_1fr] h-[600px]">
+        <div className="grid grid-cols-[60px_1fr] min-w-[340px] h-[600px]">
           {/* Time Column */}
           <div className="border-r border-gray-200 bg-gray-50">
             {timeSlots.map((time, index) => (
@@ -1212,7 +1213,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 overflow-x-auto">
         <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
           <Activity size={20} className="text-blue-600" />
           Agenda View
