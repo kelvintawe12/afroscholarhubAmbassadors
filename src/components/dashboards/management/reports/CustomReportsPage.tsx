@@ -4,6 +4,8 @@ import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
+import CreateReportModal from './CreateReportModal';
+import { Button } from '../../../ui/Button';
 
 export const CustomReportsPage = () => {
   const [activeTab, setActiveTab] = useState('builder');
@@ -26,6 +28,7 @@ export const CustomReportsPage = () => {
     { id: 2, name: 'Partnership Growth Analysis', type: 'Growth', lastRun: '2024-01-10', status: 'completed' },
     { id: 3, name: 'Regional Performance', type: 'Geographic', lastRun: '2024-01-08', status: 'completed' }
   ]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const availableFilters = {
     countries: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
@@ -75,19 +78,16 @@ export const CustomReportsPage = () => {
     alert('Custom report generated successfully!');
   };
 
-  const saveReport = () => {
-    if (reportName.trim()) {
-      const newReport = {
-        id: savedReports.length + 1,
-        name: reportName,
-        type: 'Custom',
-        lastRun: new Date().toISOString().split('T')[0],
-        status: 'completed'
-      };
-      setSavedReports([...savedReports, newReport]);
-      setReportName('');
-      alert('Report saved successfully!');
-    }
+  const handleReportCreated = () => {
+    // Refresh saved reports or add mock entry
+    setSavedReports(prev => [...prev, {
+      id: prev.length + 1,
+      name: 'New Custom Report',
+      type: 'Custom',
+      lastRun: new Date().toISOString().split('T')[0],
+      status: 'completed'
+    }]);
+    setIsModalOpen(false);
   };
 
   return (
@@ -106,13 +106,13 @@ export const CustomReportsPage = () => {
             <BarChart3Icon size={16} className="mr-2" />
             Generate Report
           </button>
-          <button
-            onClick={() => setActiveTab('builder')}
+          <Button
+            onClick={() => setIsModalOpen(true)}
             className="flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
-            <SettingsIcon size={16} className="mr-2" />
-            Report Builder
-          </button>
+            <PlusIcon size={16} className="mr-2" />
+            Create Report
+          </Button>
         </div>
       </div>
 
@@ -199,25 +199,6 @@ export const CustomReportsPage = () => {
                     </label>
                   ))}
                 </div>
-              </div>
-
-              {/* Save Report */}
-              <div className="border-t pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Save Report</label>
-                <input
-                  type="text"
-                  placeholder="Report name"
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm mb-2"
-                  value={reportName}
-                  onChange={(e) => setReportName(e.target.value)}
-                />
-                <button
-                  onClick={saveReport}
-                  className="w-full flex items-center justify-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
-                >
-                  <PlusIcon size={16} className="mr-2" />
-                  Save Report
-                </button>
               </div>
             </div>
           </div>
@@ -337,6 +318,12 @@ export const CustomReportsPage = () => {
           />
         </div>
       )}
+
+      <CreateReportModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleReportCreated}
+      />
     </div>
   );
 };

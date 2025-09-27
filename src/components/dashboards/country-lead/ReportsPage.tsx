@@ -28,6 +28,7 @@ import { PieChart } from '../../ui/widgets/PieChart';
 import { LineChart } from '../../ui/widgets/LineChart';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { DataTable } from '../../ui/widgets/DataTable';
+import CreateReportModal from '../management/reports/CreateReportModal';
 
 // Types
 interface ReportMetric {
@@ -58,8 +59,6 @@ interface Report {
 }
 
 // Real Data - will be populated from API
-const reportMetrics: ReportMetric[] = [];
-
 const recentReports: Report[] = [];
 
 // Chart Data - will be populated from API
@@ -240,6 +239,7 @@ const ReportsPage: React.FC = () => {
     category: 'all',
     status: 'all'
   });
+  const [isCreateReportModalOpen, setIsCreateReportModalOpen] = useState(false);
 
   // Populate reportMetrics from KPIs
   const reportMetrics: ReportMetric[] = React.useMemo(() => {
@@ -562,7 +562,10 @@ const ReportsPage: React.FC = () => {
           </button>
           
           {/* Generate Report */}
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl">
+          <button
+            onClick={() => setIsCreateReportModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl"
+          >
             <Plus className="h-4 w-4" />
             New Report
           </button>
@@ -794,7 +797,10 @@ const ReportsPage: React.FC = () => {
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No reports found</h3>
               <p className="text-gray-500 mb-6">Try adjusting your search or filter criteria</p>
-              <button className="flex items-center gap-2 px-4 py-2 bg-ash-teal text-white rounded-lg font-medium hover:bg-ash-teal/90 transition-colors mx-auto">
+              <button
+                onClick={() => setIsCreateReportModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-ash-teal text-white rounded-lg font-medium hover:bg-ash-teal/90 transition-colors mx-auto"
+              >
                 <Plus className="h-4 w-4" />
                 Generate New Report
               </button>
@@ -916,6 +922,16 @@ const ReportsPage: React.FC = () => {
       <div className="fixed bottom-6 right-6 bg-gradient-to-r from-ash-teal to-ash-gold text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-40 md:hidden">
         <Plus className="h-6 w-6" />
       </div>
+
+      {/* Create Report Modal */}
+      <CreateReportModal
+        isOpen={isCreateReportModalOpen}
+        onClose={() => setIsCreateReportModalOpen(false)}
+        onSuccess={() => {
+          setIsCreateReportModalOpen(false);
+          // Optionally refresh reports data here
+        }}
+      />
     </div>
   );
 };
