@@ -4,6 +4,33 @@ import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { DataTable } from '../../../ui/widgets/DataTable';
 import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
+import { supabase } from '../../../../utils/supabase';
+import { getAllAmbassadors } from '../../../../api/ambassador';
+
+type Country = {
+  code: string;
+  name: string;
+};
+
+type School = {
+  id: string;
+  name: string;
+  location: string;
+  country_code: string;
+  contact_person: string;
+  contact_email: string;
+  contact_phone: string;
+  student_count: number;
+  priority: string;
+  status: string;
+  potential_value?: string;
+  assigned_to?: string;
+  next_action?: string;
+  next_action_date?: string;
+  last_contact?: string;
+  // Add other fields as needed
+};
+
 export const SchoolProspectsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -14,110 +41,30 @@ export const SchoolProspectsPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showMenu, setShowMenu] = useState<number | null>(null);
   const [timeRange, setTimeRange] = useState('quarter');
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  type User = {
+    id: number;
+    name: string;
+    // Add other fields as needed
+  };
+  const [ambassadors, setAmbassadors] = useState<User[]>([]);
   useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      const mockProspects = [{
-        id: 1,
-        name: "St. Mary's High School",
-        location: 'Lagos, Nigeria',
-        country: 'Nigeria',
-        contactPerson: 'Oluwaseun Adeyemi',
-        contactEmail: 'oluwaseun@stmarys.edu.ng',
-        contactPhone: '+234 802 345 6789',
-        studentCount: 750,
-        priority: 'high',
-        status: 'contacted',
-        potentialValue: 'High',
-        assignedTo: 'Aisha Mohammed',
-        nextAction: 'Schedule visit',
-        nextActionDate: 'June 25, 2025',
-        lastContact: '3 days ago'
-      }, {
-        id: 2,
-        name: 'Westlands Secondary School',
-        location: 'Nairobi, Kenya',
-        country: 'Kenya',
-        contactPerson: 'David Kamau',
-        contactEmail: 'david@westlands.ac.ke',
-        contactPhone: '+254 712 345 678',
-        studentCount: 680,
-        priority: 'medium',
-        status: 'new',
-        potentialValue: 'Medium',
-        assignedTo: 'John Kamau',
-        nextAction: 'Initial call',
-        nextActionDate: 'June 18, 2025',
-        lastContact: 'Never'
-      }, {
-        id: 3,
-        name: 'Tema International School',
-        location: 'Tema, Ghana',
-        country: 'Ghana',
-        contactPerson: 'Akosua Mensah',
-        contactEmail: 'akosua@tis.edu.gh',
-        contactPhone: '+233 24 987 6543',
-        studentCount: 520,
-        priority: 'high',
-        status: 'meeting_scheduled',
-        potentialValue: 'High',
-        assignedTo: 'Grace Osei',
-        nextAction: 'Attend meeting',
-        nextActionDate: 'June 20, 2025',
-        lastContact: '1 week ago'
-      }, {
-        id: 4,
-        name: 'Pretoria Boys High School',
-        location: 'Pretoria, South Africa',
-        country: 'South Africa',
-        contactPerson: 'Johan van der Merwe',
-        contactEmail: 'johan@pbhs.ac.za',
-        contactPhone: '+27 82 765 4321',
-        studentCount: 850,
-        priority: 'medium',
-        status: 'proposal_sent',
-        potentialValue: 'High',
-        assignedTo: 'Samuel Dlamini',
-        nextAction: 'Follow up call',
-        nextActionDate: 'June 22, 2025',
-        lastContact: '5 days ago'
-      }, {
-        id: 5,
-        name: 'Kano Model College',
-        location: 'Kano, Nigeria',
-        country: 'Nigeria',
-        contactPerson: 'Ibrahim Musa',
-        contactEmail: 'ibrahim@kanomodel.edu.ng',
-        contactPhone: '+234 803 456 7890',
-        studentCount: 620,
-        priority: 'low',
-        status: 'contacted',
-        potentialValue: 'Medium',
-        assignedTo: 'Fatima Abdullahi',
-        nextAction: 'Send materials',
-        nextActionDate: 'June 28, 2025',
-        lastContact: '2 weeks ago'
-      }, {
-        id: 6,
-        name: 'Kisumu Academy',
-        location: 'Kisumu, Kenya',
-        country: 'Kenya',
-        contactPerson: 'Alice Otieno',
-        contactEmail: 'alice@kisumuacademy.ac.ke',
-        contactPhone: '+254 722 987 6543',
-        studentCount: 480,
-        priority: 'high',
-        status: 'meeting_scheduled',
-        potentialValue: 'Medium',
-        assignedTo: 'John Kamau',
-        nextAction: 'Prepare presentation',
-        nextActionDate: 'June 19, 2025',
-        lastContact: '2 days ago'
-      }];
-      setProspects(mockProspects);
-      setFilteredProspects(mockProspects);
+    const fetchProspects = async () => {
+      setIsLoading(true);
+      // Fetch only schools with status 'prospect' or similar
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .in('status', ['prospect', 'contacted', 'meeting_scheduled', 'proposal_sent', 'new']) // adjust as needed
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setProspects(data);
+        setFilteredProspects(data);
+      }
       setIsLoading(false);
-    }, 1000);
+    };
+    fetchProspects();
   }, []);
   useEffect(() => {
     if (prospects.length > 0) {
@@ -335,6 +282,46 @@ export const SchoolProspectsPage = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
+  // Fetch countries from Supabase
+  useEffect(() => {
+    const fetchCountries = async () => {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('code, name')
+        .order('name', { ascending: true });
+      if (!error && data) setCountries(data);
+    };
+    fetchCountries();
+  }, []);
+  // Fetch ambassadors
+  useEffect(() => {
+      getAllAmbassadors().then((usersFromApi) => {
+        // Map or transform users to match the local User type
+        const mappedUsers = usersFromApi.map((user: any) => ({
+          id: user.id,
+          name: user.name || user.full_name || user.email || 'Unknown', // Adjust as needed
+          // Add other fields if necessary
+        }));
+        setAmbassadors(mappedUsers);
+      });
+    }, []);
+  // Fetch schools
+  useEffect(() => {
+    const fetchSchools = async () => {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .in('status', ['prospect', 'contacted', 'meeting_scheduled', 'proposal_sent', 'new']) // adjust as needed
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setProspects(data);
+        setFilteredProspects(data);
+      }
+      setIsLoading(false);
+    };
+    fetchSchools();
+  }, []);
   return <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">School Prospects</h1>
@@ -385,13 +372,18 @@ export const SchoolProspectsPage = () => {
             </select>
           </div>
           <div className="relative">
-            <select className="rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm font-medium text-gray-700 hover:bg-gray-50" value={filterCountry} onChange={e => setFilterCountry(e.target.value)}>
-              <option value="all">All Countries</option>
-              <option value="Nigeria">Nigeria</option>
-              <option value="Kenya">Kenya</option>
-              <option value="Ghana">Ghana</option>
-              <option value="South Africa">South Africa</option>
-            </select>
+            <select
+  value={filterCountry}
+  onChange={e => setFilterCountry(e.target.value)}
+  className="rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm font-medium text-gray-700 hover:bg-gray-50"
+>
+  <option value="all">All Countries</option>
+  {countries.map(country => (
+    <option key={country.code} value={country.code}>
+      {country.name}
+    </option>
+  ))}
+</select>
           </div>
         </div>
         <div className="flex w-full items-center space-x-2 sm:w-auto">
@@ -433,11 +425,7 @@ export const SchoolProspectsPage = () => {
               </label>
               <select className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-sm">
                 <option value="all">All Ambassadors</option>
-                <option value="Aisha Mohammed">Aisha Mohammed</option>
-                <option value="John Kamau">John Kamau</option>
-                <option value="Grace Osei">Grace Osei</option>
-                <option value="Samuel Dlamini">Samuel Dlamini</option>
-                <option value="Fatima Abdullahi">Fatima Abdullahi</option>
+                {ambassadors.map(ambassador => <option key={ambassador.id} value={ambassador.name}>{ambassador.name}</option>)}
               </select>
             </div>
             <div>
