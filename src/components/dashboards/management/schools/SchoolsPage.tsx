@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { SearchIcon, FilterIcon, DownloadIcon, PlusIcon, MapPinIcon, PhoneIcon, MailIcon, UserIcon, CheckCircleIcon, ClockIcon, AlertCircleIcon, XCircleIcon, MoreHorizontalIcon, EyeIcon, EditIcon, TrashIcon, BarChart3Icon, UsersIcon, SchoolIcon } from 'lucide-react';
+import { SearchIcon, FilterIcon, DownloadIcon, PlusIcon, MapPinIcon, PhoneIcon, MailIcon, UserIcon, CheckCircleIcon, ClockIcon, AlertCircleIcon, XCircleIcon, MoreHorizontalIcon, EyeIcon, EditIcon, TrashIcon, BarChart3Icon, UsersIcon, SchoolIcon, XIcon } from 'lucide-react';
 import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { DataTable } from '../../../ui/widgets/DataTable';
 import { PieChart } from '../../../ui/widgets/PieChart';
+
 export const SchoolsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -12,138 +13,63 @@ export const SchoolsPage = () => {
   const [filteredSchools, setFilteredSchools] = useState<any[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showMenu, setShowMenu] = useState<number | null>(null);
+  const [showAddSchoolModal, setShowAddSchoolModal] = useState(false);
+  const [showAssignAmbassadorsModal, setShowAssignAmbassadorsModal] = useState(false);
+
+  // Add School form state
+  const [newSchool, setNewSchool] = useState({
+    name: '',
+    location: '',
+    country: '',
+    contactPerson: '',
+    contactEmail: '',
+    contactPhone: '',
+    studentCount: '',
+    ambassador: '',
+    address: '',
+    type: '',
+    status: 'prospect',
+    city: '',
+    region: '',
+  });
+
+  // Assign Ambassadors form state
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [selectedAmbassador, setSelectedAmbassador] = useState('');
+
+  // Fetch schools from API (replace with your real API)
   useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      const mockSchools = [{
-        id: 1,
-        name: 'Lagos Model School',
-        location: 'Lagos, Nigeria',
-        country: 'Nigeria',
-        contactPerson: 'Adebayo Johnson',
-        contactEmail: 'adebayo@lagosmodel.edu.ng',
-        contactPhone: '+234 801 234 5678',
-        studentCount: 850,
-        status: 'partnered',
-        ambassador: 'Aisha Mohammed',
-        lastVisit: '3 days ago',
-        nextVisit: 'July 15, 2025',
-        leadsGenerated: 120,
-        conversionRate: 35
-      }, {
-        id: 2,
-        name: 'Nairobi Academy',
-        location: 'Nairobi, Kenya',
-        country: 'Kenya',
-        contactPerson: 'Grace Mwangi',
-        contactEmail: 'grace@nairobiacademy.ac.ke',
-        contactPhone: '+254 712 345 678',
-        studentCount: 720,
-        status: 'partnered',
-        ambassador: 'John Kamau',
-        lastVisit: '1 week ago',
-        nextVisit: 'June 28, 2025',
-        leadsGenerated: 95,
-        conversionRate: 28
-      }, {
-        id: 3,
-        name: 'Accra High School',
-        location: 'Accra, Ghana',
-        country: 'Ghana',
-        contactPerson: 'Kwame Osei',
-        contactEmail: 'kwame@accrahigh.edu.gh',
-        contactPhone: '+233 24 123 4567',
-        studentCount: 650,
-        status: 'visited',
-        ambassador: 'Grace Osei',
-        lastVisit: '2 weeks ago',
-        nextVisit: 'July 5, 2025',
-        leadsGenerated: 45,
-        conversionRate: 0
-      }, {
-        id: 4,
-        name: 'Cape Town Secondary',
-        location: 'Cape Town, South Africa',
-        country: 'South Africa',
-        contactPerson: 'Thabo Mbeki',
-        contactEmail: 'thabo@ctownhigh.ac.za',
-        contactPhone: '+27 82 123 4567',
-        studentCount: 580,
-        status: 'prospect',
-        ambassador: 'Samuel Dlamini',
-        lastVisit: 'Never',
-        nextVisit: 'June 20, 2025',
-        leadsGenerated: 0,
-        conversionRate: 0
-      }, {
-        id: 5,
-        name: 'Abuja Grammar School',
-        location: 'Abuja, Nigeria',
-        country: 'Nigeria',
-        contactPerson: 'Fatima Ibrahim',
-        contactEmail: 'fatima@abujaschool.edu.ng',
-        contactPhone: '+234 802 345 6789',
-        studentCount: 700,
-        status: 'partnered',
-        ambassador: 'Fatima Abdullahi',
-        lastVisit: '5 days ago',
-        nextVisit: 'July 10, 2025',
-        leadsGenerated: 75,
-        conversionRate: 22
-      }, {
-        id: 6,
-        name: 'Mombasa International School',
-        location: 'Mombasa, Kenya',
-        country: 'Kenya',
-        contactPerson: 'David Ochieng',
-        contactEmail: 'david@mombasaschool.ac.ke',
-        contactPhone: '+254 722 345 678',
-        studentCount: 450,
-        status: 'visited',
-        ambassador: 'John Kamau',
-        lastVisit: '1 month ago',
-        nextVisit: 'July 8, 2025',
-        leadsGenerated: 30,
-        conversionRate: 0
-      }, {
-        id: 7,
-        name: 'Kumasi Academy',
-        location: 'Kumasi, Ghana',
-        country: 'Ghana',
-        contactPerson: 'Akua Mensah',
-        contactEmail: 'akua@kumasiacademy.edu.gh',
-        contactPhone: '+233 54 987 6543',
-        studentCount: 520,
-        status: 'inactive',
-        ambassador: 'Unassigned',
-        lastVisit: '6 months ago',
-        nextVisit: 'Not scheduled',
-        leadsGenerated: 15,
-        conversionRate: 0
-      }];
-      setSchools(mockSchools);
-      setFilteredSchools(mockSchools);
-      setIsLoading(false);
-    }, 1000);
+    setIsLoading(true);
+    fetch('/api/schools') // Replace with your actual endpoint
+      .then(res => res.json())
+      .then(data => {
+        setSchools(data);
+        setFilteredSchools(data);
+        setIsLoading(false);
+      })
+      .catch(() => setIsLoading(false));
   }, []);
+
   useEffect(() => {
     if (schools.length > 0) {
       let filtered = [...schools];
-      // Apply country filter
       if (filterCountry !== 'all') {
         filtered = filtered.filter(school => school.country === filterCountry);
       }
-      // Apply status filter
       if (filterStatus !== 'all') {
         filtered = filtered.filter(school => school.status === filterStatus);
       }
-      // Apply search
       if (searchQuery) {
-        filtered = filtered.filter(school => school.name.toLowerCase().includes(searchQuery.toLowerCase()) || school.location.toLowerCase().includes(searchQuery.toLowerCase()) || school.contactPerson.toLowerCase().includes(searchQuery.toLowerCase()));
+        filtered = filtered.filter(school =>
+          school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          school.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          school.contactPerson.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       }
       setFilteredSchools(filtered);
     }
   }, [schools, filterCountry, filterStatus, searchQuery]);
+
   // Calculate metrics
   const totalSchools = schools.length;
   const partneredSchools = schools.filter(s => s.status === 'partnered').length;
@@ -152,6 +78,7 @@ export const SchoolsPage = () => {
   const inactiveSchools = schools.filter(s => s.status === 'inactive').length;
   const totalStudents = schools.reduce((sum, school) => sum + school.studentCount, 0);
   const totalLeads = schools.reduce((sum, school) => sum + school.leadsGenerated, 0);
+
   // School status distribution data for pie chart
   const schoolStatusData = {
     labels: ['Partnered', 'Visited', 'Prospect', 'Inactive'],
@@ -160,6 +87,7 @@ export const SchoolsPage = () => {
       backgroundColor: ['rgba(38, 162, 105, 0.8)', 'rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(225, 112, 85, 0.8)']
     }]
   };
+
   // School metrics for KPI cards
   const schoolMetrics = [{
     title: 'Total Schools',
@@ -180,6 +108,7 @@ export const SchoolsPage = () => {
     change: 15,
     icon: <BarChart3Icon size={20} />
   }];
+
   // Status badge component
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -209,6 +138,7 @@ export const SchoolsPage = () => {
           </span>;
     }
   };
+
   // School table columns
   const columns = [{
     header: 'School Name',
@@ -280,6 +210,7 @@ export const SchoolsPage = () => {
             </div>}
         </div>
   }];
+
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -292,25 +223,61 @@ export const SchoolsPage = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
-  return <div>
+
+  // Add School submit handler (replace with your API logic)
+  const handleAddSchool = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Example: POST to API, then refresh list
+    // fetch('/api/schools', { method: 'POST', body: JSON.stringify(newSchool) })
+    //   .then(() => { ... });
+    setShowAddSchoolModal(false);
+    setNewSchool({
+      name: '',
+      location: '',
+      country: '',
+      contactPerson: '',
+      contactEmail: '',
+      contactPhone: '',
+      studentCount: '',
+      ambassador: '',
+      address: '',
+      type: '',
+      status: 'prospect',
+      city: '',
+      region: '',
+    });
+  };
+
+  // Assign Ambassador submit handler (replace with your API logic)
+  const handleAssignAmbassador = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Example: POST to API, then refresh list
+    setShowAssignAmbassadorsModal(false);
+    setSelectedAmbassador('');
+    setSelectedSchoolId(null);
+  };
+
+  return (
+    <div className="px-2 sm:px-4 lg:px-0">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Master School Sheet
         </h1>
         <p className="text-sm text-gray-500">
-          Comprehensive database of all schools, partnerships, and ambassador
-          assignments
+          Comprehensive database of all schools, partnerships, and ambassador assignments
         </p>
       </div>
 
       {/* School metrics */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {schoolMetrics.map((metric, index) => <KpiCard key={index} title={metric.title} value={metric.value} change={metric.change} icon={metric.icon} />)}
+        {schoolMetrics.map((metric, index) => (
+          <KpiCard key={index} title={metric.title} value={metric.value} change={metric.change} icon={metric.icon} />
+        ))}
       </div>
 
       {/* Filters and search */}
-      <div className="mb-6 flex flex-col items-center justify-between space-y-4 sm:flex-row sm:space-y-0">
-        <div className="flex w-full flex-wrap items-center space-x-2 sm:w-auto">
+      <div className="mb-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <button className="flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50" onClick={() => setShowFilters(!showFilters)}>
             <FilterIcon size={16} className="mr-2" />
             Filter
@@ -327,14 +294,14 @@ export const SchoolsPage = () => {
           <div className="relative">
             <select className="rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm font-medium text-gray-700 hover:bg-gray-50" value={filterCountry} onChange={e => setFilterCountry(e.target.value)}>
               <option value="all">All Countries</option>
-              <option value="Nigeria">Nigeria</option>
-              <option value="Kenya">Kenya</option>
-              <option value="Ghana">Ghana</option>
-              <option value="South Africa">South Africa</option>
+              {/* Dynamically generate country options */}
+              {[...new Set(schools.map(s => s.country))].map(country =>
+                <option key={country} value={country}>{country}</option>
+              )}
             </select>
           </div>
         </div>
-        <div className="flex w-full items-center space-x-2 sm:w-auto">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
           <div className="relative flex-1">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <SearchIcon size={16} className="text-gray-400" />
@@ -345,7 +312,10 @@ export const SchoolsPage = () => {
             <DownloadIcon size={16} className="mr-2" />
             Export
           </button>
-          <button className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90">
+          <button
+            className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+            onClick={() => setShowAddSchoolModal(true)}
+          >
             <PlusIcon size={16} className="mr-2" />
             Add School
           </button>
@@ -353,7 +323,8 @@ export const SchoolsPage = () => {
       </div>
 
       {/* Expanded filters */}
-      {showFilters && <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      {showFilters && (
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <h3 className="mb-3 text-sm font-medium text-gray-700">
             Advanced Filters
           </h3>
@@ -364,9 +335,9 @@ export const SchoolsPage = () => {
               </label>
               <select className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-sm">
                 <option value="all">All Sizes</option>
-                <option value="small">Small ( 500)</option>
+                <option value="small">Small ( &lt; 500)</option>
                 <option value="medium">Medium (500-1000)</option>
-                <option value="large">Large ({'>'} 1000)</option>
+                <option value="large">Large (&gt; 1000)</option>
               </select>
             </div>
             <div>
@@ -375,12 +346,9 @@ export const SchoolsPage = () => {
               </label>
               <select className="w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-sm">
                 <option value="all">All Ambassadors</option>
-                <option value="Aisha Mohammed">Aisha Mohammed</option>
-                <option value="John Kamau">John Kamau</option>
-                <option value="Grace Osei">Grace Osei</option>
-                <option value="Samuel Dlamini">Samuel Dlamini</option>
-                <option value="Fatima Abdullahi">Fatima Abdullahi</option>
-                <option value="unassigned">Unassigned</option>
+                {[...new Set(schools.map(s => s.ambassador))].map(amb =>
+                  <option key={amb} value={amb}>{amb}</option>
+                )}
               </select>
             </div>
             <div>
@@ -396,7 +364,7 @@ export const SchoolsPage = () => {
               </select>
             </div>
           </div>
-          <div className="mt-4 flex justify-end space-x-2">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end sm:space-x-2">
             <button className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
               Reset Filters
             </button>
@@ -404,14 +372,21 @@ export const SchoolsPage = () => {
               Apply Filters
             </button>
           </div>
-        </div>}
+        </div>
+      )}
 
-      {/* School status distribution chart */}
+      {/* School status distribution chart and table */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-4">
         <div className="lg:col-span-3">
-          {isLoading ? <div className="flex h-64 items-center justify-center rounded-lg border border-gray-200 bg-white">
-              <div className="h-12 w-12 animate-spin rounded-full border-4 border-ash-teal border-t-transparent"></div>
-            </div> : <DataTable columns={columns} data={filteredSchools} keyField="id" rowsPerPage={10} showSearch={false} />}
+          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+            {isLoading ? (
+              <div className="flex h-64 items-center justify-center">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-ash-teal border-t-transparent"></div>
+              </div>
+            ) : (
+              <DataTable columns={columns} data={filteredSchools} keyField="id" rowsPerPage={10} showSearch={false} />
+            )}
+          </div>
         </div>
         <div className="lg:col-span-1">
           <div className="h-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -459,7 +434,10 @@ export const SchoolsPage = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
+          <button
+            className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10"
+            onClick={() => setShowAddSchoolModal(true)}
+          >
             <PlusIcon size={16} className="mr-2" />
             Add New School
           </button>
@@ -467,11 +445,240 @@ export const SchoolsPage = () => {
             <DownloadIcon size={16} className="mr-2" />
             Export to Excel
           </button>
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
+          <button
+            className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10"
+            onClick={() => setShowAssignAmbassadorsModal(true)}
+          >
             <UsersIcon size={16} className="mr-2" />
             Assign Ambassadors
           </button>
         </div>
       </div>
-    </div>;
+
+      {/* Add New School Modal */}
+      {showAddSchoolModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Add New School</h3>
+              <button
+                onClick={() => setShowAddSchoolModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddSchool} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">School Name</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={newSchool.name}
+                  onChange={e => setNewSchool({ ...newSchool, name: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
+                  <select
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.type || ''}
+                    onChange={e => setNewSchool({ ...newSchool, type: e.target.value })}
+                    required
+                  >
+                    <option value="">Select type</option>
+                    <option value="primary">Primary</option>
+                    <option value="secondary">Secondary</option>
+                    <option value="tertiary">Tertiary</option>
+                    <option value="university">University</option>
+                    <option value="polytechnic">Polytechnic</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                  <select
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.status || ''}
+                    onChange={e => setNewSchool({ ...newSchool, status: e.target.value })}
+                  >
+                    <option value="prospect">Prospect</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="visited">Visited</option>
+                    <option value="proposal">Proposal</option>
+                    <option value="partnered">Partnered</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={newSchool.address || ''}
+                  onChange={e => setNewSchool({ ...newSchool, address: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">City</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.city || ''}
+                    onChange={e => setNewSchool({ ...newSchool, city: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Region</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.region || ''}
+                    onChange={e => setNewSchool({ ...newSchool, region: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Country</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={newSchool.country}
+                  onChange={e => setNewSchool({ ...newSchool, country: e.target.value })}
+                  required
+                >
+                  <option value="">Select country</option>
+                  {[...new Set(schools.map(s => s.country))].map(country =>
+                    <option key={country} value={country}>{country}</option>
+                  )}
+                </select>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Person</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    required
+                    value={newSchool.contactPerson}
+                    onChange={e => setNewSchool({ ...newSchool, contactPerson: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Email</label>
+                  <input
+                    type="email"
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.contactEmail}
+                    onChange={e => setNewSchool({ ...newSchool, contactEmail: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Phone</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.contactPhone}
+                    onChange={e => setNewSchool({ ...newSchool, contactPhone: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Student Count</label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.studentCount}
+                    onChange={e => setNewSchool({ ...newSchool, studentCount: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Ambassador</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={newSchool.ambassador}
+                  onChange={e => setNewSchool({ ...newSchool, ambassador: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowAddSchoolModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+                >
+                  Add School
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Ambassadors Modal */}
+      {showAssignAmbassadorsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Assign Ambassador</h3>
+              <button
+                onClick={() => setShowAssignAmbassadorsModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAssignAmbassador} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Select School</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={selectedSchoolId || ''}
+                  onChange={e => setSelectedSchoolId(e.target.value)}
+                >
+                  <option value="">Select a school</option>
+                  {schools.map(school => (
+                    <option key={school.id} value={school.id}>
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Ambassador Name</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={selectedAmbassador}
+                  onChange={e => setSelectedAmbassador(e.target.value)}
+                  placeholder="Enter ambassador name"
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowAssignAmbassadorsModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+                >
+                  Assign
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
