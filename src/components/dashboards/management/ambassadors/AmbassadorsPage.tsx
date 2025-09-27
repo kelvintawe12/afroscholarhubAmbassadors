@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users,
   MapPin,
   Award,
   TrendingUp,
   Star,
-  Calendar,
   Phone,
   Mail,
   Download,
@@ -19,15 +18,16 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  X,
+  Globe
 } from 'lucide-react';
 import { DataTable } from '../../../ui/widgets/DataTable';
 import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { LineChart } from '../../../ui/widgets/LineChart';
-import { getAmbassadorsData } from '../../../../api/management';
-import { useDashboardData } from '../../../../hooks/useDashboardData';
+import { getAmbassadorsData, getCountries, createCountry, createAmbassador, assignCountryLead, assignCountryToAmbassador } from '../../../../api/management';
 
 // Types
 interface Ambassador {
@@ -67,223 +67,6 @@ interface AmbassadorMetric {
   icon: React.ReactNode;
   color: string;
 }
-
-// Mock Data
-const ambassadorMetrics: AmbassadorMetric[] = [
-  {
-    title: 'Total Ambassadors',
-    value: '1,247',
-    trend: '+12% QoQ',
-    icon: <Users className="h-5 w-5 text-blue-600" />,
-    color: 'from-blue-500 to-blue-600'
-  },
-  {
-    title: 'Active Ambassadors',
-    value: '1,156',
-    trend: '93% active',
-    icon: <TrendingUp className="h-5 w-5 text-green-600" />,
-    color: 'from-green-500 to-emerald-600'
-  },
-  {
-    title: 'Top Performers',
-    value: '89',
-    trend: 'Top 7%',
-    icon: <Award className="h-5 w-5 text-yellow-500" />,
-    color: 'from-yellow-400 to-orange-500'
-  },
-  {
-    title: 'Training Completion',
-    value: '94%',
-    trend: 'Target: 90%',
-    icon: <GraduationCap className="h-5 w-5 text-purple-600" />,
-    color: 'from-purple-500 to-violet-600'
-  },
-  {
-    title: 'Avg Response Time',
-    value: '2.1h',
-    trend: 'Target: 4h',
-    icon: <Clock className="h-5 w-5 text-indigo-600" />,
-    color: 'from-indigo-500 to-cyan-600'
-  },
-  {
-    title: 'Satisfaction Score',
-    value: '4.7/5',
-    trend: '+0.2 from last quarter',
-    icon: <Star className="h-5 w-5 text-amber-500" />,
-    color: 'from-amber-500 to-orange-600'
-  }
-];
-
-const ambassadorsData: Ambassador[] = [
-  {
-    id: '1',
-    name: 'Aisha Bello',
-    email: 'aisha.bello@afroscholarhub.org',
-    phone: '+234 801 234 5678',
-    country: 'Nigeria',
-    flag: '🇳🇬',
-    region: 'Lagos & West',
-    role: 'lead',
-    status: 'active',
-    joinDate: '2023-03-15',
-    lastActivity: '2 hours ago',
-    performanceScore: 94,
-    certifications: 5,
-    schoolsReached: 23,
-    scholarshipsGenerated: 45,
-    leadsGenerated: 156,
-    conversionRate: 29,
-    avgResponseTime: '1.8h',
-    trainingCompletion: 100,
-    satisfactionRating: 4.9,
-    assignedRegion: 'Lagos State',
-    contact: {
-      email: 'aisha.bello@afroscholarhub.org',
-      phone: '+234 801 234 5678'
-    },
-    bio: 'Lead Ambassador for Nigeria operations with 5+ years in educational outreach'
-  },
-  {
-    id: '2',
-    name: 'Kwame Mensah',
-    email: 'kwame.mensah@afroscholarhub.org',
-    phone: '+233 302 123 456',
-    country: 'Ghana',
-    flag: '🇬🇭',
-    region: 'Greater Accra',
-    role: 'coordinator',
-    status: 'active',
-    joinDate: '2023-06-22',
-    lastActivity: '5 hours ago',
-    performanceScore: 88,
-    certifications: 4,
-    schoolsReached: 18,
-    scholarshipsGenerated: 32,
-    leadsGenerated: 123,
-    conversionRate: 26,
-    avgResponseTime: '2.3h',
-    trainingCompletion: 95,
-    satisfactionRating: 4.6,
-    assignedRegion: 'Accra Metropolitan',
-    contact: {
-      email: 'kwame.mensah@afroscholarhub.org',
-      phone: '+233 302 123 456'
-    },
-    bio: 'Engineering graduate passionate about STEM education in rural Ghana'
-  },
-  {
-    id: '3',
-    name: 'Fatima Ali',
-    email: 'fatima.ali@afroscholarhub.org',
-    phone: '+254 711 234 567',
-    country: 'Kenya',
-    flag: '🇰🇪',
-    region: 'Nairobi',
-    role: 'field',
-    status: 'active',
-    joinDate: '2023-09-10',
-    lastActivity: '1 day ago',
-    performanceScore: 76,
-    certifications: 3,
-    schoolsReached: 12,
-    scholarshipsGenerated: 18,
-    leadsGenerated: 89,
-    conversionRate: 20,
-    avgResponseTime: '3.1h',
-    trainingCompletion: 85,
-    satisfactionRating: 4.4,
-    assignedRegion: 'Nairobi County',
-    contact: {
-      email: 'fatima.ali@afroscholarhub.org',
-      phone: '+254 711 234 567'
-    },
-    bio: 'Women in Tech advocate focusing on STEM scholarships for girls'
-  },
-  {
-    id: '4',
-    name: 'Thabo Mthembu',
-    email: 'thabo.mthembu@afroscholarhub.org',
-    phone: '+27 82 345 6789',
-    country: 'South Africa',
-    flag: '🇿🇦',
-    region: 'Gauteng',
-    role: 'lead',
-    status: 'active',
-    joinDate: '2022-11-05',
-    lastActivity: '3 hours ago',
-    performanceScore: 91,
-    certifications: 6,
-    schoolsReached: 27,
-    scholarshipsGenerated: 56,
-    leadsGenerated: 201,
-    conversionRate: 28,
-    avgResponseTime: '1.5h',
-    trainingCompletion: 100,
-    satisfactionRating: 4.8,
-    assignedRegion: 'Johannesburg',
-    contact: {
-      email: 'thabo.mthembu@afroscholarhub.org',
-      phone: '+27 82 345 6789'
-    },
-    bio: 'Regional Lead with expertise in corporate partnerships and funding'
-  },
-  {
-    id: '5',
-    name: 'Sarah Nakato',
-    email: 'sarah.nakato@afroscholarhub.org',
-    phone: '+256 772 456 789',
-    country: 'Uganda',
-    flag: '🇺🇬',
-    region: 'Central',
-    role: 'trainee',
-    status: 'training',
-    joinDate: '2024-01-20',
-    lastActivity: '6 hours ago',
-    performanceScore: 67,
-    certifications: 2,
-    schoolsReached: 5,
-    scholarshipsGenerated: 8,
-    leadsGenerated: 34,
-    conversionRate: 24,
-    avgResponseTime: '4.2h',
-    trainingCompletion: 65,
-    satisfactionRating: 4.2,
-    assignedRegion: 'Kampala',
-    contact: {
-      email: 'sarah.nakato@afroscholarhub.org',
-      phone: '+256 772 456 789'
-    },
-    bio: 'Recent graduate currently completing ambassador training program'
-  },
-  {
-    id: '6',
-    name: 'Jamal Ibrahim',
-    email: 'jamal.ibrahim@afroscholarhub.org',
-    phone: '+20 100 123 4567',
-    country: 'Egypt',
-    flag: '🇪🇬',
-    region: 'Cairo',
-    role: 'coordinator',
-    status: 'inactive',
-    joinDate: '2023-04-12',
-    lastActivity: '15 days ago',
-    performanceScore: 54,
-    certifications: 3,
-    schoolsReached: 8,
-    scholarshipsGenerated: 12,
-    leadsGenerated: 45,
-    conversionRate: 27,
-    avgResponseTime: '5.8h',
-    trainingCompletion: 80,
-    satisfactionRating: 3.8,
-    assignedRegion: 'Cairo Governorate',
-    contact: {
-      email: 'jamal.ibrahim@afroscholarhub.org',
-      phone: '+20 100 123 4567'
-    },
-    bio: 'Currently on academic leave - returning January 2025'
-  }
-];
 
 // Chart Data
 const performanceByCountryData = {
@@ -545,7 +328,7 @@ const AmbassadorQuickAction: React.FC<{
       )}
       
       <div className="relative z-10 flex items-start space-x-3">
-        <div className={`p-2 rounded-lg bg-gradient-to-br ${color} flex-shrink-0`}>
+        <div className={`p-2 rounded-lg bg-gradient-to-br ${color} mr-3 flex-shrink-0`}>
           {icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -601,10 +384,63 @@ const PerformanceSummary: React.FC<{
 };
 
 const AmbassadorsPage: React.FC = () => {
-  const { data: dashboardData, loading, error } = useDashboardData(
-    async () => await getAmbassadorsData(),
-    []
-  );
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [countries, setCountries] = useState<any[]>([]);
+  const [countriesList, setCountriesList] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getAmbassadorsData();
+        setDashboardData(data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const data = await getCountries();
+        setCountries(data);
+      } catch (err) {
+        console.error('Error fetching countries:', err);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
+  useEffect(() => {
+    if (dashboardData?.ambassadors) {
+      const countryCodes = dashboardData.ambassadors
+        .map((a: any) => a.country)
+        .filter((country: any): country is string => typeof country === 'string');
+      setCountriesList(Array.from<string>(new Set(countryCodes)));
+    }
+  }, [dashboardData]);
+
+  const refreshData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAmbassadorsData();
+      setDashboardData(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [activeTab, setActiveTab] = useState('directory');
   const [searchTerm, setSearchTerm] = useState('');
@@ -615,6 +451,88 @@ const AmbassadorsPage: React.FC = () => {
     region: 'all',
     performance: 'all'
   });
+  const [assigningLead, setAssigningLead] = useState<Ambassador | null>(null);
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [newCountryCode, setNewCountryCode] = useState('');
+  const [newCountryName, setNewCountryName] = useState('');
+  const [showAddAmbassador, setShowAddAmbassador] = useState(false);
+  const [newAmbassador, setNewAmbassador] = useState({ name: '', email: '', countryCode: '' });
+
+  const handleAssignLead = (ambassador: Ambassador) => {
+    setAssigningLead(ambassador);
+    // Optionally open a modal for confirmation or country selection
+  };
+
+  const confirmAssignLead = async () => {
+    if (assigningLead && assigningLead.country) {
+      try {
+        await assignCountryLead(assigningLead.country, assigningLead.id);
+        alert(`${assigningLead.name} assigned as Country Lead!`);
+        setAssigningLead(null);
+        await refreshData();
+      } catch (err: any) {
+        alert(`Error assigning lead: ${err.message}`);
+      }
+    }
+  };
+
+  const handleAddCountry = async () => {
+    if (newCountryName) {
+      try {
+        // Auto-generate country code from name
+        const generatedCode = newCountryName
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase())
+          .join('')
+          .slice(0, 3);
+
+        const countryData = { code: generatedCode, name: newCountryName };
+        const newCountry = await createCountry(countryData);
+
+        // Auto-assign country lead if there are ambassadors in this country
+        const ambassadorsInCountry = mappedAmbassadors.filter(a => a.country === generatedCode);
+        if (ambassadorsInCountry.length > 0) {
+          // Find the ambassador with highest performance score
+          const bestAmbassador = ambassadorsInCountry.reduce((best, current) =>
+            current.performanceScore > best.performanceScore ? current : best
+          );
+          await assignCountryLead(generatedCode, bestAmbassador.id);
+          alert(`Country ${newCountryName} added and ${bestAmbassador.name} assigned as Country Lead!`);
+        } else {
+          alert(`Country ${newCountryName} added!`);
+        }
+
+        setNewCountryCode('');
+        setNewCountryName('');
+        const fetchedCountries = await getCountries();
+        setCountries(fetchedCountries);
+        await refreshData();
+      } catch (err: any) {
+        alert(`Error adding country: ${err.message}`);
+      }
+    }
+  };
+
+  const handleAddAmbassador = async () => {
+    if (newAmbassador.name && newAmbassador.email) {
+      try {
+        const newUser = await createAmbassador({
+          email: newAmbassador.email,
+          full_name: newAmbassador.name,
+          country_code: newAmbassador.countryCode,
+        });
+        if (newAmbassador.countryCode) {
+          await assignCountryToAmbassador(newUser.id, newAmbassador.countryCode);
+        }
+        alert(`Added ambassador: ${newAmbassador.name}`);
+        setShowAddAmbassador(false);
+        setNewAmbassador({ name: '', email: '', countryCode: '' });
+        await refreshData();
+      } catch (err: any) {
+        alert(`Error adding ambassador: ${err.message}`);
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -643,9 +561,9 @@ const AmbassadorsPage: React.FC = () => {
     { id: 'training', label: 'Training', icon: <GraduationCap className="h-4 w-4" /> }
   ];
 
-  const countries = [
+  const countriesFilter = [
     { value: 'all', label: 'All Countries' },
-    ...[...new Set(ambassadors.map(a => a.country))].map(c => ({ value: c, label: `${c}` })).sort((a, b) => a.value.localeCompare(b.value))
+    ...countries.map(c => ({ value: c.code, label: `${c.name} (${c.code})` })).sort((a, b) => a.label.localeCompare(b.label))
   ];
 
   const roles = [
@@ -661,7 +579,7 @@ const AmbassadorsPage: React.FC = () => {
   ];
 
   // Map API data to component expected format
-  const mappedAmbassadors: Ambassador[] = ambassadors.map(a => ({
+  const mappedAmbassadors: Ambassador[] = ambassadors.map((a: any) => ({
     id: a.id,
     name: a.name,
     email: a.email,
@@ -772,9 +690,21 @@ const AmbassadorsPage: React.FC = () => {
           </button>
           
           {/* Add Ambassador Button */}
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl">
+          <button
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl"
+            onClick={() => setShowAddAmbassador(true)}
+          >
             <Plus className="h-4 w-4" />
             Add Ambassador
+          </button>
+
+          {/* Manage Countries Button */}
+          <button
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+            onClick={() => setShowCountryModal(true)}
+          >
+            <MapPin className="h-4 w-4" />
+            Manage Countries
           </button>
         </div>
       </div>
@@ -802,8 +732,8 @@ const AmbassadorsPage: React.FC = () => {
         <div className="space-y-6">
       {/* KPI Metrics */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {metrics.map((metric, index) => (
-          <KpiCard 
+        {metrics.map((metric: any, index: number) => (
+          <KpiCard
             key={index}
             title={metric.title}
             value={metric.value}
@@ -878,7 +808,7 @@ const AmbassadorsPage: React.FC = () => {
                     value={filters.country}
                     onChange={(e) => setFilters(prev => ({ ...prev, country: e.target.value }))}
                   >
-                    {countries.map(country => (
+                    {countriesFilter.map(country => (
                       <option key={country.value} value={country.value}>{country.label}</option>
                     ))}
                   </select>
@@ -1041,6 +971,13 @@ const AmbassadorsPage: React.FC = () => {
                       </button>
                       <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors">
                         <Download className="h-4 w-4" />
+                      </button>
+                      <button
+                        className="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors text-xs font-semibold"
+                        onClick={() => handleAssignLead(row)}
+                        title="Assign as Country Lead"
+                      >
+                        <Shield className="h-4 w-4" />
                       </button>
                     </div>
                   )
@@ -1215,6 +1152,161 @@ const AmbassadorsPage: React.FC = () => {
       <div className="fixed bottom-6 right-6 bg-gradient-to-r from-ash-teal to-ash-gold text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-40 md:hidden">
         <Plus className="h-6 w-6" />
       </div>
+
+      {/* Assign Lead Modal */}
+      {assigningLead && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Assign as Country Lead</h2>
+            <p>
+              Are you sure you want to assign <b>{assigningLead.name}</b> as the lead for <b>{assigningLead.country}</b>?
+            </p>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 rounded bg-gray-100" onClick={() => setAssigningLead(null)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-ash-teal text-white" onClick={confirmAssignLead}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Country Modal */}
+      {showCountryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-ash-teal to-ash-gold p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <MapPin className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-white">Manage Countries</h2>
+                    <p className="text-white/80 text-sm">Add and manage country operations</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCountryModal(false)}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Existing Countries */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <Globe className="h-5 w-5 mr-2 text-ash-teal" />
+                  Active Countries ({countries.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto">
+                  {countries.map((country) => (
+                    <div key={country.code} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ash-teal to-ash-gold flex items-center justify-center text-white text-sm font-semibold">
+                          {country.code}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{country.name}</p>
+                          <p className="text-sm text-gray-500">{country.code}</p>
+                        </div>
+                      </div>
+                      {country.lead_id && (
+                        <div className="flex items-center text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                          <Shield className="h-3 w-3 mr-1" />
+                          Lead Assigned
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add New Country */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Plus className="h-5 w-5 mr-2 text-ash-teal" />
+                  Add New Country
+                </h3>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="p-1 bg-blue-100 rounded">
+                      <Shield className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div className="text-sm text-blue-800">
+                      <p className="font-medium">Auto-Assignment Feature</p>
+                      <p className="mt-1">Country code will be auto-generated from the name. If ambassadors exist in this country, the highest-performing one will be automatically assigned as Country Lead.</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Country Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                      placeholder="e.g., Nigeria"
+                      value={newCountryName}
+                      onChange={e => setNewCountryName(e.target.value)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Full country name - code will be auto-generated</p>
+                  </div>
+                  <button
+                    className="w-full bg-gradient-to-r from-ash-teal to-ash-gold text-white py-3 px-4 rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleAddCountry}
+                    disabled={!newCountryName.trim()}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Country & Auto-Assign Lead
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Ambassador Modal */}
+      {showAddAmbassador && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg font-semibold mb-4">Add Ambassador</h2>
+            <div className="flex flex-col gap-3">
+              <input
+                className="border rounded px-2 py-1"
+                placeholder="Name"
+                value={newAmbassador.name}
+                onChange={e => setNewAmbassador(a => ({ ...a, name: e.target.value }))}
+              />
+              <input
+                className="border rounded px-2 py-1"
+                placeholder="Email"
+                value={newAmbassador.email}
+                onChange={e => setNewAmbassador(a => ({ ...a, email: e.target.value }))}
+              />
+              <select
+                className="border rounded px-2 py-1"
+                value={newAmbassador.countryCode}
+                onChange={e => setNewAmbassador(a => ({ ...a, countryCode: e.target.value }))}
+              >
+                <option value="">Select Country</option>
+                {countries.map(c => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="px-4 py-2 rounded bg-gray-100" onClick={() => setShowAddAmbassador(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-ash-teal text-white" onClick={handleAddAmbassador}>Add</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
