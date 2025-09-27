@@ -57,6 +57,18 @@ export const SchoolPartnershipsPage = () => {
     fetchAmbassadors();
   }, []);
 
+  // Fetch countries for the select
+  useEffect(() => {
+    const fetchCountries = async () => {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('code, name')
+        .order('name', { ascending: true });
+      if (!error && data) setCountries(data);
+    };
+    fetchCountries();
+  }, []);
+
   // Filter logic
   useEffect(() => {
     let filtered = [...schools];
@@ -77,12 +89,7 @@ export const SchoolPartnershipsPage = () => {
   }, [searchQuery, selectedCountry, selectedRegion, schools]);
 
   // Get unique countries and regions for filters
-  const countries = [
-    { code: 'ng', name: 'Nigeria' },
-    { code: 'gh', name: 'Ghana' },
-    { code: 'ke', name: 'Kenya' },
-    { code: 'za', name: 'South Africa' }
-  ];
+  const [countries, setCountries] = useState<{ code: string; name: string }[]>([]);
   const regions = Array.from(new Set(schools.map(school => school.region).filter(Boolean)));
 
   // Helper function to get country name from code
