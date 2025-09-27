@@ -3,16 +3,27 @@ import { Escalation, EscalationActivity } from '../types';
 
 // Escalation API functions
 export const getCountryEscalations = async (countryCode: string) => {
+  // First get the relevant IDs
+  const [schoolsResult, usersResult, teamsResult] = await Promise.all([
+    supabase.from('schools').select('id').eq('country_code', countryCode),
+    supabase.from('users').select('id').eq('country_code', countryCode),
+    supabase.from('teams').select('id').eq('country_code', countryCode)
+  ]);
+
+  const schoolIds = schoolsResult.data?.map(s => s.id) || [];
+  const userIds = usersResult.data?.map(u => u.id) || [];
+  const teamIds = teamsResult.data?.map(t => t.id) || [];
+
   const { data, error } = await supabase
     .from('escalations')
     .select(`
       *,
-      reporter_user:escalated_by(full_name, email, country_code),
-      assigned_to_user:assigned_to(full_name, email),
-      school:school_id(name, location, country_code),
-      team:team_id(name)
+      reporter:users!reporter_id(full_name, email, country_code),
+      assignee:users!assignee_id(full_name, email),
+      schools!school_id(name, location, country_code),
+      teams!team_id(name)
     `)
-    .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`)
+    .or(`school_id.in.(${schoolIds.map(id => `"${id}"`).join(',')}),reporter_id.in.(${userIds.map(id => `"${id}"`).join(',')}),team_id.in.(${teamIds.map(id => `"${id}"`).join(',')})`)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -20,11 +31,24 @@ export const getCountryEscalations = async (countryCode: string) => {
 };
 
 export const getEscalationStats = async (countryCode: string) => {
+  // First get the relevant IDs
+  const [schoolsResult, usersResult, teamsResult] = await Promise.all([
+    supabase.from('schools').select('id').eq('country_code', countryCode),
+    supabase.from('users').select('id').eq('country_code', countryCode),
+    supabase.from('teams').select('id').eq('country_code', countryCode)
+  ]);
+
+  const schoolIds = schoolsResult.data?.map(s => s.id) || [];
+  const userIds = usersResult.data?.map(u => u.id) || [];
+  const teamIds = teamsResult.data?.map(t => t.id) || [];
+
+  const filterClause = `school_id.in.(${schoolIds.map(id => `"${id}"`).join(',')}),reporter_id.in.(${userIds.map(id => `"${id}"`).join(',')}),team_id.in.(${teamIds.map(id => `"${id}"`).join(',')})`;
+
   // Get total escalations in country
   const { count: totalEscalations, error: totalError } = await supabase
     .from('escalations')
     .select('id', { count: 'exact', head: true })
-    .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`);
+    .or(filterClause);
 
   if (totalError) throw totalError;
 
@@ -32,8 +56,8 @@ export const getEscalationStats = async (countryCode: string) => {
   const { count: openEscalations, error: openError } = await supabase
     .from('escalations')
     .select('id', { count: 'exact', head: true })
-    .in('status', ['Open', 'Assigned', 'In Progress', 'Pending'])
-    .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`);
+    .in('status', ['new', 'assigned', 'in_progress', 'escalated'])
+    .or(filterClause);
 
   if (openError) throw openError;
 
@@ -43,23 +67,30 @@ export const getEscalationStats = async (countryCode: string) => {
   const { count: resolvedThisMonth, error: resolvedError } = await supabase
     .from('escalations')
     .select('id', { count: 'exact', head: true })
-    .eq('status', 'Resolved')
+    .eq('status', 'resolved')
     .gte('resolved_at', startOfMonth.toISOString())
-    .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`);
+    .or(filterClause);
 
   if (resolvedError) throw resolvedError;
 
   // Get average resolution time
   const { data: resolvedData, error: avgError } = await supabase
     .from('escalations')
-    .select('resolution_time_hours')
-    .not('resolution_time_hours', 'is', null)
-    .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`);
+    .select('time_to_resolve, created_at, resolved_at')
+    .eq('status', 'resolved')
+    .not('resolved_at', 'is', null)
+    .or(filterClause);
 
   if (avgError) throw avgError;
 
   const avgResolutionTime = resolvedData && resolvedData.length > 0
-    ? Math.round(resolvedData.reduce((sum, esc) => sum + (esc.resolution_time_hours || 0), 0) / resolvedData.length)
+    ? Math.round(resolvedData.reduce((sum, esc) => {
+        if (esc.resolved_at && esc.created_at) {
+          const diffMs = new Date(esc.resolved_at).getTime() - new Date(esc.created_at).getTime();
+          return sum + (diffMs / (1000 * 60 * 60)); // Convert to hours
+        }
+        return sum;
+      }, 0) / resolvedData.length)
     : 0;
 
   return {
@@ -89,15 +120,15 @@ export const createEscalation = async (escalationData: {
     .from('escalations')
     .insert({
       ...escalationData,
-      escalated_by: (await supabase.auth.getUser()).data.user?.id,
-      status: 'Open'
+      reporter_id: (await supabase.auth.getUser()).data.user?.id,
+      status: 'new'
     })
     .select(`
       *,
-      reporter_user:escalated_by(full_name, email, country_code),
-      assigned_to_user:assigned_to(full_name, email),
-      school:school_id(name, location, country_code),
-      team:team_id(name)
+      reporter:users!reporter_id(full_name, email, country_code),
+      assignee:users!assignee_id(full_name, email),
+      schools!school_id(name, location, country_code),
+      teams!team_id(name)
     `)
     .single();
 
@@ -115,10 +146,10 @@ export const updateEscalation = async (id: string, updates: Partial<Escalation>)
     .eq('id', id)
     .select(`
       *,
-      reporter_user:escalated_by(full_name, email, country_code),
-      assigned_to_user:assigned_to(full_name, email),
-      school:school_id(name, location, country_code),
-      team:team_id(name)
+      reporter:users!reporter_id(full_name, email, country_code),
+      assignee:users!assignee_id(full_name, email),
+      schools!school_id(name, location, country_code),
+      teams!team_id(name)
     `)
     .single();
 
@@ -130,18 +161,17 @@ export const assignEscalation = async (id: string, assignedTo: string) => {
   const { data, error } = await supabase
     .from('escalations')
     .update({
-      assigned_to: assignedTo,
-      status: 'Assigned',
-      assigned_at: new Date().toISOString(),
+      assignee_id: assignedTo,
+      status: 'assigned',
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
     .select(`
       *,
-      reporter_user:escalated_by(full_name, email, country_code),
-      assigned_to_user:assigned_to(full_name, email),
-      school:school_id(name, location, country_code),
-      team:team_id(name)
+      reporter:users!reporter_id(full_name, email, country_code),
+      assignee:users!assignee_id(full_name, email),
+      schools!school_id(name, location, country_code),
+      teams!team_id(name)
     `)
     .single();
 
@@ -153,7 +183,7 @@ export const resolveEscalation = async (id: string, resolutionNotes: string, cus
   const { data, error } = await supabase
     .from('escalations')
     .update({
-      status: 'Resolved',
+      status: 'resolved',
       resolution_notes: resolutionNotes,
       customer_satisfaction: customerSatisfaction,
       resolved_at: new Date().toISOString(),
@@ -163,10 +193,10 @@ export const resolveEscalation = async (id: string, resolutionNotes: string, cus
     .eq('id', id)
     .select(`
       *,
-      reporter_user:escalated_by(full_name, email, country_code),
-      assigned_to_user:assigned_to(full_name, email),
-      school:school_id(name, location, country_code),
-      team:team_id(name)
+      reporter:users!reporter_id(full_name, email, country_code),
+      assignee:users!assignee_id(full_name, email),
+      schools!school_id(name, location, country_code),
+      teams!team_id(name)
     `)
     .single();
 
@@ -175,6 +205,17 @@ export const resolveEscalation = async (id: string, resolutionNotes: string, cus
 };
 
 export const getEscalationActivities = async (countryCode: string, limit: number = 20) => {
+  // First get the relevant IDs
+  const [schoolsResult, usersResult, teamsResult] = await Promise.all([
+    supabase.from('schools').select('id').eq('country_code', countryCode),
+    supabase.from('users').select('id').eq('country_code', countryCode),
+    supabase.from('teams').select('id').eq('country_code', countryCode)
+  ]);
+
+  const schoolIds = schoolsResult.data?.map(s => s.id) || [];
+  const userIds = usersResult.data?.map(u => u.id) || [];
+  const teamIds = teamsResult.data?.map(t => t.id) || [];
+
   // Get recent escalation activities
   const { data, error } = await supabase
     .from('escalations')
@@ -185,9 +226,9 @@ export const getEscalationActivities = async (countryCode: string, limit: number
       created_at,
       updated_at,
       resolved_at,
-      reporter_user:escalated_by(full_name, email)
+      reporter:users!reporter_id(full_name, email)
     `)
-    .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`)
+    .or(`school_id.in.(${schoolIds.map(id => `"${id}"`).join(',')}),reporter_id.in.(${userIds.map(id => `"${id}"`).join(',')}),team_id.in.(${teamIds.map(id => `"${id}"`).join(',')})`)
     .order('updated_at', { ascending: false })
     .limit(limit);
 
@@ -204,13 +245,13 @@ export const getEscalationActivities = async (countryCode: string, limit: number
       description: `New escalation was created`,
       timestamp: escalation.created_at,
       user: {
-        name: escalation.reporter_user?.[0]?.full_name || 'Unknown User'
+        name: (escalation.reporter as any)?.full_name || 'Unknown User'
       },
       escalation_id: escalation.id
     });
 
     // Status change activities
-    if (escalation.status === 'Resolved' && escalation.resolved_at) {
+    if (escalation.status === 'resolved' && escalation.resolved_at) {
       activities.push({
         id: `resolved-${escalation.id}`,
         type: 'escalation_resolved',
@@ -218,7 +259,7 @@ export const getEscalationActivities = async (countryCode: string, limit: number
         description: `Escalation was marked as resolved`,
         timestamp: escalation.resolved_at,
         user: {
-          name: escalation.reporter_user?.[0]?.full_name || 'Unknown User'
+          name: (escalation.reporter as any)?.full_name || 'Unknown User'
         },
         escalation_id: escalation.id
       });

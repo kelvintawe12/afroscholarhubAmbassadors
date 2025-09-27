@@ -53,12 +53,12 @@ const priorityConfig = {
 
 // Status colors
 const statusConfig = {
-  'Open': { color: 'bg-gray-100 text-gray-800', label: 'Open' },
-  'Assigned': { color: 'bg-blue-100 text-blue-800', label: 'Assigned' },
-  'In Progress': { color: 'bg-yellow-100 text-yellow-800', label: 'In Progress' },
-  'Pending': { color: 'bg-orange-100 text-orange-800', label: 'Pending' },
-  'Resolved': { color: 'bg-green-100 text-green-800', label: 'Resolved' },
-  'Closed': { color: 'bg-gray-200 text-gray-600', label: 'Closed' }
+  'new': { color: 'bg-gray-100 text-gray-800', label: 'New' },
+  'assigned': { color: 'bg-blue-100 text-blue-800', label: 'Assigned' },
+  'in_progress': { color: 'bg-yellow-100 text-yellow-800', label: 'In Progress' },
+  'escalated': { color: 'bg-orange-100 text-orange-800', label: 'Escalated' },
+  'resolved': { color: 'bg-green-100 text-green-800', label: 'Resolved' },
+  'closed': { color: 'bg-gray-200 text-gray-600', label: 'Closed' }
 };
 
 // Impact levels
@@ -137,11 +137,11 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
               <span className="flex items-center">
                 <span className="flex items-center mr-4">
                   <User className="h-3 w-3 mr-1" />
-                  {escalation.reporter_user?.full_name || 'Unknown User'}
+                  {escalation.users?.full_name || 'Unknown User'}
                 </span>
                 <span className="flex items-center">
                   <span className="mr-1">🇳🇬</span>
-                  <span className="truncate">{escalation.reporter_user?.country_code || 'Unknown'}</span>
+                  <span className="truncate">{escalation.users?.country_code || 'Unknown'}</span>
                 </span>
               </span>
             </div>
@@ -162,10 +162,10 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
               {escalation.due_date && (
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                   <span>Due: {new Date(escalation.due_date).toLocaleDateString()}</span>
-                  {escalation.assigned_to && (
+                  {escalation.assignee_id && (
                     <span className="flex items-center gap-1">
                       <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                      {escalation.assigned_to_user?.full_name || escalation.assigned_to}
+                      {escalation.users?.full_name || escalation.assignee_id}
                     </span>
                   )}
                 </div>
@@ -186,7 +186,7 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
           <div className="flex items-center text-sm text-gray-500 space-x-4">
             <button className="flex items-center gap-1 hover:text-ash-teal transition-colors">
               <Mail className="h-3 w-3" />
-              <span>{escalation.reporter_user?.email || 'No email'}</span>
+              <span>{escalation.users?.email || 'No email'}</span>
             </button>
           </div>
 
@@ -293,10 +293,10 @@ const EscalationsPage: React.FC = () => {
   }
 
   const tabs: TabConfig[] = [
-    { id: 'open', label: `Open (${escalationsData?.filter((e: Escalation) => ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length || 0})`, icon: <AlertTriangle className="h-4 w-4" /> },
-    { id: 'in-progress', label: `In Progress (${escalationsData?.filter((e: Escalation) => e.status === 'In Progress').length || 0})`, icon: <Clock className="h-4 w-4" /> },
+    { id: 'open', label: `Open (${escalationsData?.filter((e: Escalation) => ['new', 'assigned', 'in_progress', 'escalated'].includes(e.status)).length || 0})`, icon: <AlertTriangle className="h-4 w-4" /> },
+    { id: 'in-progress', label: `In Progress (${escalationsData?.filter((e: Escalation) => e.status === 'in_progress').length || 0})`, icon: <Clock className="h-4 w-4" /> },
     { id: 'critical', label: `Critical (${escalationsData?.filter((e: Escalation) => e.priority === 'critical').length || 0})`, icon: <Shield className="h-4 w-4" /> },
-    { id: 'resolved', label: `Resolved (${escalationsData?.filter((e: Escalation) => ['Resolved', 'Closed'].includes(e.status)).length || 0})`, icon: <CheckCircle className="h-4 w-4" /> },
+    { id: 'resolved', label: `Resolved (${escalationsData?.filter((e: Escalation) => ['resolved', 'closed'].includes(e.status)).length || 0})`, icon: <CheckCircle className="h-4 w-4" /> },
     { id: 'all', label: `All (${escalationsData?.length || 0})`, icon: <TrendingUp className="h-4 w-4" /> }
   ];
 
@@ -329,29 +329,23 @@ const EscalationsPage: React.FC = () => {
   ];
 
   // Filter escalations from real data
-  interface Filters {
-    category: string;
-    priority: string;
-    status: string;
-    country: string;
-  }
 
   const filteredEscalations: Escalation[] = (escalationsData || []).filter((escalation: Escalation) => {
-    const matchesTab: boolean = activeTab === 'open' ? ['Open', 'Assigned', 'In Progress', 'Pending'].includes(escalation.status) :
+    const matchesTab: boolean = activeTab === 'open' ? ['new', 'assigned', 'in_progress', 'escalated'].includes(escalation.status) :
                       activeTab === 'critical' ? escalation.priority === 'critical' :
-                      activeTab === 'resolved' ? ['Resolved', 'Closed'].includes(escalation.status) :
-                      activeTab === 'in-progress' ? escalation.status === 'In Progress' : true;
+                      activeTab === 'resolved' ? ['resolved', 'closed'].includes(escalation.status) :
+                      activeTab === 'in-progress' ? escalation.status === 'in_progress' : true;
 
     const matchesSearch: boolean = escalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          escalation.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         escalation.reporter_user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         escalation.users?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          false;
 
     const matchesCategory: boolean = filters.category === 'all' || escalation.category === filters.category;
     const matchesPriority: boolean = filters.priority === 'all' || escalation.priority === filters.priority;
     const matchesStatus: boolean = filters.status === 'all' || escalation.status === filters.status;
     const matchesCountry: boolean = filters.country === 'all' ||
-                          escalation.reporter_user?.country_code === filters.country ||
+                          escalation.users?.country_code === filters.country ||
                           false;
 
     return matchesTab && matchesSearch && matchesCategory && matchesPriority && matchesStatus && matchesCountry;
