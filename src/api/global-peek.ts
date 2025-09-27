@@ -139,6 +139,15 @@ export const getGlobalQuickStats = async (): Promise<QuickStat[]> => {
 
   const scholarshipsFunded = scholarshipsData.length;
 
+  // Total Schools (for success rate calculation)
+  const { data: totalSchoolsData, error: totalSchoolsError } = await supabase
+    .from('schools')
+    .select('id');
+
+  if (totalSchoolsError) throw totalSchoolsError;
+
+  const totalSchools = totalSchoolsData.length;
+
   // Total Impact (students reached)
   const { data: visitsData, error: visitsError } = await supabase
     .from('visits')
@@ -157,6 +166,9 @@ export const getGlobalQuickStats = async (): Promise<QuickStat[]> => {
   if (countriesError) throw countriesError;
 
   const activeCountries = countriesData.length;
+
+  // Calculate success rate (partnered schools / total schools)
+  const successRate = totalSchools > 0 ? Math.round((scholarshipsFunded / totalSchools) * 100) : 0;
 
   // Calculate changes (simplified - would need historical data)
   return [
@@ -187,6 +199,13 @@ export const getGlobalQuickStats = async (): Promise<QuickStat[]> => {
       change: `+${activeCountries || 0}`, // Placeholder
       icon: null,
       trend: 'up' as const
+    },
+    {
+      title: 'Success Rate',
+      value: `${successRate}%`,
+      change: '', // Not applicable
+      icon: null,
+      trend: 'stable' as const
     }
   ];
 };

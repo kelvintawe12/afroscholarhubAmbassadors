@@ -388,7 +388,7 @@ const GlobalPeekPage: React.FC = () => {
               <div className="text-ash-light text-lg">Total Investment</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">89%</div>
+              <div className="text-4xl font-bold mb-2">{quickStats.find(s => s.title.includes('Success Rate'))?.value || '0%'}</div>
               <div className="text-ash-light text-lg">Success Rate</div>
             </div>
           </div>
