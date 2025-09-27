@@ -3,7 +3,7 @@ import { SearchIcon, FilterIcon, DownloadIcon, PlusIcon, MapPinIcon, PhoneIcon, 
 import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { DataTable } from '../../../ui/widgets/DataTable';
 import { PieChart } from '../../../ui/widgets/PieChart';
-
+import { supabase } from '../../../../utils/supabase';
 export const SchoolsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -225,27 +225,57 @@ export const SchoolsPage = () => {
   }, [showMenu]);
 
   // Add School submit handler (replace with your API logic)
-  const handleAddSchool = (e: React.FormEvent) => {
+  const handleAddSchool = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Example: POST to API, then refresh list
-    // fetch('/api/schools', { method: 'POST', body: JSON.stringify(newSchool) })
-    //   .then(() => { ... });
-    setShowAddSchoolModal(false);
-    setNewSchool({
-      name: '',
-      location: '',
-      country: '',
-      contactPerson: '',
-      contactEmail: '',
-      contactPhone: '',
-      studentCount: '',
-      ambassador: '',
-      address: '',
-      type: '',
-      status: 'prospect',
-      city: '',
-      region: '',
-    });
+
+    // Prepare payload matching your SQL schema
+    const payload = {
+      name: newSchool.name,
+      location: newSchool.location,
+      address: newSchool.address,
+      city: newSchool.city,
+      region: newSchool.region,
+      country_code: newSchool.country,
+      type: newSchool.type,
+      status: newSchool.status,
+      contact_person: newSchool.contactPerson,
+      contact_email: newSchool.contactEmail,
+      contact_phone: newSchool.contactPhone,
+      student_count: Number(newSchool.studentCount) || 0,
+      ambassador: newSchool.ambassador,
+    };
+
+    const { data, error } = await supabase
+      .from('schools')
+      .insert([payload])
+      .select()
+      .single();
+
+    if (error) {
+      alert('Failed to add school: ' + error.message);
+      return;
+    }
+
+    if (data) {
+      setSchools(prev => [...prev, data]);
+      setFilteredSchools(prev => [...prev, data]);
+      setShowAddSchoolModal(false);
+      setNewSchool({
+        name: '',
+        location: '',
+        country: '',
+        contactPerson: '',
+        contactEmail: '',
+        contactPhone: '',
+        studentCount: '',
+        ambassador: '',
+        address: '',
+        type: '',
+        status: 'prospect',
+        city: '',
+        region: '',
+      });
+    }
   };
 
   // Assign Ambassador submit handler (replace with your API logic)
