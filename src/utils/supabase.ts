@@ -32,6 +32,7 @@ export type User = {
   created_at: string;
 };
 export type School = {
+  upcoming_activities: any;
   id: string;
   name: string;
   location: string;
@@ -45,6 +46,9 @@ export type School = {
   region: string;
   created_at: string;
   ambassador_id?: string;
+  partnership_strength?: 'strong' | 'moderate' | 'weak' | 'new' | string;
+  partnership_date?: string; // <-- Add this line
+  last_visit?: string;       // <-- (Optional) Add if you use school.last_visit
 };
 export type Visit = {
   id: string;

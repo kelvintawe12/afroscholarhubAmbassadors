@@ -1,169 +1,71 @@
 import React, { useEffect, useState } from 'react';
-import { SchoolIcon, PlusIcon, FilterIcon, MapPinIcon, UsersIcon, PhoneIcon, MailIcon, EditIcon, TrashIcon, DownloadIcon, ClipboardIcon, ChevronDownIcon, SearchIcon } from 'lucide-react';
-import { getSchoolsByStatus } from '../../../../api/management';
+import { SchoolIcon, PlusIcon, FilterIcon, MapPinIcon, UsersIcon, PhoneIcon, MailIcon, EditIcon, TrashIcon, DownloadIcon, ClipboardIcon, ChevronDownIcon, SearchIcon, XIcon } from 'lucide-react';
+import { supabase, School, User } from '../../../../utils/supabase';
+
 export const SchoolPartnershipsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
-  const [schools, setSchools] = useState<any[]>([]);
-  const [filteredSchools, setFilteredSchools] = useState<any[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
+  const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
+  const [ambassadors, setAmbassadors] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Add School form state
+  const [newSchool, setNewSchool] = useState<Partial<School>>({
+    name: '',
+    location: '',
+    address: '',
+    country_code: '',
+    region: '',
+    contact_person: '',
+    contact_email: '',
+    contact_phone: '',
+    student_count: 0,
+    status: 'partnered',
+    ambassador_id: '',
+  });
+
+  // Fetch schools from Supabase
   useEffect(() => {
     const fetchSchools = async () => {
-      try {
-        setIsLoading(true);
-        // In a real app, this would use the API client
-        // const data = await getSchoolsByStatus('partnered')
-        // For now, use mock data
-        const mockData = [{
-          id: '1',
-          name: 'Lagos Model School',
-          location: 'Lagos',
-          address: '123 Main Street, Lagos',
-          country_code: 'ng',
-          region: 'Southwest',
-          contact_person: 'Adebayo Johnson',
-          contact_email: 'adebayo@lagosmodel.edu',
-          contact_phone: '+234 123 456 7890',
-          student_count: 1250,
-          status: 'partnered',
-          created_at: '2023-05-15',
-          ambassador: {
-            id: '101',
-            full_name: 'Aisha Mohammed',
-            email: 'aisha@afroscholarhub.org'
-          },
-          partnership_date: '2023-06-01',
-          partnership_strength: 'strong',
-          last_visit: '2024-03-15',
-          upcoming_activities: ['Career Fair', 'Scholarship Workshop']
-        }, {
-          id: '2',
-          name: 'Accra International Academy',
-          location: 'Accra',
-          address: '456 Independence Ave, Accra',
-          country_code: 'gh',
-          region: 'Greater Accra',
-          contact_person: 'Kwame Mensah',
-          contact_email: 'kmensah@aia.edu.gh',
-          contact_phone: '+233 987 654 3210',
-          student_count: 980,
-          status: 'partnered',
-          created_at: '2023-07-22',
-          ambassador: {
-            id: '102',
-            full_name: 'Daniel Osei',
-            email: 'daniel@afroscholarhub.org'
-          },
-          partnership_date: '2023-08-15',
-          partnership_strength: 'medium',
-          last_visit: '2024-02-28',
-          upcoming_activities: ['STEM Workshop']
-        }, {
-          id: '3',
-          name: 'Nairobi Secondary School',
-          location: 'Nairobi',
-          address: '789 Uhuru Highway, Nairobi',
-          country_code: 'ke',
-          region: 'Nairobi County',
-          contact_person: 'Grace Wanjiku',
-          contact_email: 'grace@nairobisec.ac.ke',
-          contact_phone: '+254 712 345 678',
-          student_count: 1100,
-          status: 'partnered',
-          created_at: '2023-09-10',
-          ambassador: {
-            id: '103',
-            full_name: 'James Mwangi',
-            email: 'james@afroscholarhub.org'
-          },
-          partnership_date: '2023-10-01',
-          partnership_strength: 'strong',
-          last_visit: '2024-04-02',
-          upcoming_activities: ['University Applications Workshop', 'Alumni Talk']
-        }, {
-          id: '4',
-          name: 'Cape Town High School',
-          location: 'Cape Town',
-          address: '101 Long Street, Cape Town',
-          country_code: 'za',
-          region: 'Western Cape',
-          contact_person: 'Sarah van der Merwe',
-          contact_email: 'sarah@capetownhigh.co.za',
-          contact_phone: '+27 21 987 6543',
-          student_count: 850,
-          status: 'partnered',
-          created_at: '2023-11-05',
-          ambassador: {
-            id: '104',
-            full_name: 'Thabo Ndlovu',
-            email: 'thabo@afroscholarhub.org'
-          },
-          partnership_date: '2023-12-01',
-          partnership_strength: 'new',
-          last_visit: '2024-03-20',
-          upcoming_activities: ['Scholarship Info Session']
-        }, {
-          id: '5',
-          name: 'Abuja Grammar School',
-          location: 'Abuja',
-          address: '202 Independence Ave, Abuja',
-          country_code: 'ng',
-          region: 'Federal Capital Territory',
-          contact_person: 'Ibrahim Suleiman',
-          contact_email: 'ibrahim@abujagrammer.edu.ng',
-          contact_phone: '+234 801 234 5678',
-          student_count: 920,
-          status: 'partnered',
-          created_at: '2024-01-15',
-          ambassador: {
-            id: '105',
-            full_name: 'Ngozi Okafor',
-            email: 'ngozi@afroscholarhub.org'
-          },
-          partnership_date: '2024-02-01',
-          partnership_strength: 'medium',
-          last_visit: '2024-04-10',
-          upcoming_activities: ['Career Day', 'Parent Information Session']
-        }, {
-          id: '6',
-          name: 'Kumasi Academy',
-          location: 'Kumasi',
-          address: '303 Asante Road, Kumasi',
-          country_code: 'gh',
-          region: 'Ashanti',
-          contact_person: 'Akosua Boateng',
-          contact_email: 'aboateng@kumasiacademy.edu.gh',
-          contact_phone: '+233 24 567 8901',
-          student_count: 760,
-          status: 'partnered',
-          created_at: '2024-02-20',
-          ambassador: {
-            id: '102',
-            full_name: 'Daniel Osei',
-            email: 'daniel@afroscholarhub.org'
-          },
-          partnership_date: '2024-03-15',
-          partnership_strength: 'new',
-          last_visit: '2024-04-05',
-          upcoming_activities: ['Mentorship Program Launch']
-        }];
-        setSchools(mockData);
-        setFilteredSchools(mockData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching schools:', error);
-        setIsLoading(false);
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        setSchools(data);
+        setFilteredSchools(data);
       }
+      setIsLoading(false);
     };
     fetchSchools();
   }, []);
+
+  // Fetch ambassadors for the select
   useEffect(() => {
-    // Filter schools based on search query and filters
+    const fetchAmbassadors = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, full_name, email, role, created_at')
+        .eq('role', 'ambassador');
+      if (!error && data) setAmbassadors(data);
+    };
+    fetchAmbassadors();
+  }, []);
+
+  // Filter logic
+  useEffect(() => {
     let filtered = [...schools];
     if (searchQuery) {
-      filtered = filtered.filter(school => school.name.toLowerCase().includes(searchQuery.toLowerCase()) || school.location.toLowerCase().includes(searchQuery.toLowerCase()) || school.contact_person.toLowerCase().includes(searchQuery.toLowerCase()));
+      filtered = filtered.filter(school =>
+        (school.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (school.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (school.contact_person || '').toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
     if (selectedCountry !== 'all') {
       filtered = filtered.filter(school => school.country_code === selectedCountry);
@@ -173,40 +75,79 @@ export const SchoolPartnershipsPage = () => {
     }
     setFilteredSchools(filtered);
   }, [searchQuery, selectedCountry, selectedRegion, schools]);
+
   // Get unique countries and regions for filters
-  const countries = [{
-    code: 'ng',
-    name: 'Nigeria'
-  }, {
-    code: 'gh',
-    name: 'Ghana'
-  }, {
-    code: 'ke',
-    name: 'Kenya'
-  }, {
-    code: 'za',
-    name: 'South Africa'
-  }];
-  const regions = Array.from(new Set(schools.map(school => school.region)));
+  const countries = [
+    { code: 'ng', name: 'Nigeria' },
+    { code: 'gh', name: 'Ghana' },
+    { code: 'ke', name: 'Kenya' },
+    { code: 'za', name: 'South Africa' }
+  ];
+  const regions = Array.from(new Set(schools.map(school => school.region).filter(Boolean)));
+
   // Helper function to get country name from code
   const getCountryName = (code: string) => {
     const country = countries.find(c => c.code === code);
     return country ? country.name : code;
   };
-  // Helper function to get partnership strength badge color
+
+  // Helper function to get badge color class for partnership strength
   const getStrengthBadge = (strength: string) => {
     switch (strength) {
       case 'strong':
         return 'bg-green-100 text-green-800';
-      case 'medium':
+      case 'moderate':
         return 'bg-yellow-100 text-yellow-800';
-      case 'new':
-        return 'bg-blue-100 text-blue-800';
+      case 'weak':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
-  return <div>
+
+  // Add School submit handler
+  const handleAddSchool = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      ...newSchool,
+      student_count: Number(newSchool.student_count) || 0,
+      created_at: new Date().toISOString(),
+    };
+    const { data, error } = await supabase
+      .from('schools')
+      .insert([payload])
+      .select()
+      .single();
+    if (error) {
+      alert('Failed to add school: ' + error.message);
+      return;
+    }
+    if (data) {
+      setSchools(prev => [data, ...prev]);
+      setFilteredSchools(prev => [data, ...prev]);
+      setShowAddModal(false);
+      setNewSchool({
+        name: '',
+        location: '',
+        address: '',
+        country_code: '',
+        region: '',
+        contact_person: '',
+        contact_email: '',
+        contact_phone: '',
+        student_count: 0,
+        status: 'partnered',
+        ambassador_id: '',
+      });
+    }
+  };
+
+  // Helper to get ambassador object by ID
+  const getAmbassador = (id?: string) =>
+    ambassadors.find(a => a.id === id);
+
+  return (
+    <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           School Partnerships
@@ -256,7 +197,7 @@ export const SchoolPartnershipsPage = () => {
                 Students Reached
               </p>
               <h3 className="text-2xl font-bold text-gray-900">
-                {schools.reduce((sum, school) => sum + school.student_count, 0).toLocaleString()}
+                {schools.reduce((sum, school) => sum + (school.student_count || 0), 0).toLocaleString()}
               </h3>
             </div>
           </div>
@@ -271,7 +212,8 @@ export const SchoolPartnershipsPage = () => {
                 Planned Activities
               </p>
               <h3 className="text-2xl font-bold text-gray-900">
-                {schools.reduce((sum, school) => sum + (school.upcoming_activities?.length || 0), 0)}
+                {/* Placeholder, adjust if you have activities */}
+                {schools.reduce((sum, school) => sum + ((school.upcoming_activities?.length) || 0), 0)}
               </h3>
             </div>
           </div>
@@ -312,29 +254,151 @@ export const SchoolPartnershipsPage = () => {
             </div>
             <input type="search" placeholder="Search schools..." className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <div className="flex rounded-md border border-gray-300 bg-white">
-            <button className={`px-3 py-2 ${viewMode === 'grid' ? 'bg-gray-100' : 'hover:bg-gray-50'}`} onClick={() => setViewMode('grid')} aria-label="Grid view">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-            </button>
-            <button className={`px-3 py-2 ${viewMode === 'list' ? 'bg-gray-100' : 'hover:bg-gray-50'}`} onClick={() => setViewMode('list')} aria-label="List view">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1.5 4.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M1.5 8H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                <path d="M1.5 11.5H14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </button>
-          </div>
-          <button className="flex items-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90">
+          <button
+            className="flex items-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+            onClick={() => setShowAddModal(true)}
+          >
             <PlusIcon size={16} className="mr-2" />
             Add School
           </button>
         </div>
       </div>
+
+      {/* Add School Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Add New School</h3>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleAddSchool} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">School Name</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={newSchool.name}
+                  onChange={e => setNewSchool({ ...newSchool, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Location</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={newSchool.location}
+                  onChange={e => setNewSchool({ ...newSchool, location: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={newSchool.address}
+                  onChange={e => setNewSchool({ ...newSchool, address: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Country</label>
+                  <select
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    required
+                    value={newSchool.country_code}
+                    onChange={e => setNewSchool({ ...newSchool, country_code: e.target.value })}
+                  >
+                    <option value="">Select country</option>
+                    {countries.map(country =>
+                      <option key={country.code} value={country.code}>{country.name}</option>
+                    )}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Region</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.region}
+                    onChange={e => setNewSchool({ ...newSchool, region: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Person</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.contact_person}
+                    onChange={e => setNewSchool({ ...newSchool, contact_person: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Email</label>
+                  <input
+                    type="email"
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.contact_email}
+                    onChange={e => setNewSchool({ ...newSchool, contact_email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Phone</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.contact_phone}
+                    onChange={e => setNewSchool({ ...newSchool, contact_phone: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Student Count</label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newSchool.student_count}
+                    onChange={e => setNewSchool({ ...newSchool, student_count: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Ambassador</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={newSchool.ambassador_id}
+                  onChange={e => setNewSchool({ ...newSchool, ambassador_id: e.target.value })}
+                >
+                  <option value="">Select ambassador</option>
+                  {ambassadors.map(a =>
+                    <option key={a.id} value={a.id}>{a.full_name} ({a.email})</option>
+                  )}
+                </select>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+                >
+                  Add School
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Loading State */}
       {isLoading && <div className="flex h-64 items-center justify-center">
@@ -373,8 +437,8 @@ export const SchoolPartnershipsPage = () => {
                       </span>
                     </div>
                   </div>
-                  <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStrengthBadge(school.partnership_strength)}`}>
-                    {school.partnership_strength.charAt(0).toUpperCase() + school.partnership_strength.slice(1)}
+                  <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStrengthBadge(school.partnership_strength ?? '')}`}>
+                    {(school.partnership_strength ?? '').charAt(0).toUpperCase() + (school.partnership_strength ?? '').slice(1)}
                   </span>
                 </div>
               </div>
@@ -402,10 +466,10 @@ export const SchoolPartnershipsPage = () => {
                     Ambassador
                   </div>
                   <div className="text-sm font-medium">
-                    {school.ambassador.full_name}
+                    {getAmbassador(school.ambassador_id)?.full_name || '—'}
                   </div>
                   <div className="text-sm text-gray-500">
-                    {school.ambassador.email}
+                    {getAmbassador(school.ambassador_id)?.email || ''}
                   </div>
                 </div>
                 <div className="mb-4">
@@ -415,13 +479,13 @@ export const SchoolPartnershipsPage = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Since:</span>
                     <span className="font-medium">
-                      {new Date(school.partnership_date).toLocaleDateString()}
+                      {school.partnership_date ? new Date(school.partnership_date).toLocaleDateString() : '—'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Last Visit:</span>
                     <span className="font-medium">
-                      {new Date(school.last_visit).toLocaleDateString()}
+                      {school.last_visit ? new Date(school.last_visit as string).toLocaleDateString() : '—'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
@@ -492,7 +556,7 @@ export const SchoolPartnershipsPage = () => {
                     </div>
                     <div className="text-sm text-gray-500">
                       Since{' '}
-                      {new Date(school.partnership_date).toLocaleDateString()}
+                      {school.partnership_date ? new Date(school.partnership_date).toLocaleDateString() : '—'}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
@@ -513,16 +577,18 @@ export const SchoolPartnershipsPage = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <div className="text-sm text-gray-900">
-                      {school.ambassador.full_name}
+                      {getAmbassador(school.ambassador_id)?.full_name || '—'}
                     </div>
                     <div className="text-sm text-gray-500">
                       Last visit:{' '}
-                      {new Date(school.last_visit).toLocaleDateString()}
+                      {school.last_visit ? new Date(school.last_visit).toLocaleDateString() : '—'}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStrengthBadge(school.partnership_strength)}`}>
-                      {school.partnership_strength.charAt(0).toUpperCase() + school.partnership_strength.slice(1)}
+                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getStrengthBadge(school.partnership_strength || '')}`}>
+                      {school.partnership_strength
+                        ? school.partnership_strength.charAt(0).toUpperCase() + school.partnership_strength.slice(1)
+                        : '—'}
                     </span>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
@@ -581,5 +647,6 @@ export const SchoolPartnershipsPage = () => {
             </div>
           </div>
         </div>}
-    </div>;
+    </div>
+  );
 };
