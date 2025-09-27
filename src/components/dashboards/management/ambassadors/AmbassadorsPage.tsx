@@ -672,22 +672,23 @@ const AmbassadorsPage: React.FC = () => {
               <Users className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Ambassador Directory</h1>
-              <p className="text-lg text-gray-600 mt-1">Manage and analyze your ambassador network across Africa</p>
+              <h1 className="text-xl font-bold text-gray-900">Ambassador Directory</h1>
+              <p className="text-sm text-gray-600 mt-1">Manage and analyze your ambassador network across Africa</p>
             </div>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        {/* Responsive Button Group */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {/* Export Button */}
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm w-full sm:w-auto">
             <Download className="h-4 w-4" />
             Export Directory
           </button>
           
           {/* Add Ambassador Button */}
           <button
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-ash-teal to-ash-gold text-white rounded-lg font-semibold hover:from-ash-teal/90 hover:to-ash-gold/90 transition-all shadow-lg hover:shadow-xl w-full sm:w-auto"
             onClick={() => setShowAddAmbassador(true)}
           >
             <Plus className="h-4 w-4" />
@@ -696,7 +697,7 @@ const AmbassadorsPage: React.FC = () => {
 
           {/* Manage Countries Button */}
           <button
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors w-full sm:w-auto"
             onClick={() => setShowCountryModal(true)}
           >
             <MapPin className="h-4 w-4" />
