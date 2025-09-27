@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   Calendar,
   Plus,
@@ -20,6 +20,7 @@ import {
   X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../../utils/supabase';
 
 interface Event {
   id: string;
@@ -45,6 +46,12 @@ interface Event {
   tags?: string[];
 }
 
+interface Country {
+  code: string;
+  name: string;
+  flag_emoji?: string;
+  // ...other fields if needed
+}
 
 interface EventTypeConfig {
   [key: string]: {
@@ -341,7 +348,19 @@ export const CalendarPage: React.FC = () => {
   });
   const [showEventModal, setShowEventModal] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [countries, setCountries] = useState<Country[]>([]);
   const navigate = useNavigate();
+
+  // Fetch countries from Supabase
+  useEffect(() => {
+    const fetchCountries = async () => {
+      const { data, error } = await supabase
+        .from('countries')
+        .select('code, name, flag_emoji');
+      if (!error && data) setCountries(data);
+    };
+    fetchCountries();
+  }, []);
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -402,6 +421,21 @@ export const CalendarPage: React.FC = () => {
     setShowEventModal(true);
   }, []);
 
+  // Helper to get country display (flag + name) from code
+  const getCountryDisplay = useCallback(
+    (code?: string) => {
+      if (!code) return '';
+      const country = countries.find(c => c.code === code);
+      if (!country) return code;
+      return (
+        <>
+          {country.flag_emoji && <span>{country.flag_emoji} </span>}
+          {country.name}
+        </>
+      );
+    },
+    [countries]
+  );
 
   return (
     <div className="space-y-6 p-6">
@@ -496,10 +530,11 @@ export const CalendarPage: React.FC = () => {
               className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Countries</option>
-              <option value="NG">Nigeria 🇳🇬</option>
-              <option value="GH">Ghana 🇬🇭</option>
-              <option value="KE">Kenya 🇰🇪</option>
-              <option value="ZA">South Africa 🇿🇦</option>
+              {countries.map(country => (
+                <option key={country.code} value={country.code}>
+                  {country.flag_emoji ? `${country.flag_emoji} ` : ''}{country.name}
+                </option>
+              ))}
               <option value="multi">Multi-country 🌍</option>
             </select>
           </div>
@@ -1295,6 +1330,30 @@ const EventModal: React.FC<EventModalProps> = ({
   const statusConfig = STATUS_CONFIG[event.status as keyof typeof STATUS_CONFIG];
   const priorityConfig = PRIORITY_CONFIG[event.priority as keyof typeof PRIORITY_CONFIG];
 
+  function getCountryDisplay(code?: string): React.ReactNode {
+    if (!code) return '';
+    // Try to find the country in the eventTypeConfig (not available), fallback to emoji for multi, else show code
+    if (code === 'multi') return <>🌍 Multi-country</>;
+    // Common flags for demo, you may want to pass countries as prop for real data
+    const FLAGS: Record<string, string> = {
+      NG: '🇳🇬',
+      GH: '🇬🇭',
+      KE: '🇰🇪',
+      // Add more as needed
+    };
+    const NAMES: Record<string, string> = {
+      NG: 'Nigeria',
+      GH: 'Ghana',
+      KE: 'Kenya',
+      // Add more as needed
+    };
+    return (
+      <>
+        {FLAGS[code] && <span>{FLAGS[code]} </span>}
+        {NAMES[code] || code}
+      </>
+    );
+  }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -1347,8 +1406,7 @@ const EventModal: React.FC<EventModalProps> = ({
             </div>
             {event.country && (
               <span className="flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
-                <span>{event.flag}</span>
-                <span>{event.country}</span>
+                {getCountryDisplay(event.country)}
               </span>
             )}
           </div>

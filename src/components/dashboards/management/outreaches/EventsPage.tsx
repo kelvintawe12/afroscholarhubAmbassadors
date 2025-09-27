@@ -492,8 +492,8 @@ export const OutreachEventsPage = () => {
         </div>
 
         {/* Time range selector */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-2">
             <button
               className={`rounded-md px-3 py-1.5 text-sm font-medium ${timeRange === 'all' ? 'bg-ash-teal text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
               onClick={() => setTimeRange('all')}
@@ -513,13 +513,15 @@ export const OutreachEventsPage = () => {
               Past Events
             </button>
           </div>
-          <button
-            className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <PlusIcon size={16} className="mr-2" />
-            Create Event
-          </button>
+          <div className="flex w-full sm:w-auto">
+            <button
+              className="flex w-full sm:w-auto items-center justify-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <PlusIcon size={16} className="mr-2" />
+              Create Event
+            </button>
+          </div>
         </div>
 
         {/* Filters and search */}
