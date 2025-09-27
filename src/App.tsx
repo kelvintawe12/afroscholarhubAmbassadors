@@ -94,7 +94,15 @@ function App() {
                 element={
                   <DashboardLayout>
                     <ManagementDashboard />
-                 u </DashboardLayout>
+                  </DashboardLayout>
+                }
+              />
+              <Route
+                path="/dashboard/management/global"
+                element={
+                  <DashboardLayout>
+                    <GlobalPeekPage />
+                  </DashboardLayout>
                 }
               />
               <Route
@@ -320,6 +328,14 @@ function App() {
                 }
               />
               <Route
+                path="/dashboard/ambassador/global"
+                element={
+                  <DashboardLayout>
+                    <GlobalPeekPage />
+                  </DashboardLayout>
+                }
+              />
+              <Route
                 path="/dashboard/ambassador/tasks"
                 element={
                   <DashboardLayout>
@@ -389,6 +405,14 @@ function App() {
                 element={
                   <DashboardLayout>
                     <SupportDashboard />
+                  </DashboardLayout>
+                }
+              />
+              <Route
+                path="/dashboard/support/global"
+                element={
+                  <DashboardLayout>
+                    <GlobalPeekPage />
                   </DashboardLayout>
                 }
               />

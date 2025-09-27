@@ -9,8 +9,13 @@
 - [x] Updated priority enum: 'Low'/'Medium'/'High'/'Critical' → 'low'/'medium'/'high'/'critical'
 - [x] Updated impact enum: 'Low'/'Medium'/'High'/'Critical' → 'single_student'/'multiple_students'/'regional'/'national'/'system_wide'
 - [x] Updated category enum: 'school_issue'/'ambassador_issue' → 'scholarship'/'ambassador'/'compliance'/'technical'/'partner'/'system'/'finance'
+- [x] Added Global Peek page routes for all dashboard types:
+  - Management: `/dashboard/management/global`
+  - Ambassador: `/dashboard/ambassador/global`
+  - Support: `/dashboard/support/global`
+  - Country Lead: `/dashboard/country-lead/:countryCode/global` (already existed)
 
 ## Summary
 The original error "Could not find a relationship between 'escalations' and 'escalated_by'" was caused by a mismatch between the database schema (using `reporter_id` from migration 002) and the code (using `escalated_by` from migration 006). The code has been updated to align with the actual database schema using `reporter_id` as the foreign key column.
 
-All escalations-related TypeScript errors have been resolved and the escalations API should now work correctly with proper foreign key relationships. The remaining TypeScript errors in the codebase are unrelated to the escalations functionality and can be addressed separately.
+All escalations-related TypeScript errors have been resolved and the escalations API should now work correctly with proper foreign key relationships. The Global Peek page is now available across all dashboard types. The remaining TypeScript errors in the codebase are unrelated to the escalations functionality and can be addressed separately.

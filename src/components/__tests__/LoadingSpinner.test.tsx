@@ -44,4 +44,4 @@ describe('LoadingSpinner', () => {
     const skeletons = screen.getAllByTestId('skeleton');
     expect(skeletons).toHaveLength(3);
   });
-});
+});uc
