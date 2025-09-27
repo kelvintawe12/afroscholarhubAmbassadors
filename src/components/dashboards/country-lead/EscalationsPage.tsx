@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { 
+import {
   AlertTriangle, User, MessageSquare, Clock, CheckCircle, XCircle, TrendingUp, Download, Plus, Search, Filter, Phone, Mail, Shield, Zap, Award, Building
 } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
@@ -8,6 +8,7 @@ import { KpiCard } from '../../ui/widgets/KpiCard';
 import { useCountryEscalations, useEscalationStatsFormatted, useEscalationActivities } from '../../../hooks/useEscalations';
 import { LoadingSpinner } from '../../LoadingSpinner';
 import { Escalation, EscalationStat, EscalationActivity } from '../../../types';
+import CreateEscalationModal from './CreateEscalationModal';
 
 // Category configurations
 const categoryConfig = {
@@ -207,11 +208,11 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
   );
 };
 
-const EscalationQuickAction: React.FC<{ 
-  icon: React.ReactNode; 
-  title: string; 
-  description: string; 
-  onClick: () => void; 
+const EscalationQuickAction: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
   color?: string;
   badge?: string;
 }> = ({ icon, title, description, onClick, color = 'from-ash-teal to-ash-gold', badge }) => {
@@ -222,7 +223,7 @@ const EscalationQuickAction: React.FC<{
     >
       {/* Gradient Background */}
       <div className={`absolute inset-0 bg-gradient-to-r ${color} opacity-0 group-hover:opacity-5 transition-opacity`} />
-      
+
       {/* Badge */}
       {badge && (
         <div className="absolute top-3 right-3">
@@ -231,7 +232,7 @@ const EscalationQuickAction: React.FC<{
           </span>
         </div>
       )}
-      
+
       <div className="relative z-10 flex items-start space-x-3">
         <div className={`p-2 rounded-lg bg-gradient-to-br ${color} flex-shrink-0`}>
           {icon}
@@ -241,7 +242,7 @@ const EscalationQuickAction: React.FC<{
           <p className="text-sm text-gray-600">{description}</p>
         </div>
       </div>
-      
+
       <div className="absolute bottom-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity">
         <Plus className="h-4 w-4 text-white" />
       </div>
@@ -258,6 +259,7 @@ const EscalationsPage: React.FC = () => {
     status: 'all',
     country: 'all'
   });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch real data from backend
   const { data: escalationStats, loading: statsLoading, error: statsError } = useEscalationStatsFormatted('NG'); // Using Nigeria as example
@@ -366,16 +368,19 @@ const EscalationsPage: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-3">
           {/* Export Button */}
           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
             <Download className="h-4 w-4" />
             Export Report
           </button>
-          
+
           {/* Create Escalation Button */}
-          <button className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg font-semibold hover:from-red-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl">
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-lg font-semibold hover:from-red-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl"
+          >
             <Plus className="h-4 w-4" />
             New Escalation
           </button>
@@ -385,7 +390,7 @@ const EscalationsPage: React.FC = () => {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {escalationStats.map((stat: EscalationStat, index: number) => (
-          <KpiCard 
+          <KpiCard
             key={index}
             title={stat.title}
             value={stat.value}
@@ -496,7 +501,7 @@ const EscalationsPage: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                
+
                 <div className="flex items-center bg-gray-100 rounded-lg px-2 py-1">
                   <select
                     className="bg-transparent text-sm border-none focus:outline-none"
@@ -547,7 +552,7 @@ const EscalationsPage: React.FC = () => {
                 </button>
               </div>
             )}
-            
+
             {filteredEscalations.length > 8 && (
               <div className="text-center">
                 <button className="text-red-500 hover:text-red-600 font-medium text-sm flex items-center justify-center gap-1 mx-auto">
@@ -567,7 +572,7 @@ const EscalationsPage: React.FC = () => {
               Live
             </span>
           </h2>
-          
+
           <ActivityFeed
             title="Recent Activity"
             activities={recentActivities || []}
@@ -580,6 +585,16 @@ const EscalationsPage: React.FC = () => {
       <div className="fixed bottom-6 right-6 bg-gradient-to-r from-red-500 to-orange-500 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all z-40 md:hidden">
         <Plus className="h-6 w-6" />
       </div>
+
+      {/* Create Escalation Modal */}
+      <CreateEscalationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          // Refresh data if needed
+        }}
+      />
     </div>
   );
 };
