@@ -1,6 +1,18 @@
 import { supabase } from '../utils/supabase';
 import { Report } from '../types';
 
+// Fetch countries from database
+export const getCountries = async () => {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('code, name, flag_emoji')
+    .eq('active', true)
+    .order('name');
+
+  if (error) throw error;
+  return data || [];
+};
+
 // Report API functions
 export const createReport = async (reportData: {
   name: string;
