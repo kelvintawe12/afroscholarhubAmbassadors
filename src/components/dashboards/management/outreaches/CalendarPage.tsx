@@ -17,17 +17,20 @@ import {
   GraduationCap,
   Activity,
   List,
-  X
+  X,
+  Save
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../../utils/supabase';
+import { createEvent } from '../../../../api/management';
 
 interface Event {
   id: string;
-  title: string;
-  date: string;
-  startTime: string;
-  endTime?: string;
+  name: string;
+  description: string;
+  event_date: string;
+  start_time: string;
+  end_time?: string;
   type: 'visit' | 'meeting' | 'workshop' | 'webinar' | 'training' | 'milestone';
   location?: string;
   ambassador: {
@@ -37,9 +40,8 @@ interface Event {
   };
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high' | 'critical';
-  description?: string;
-  attendees?: number;
-  leadsGenerated?: number;
+  expected_attendance?: number;
+  actual_attendance?: number;
   country?: string;
   flag?: string;
   color: string;
@@ -50,7 +52,20 @@ interface Country {
   code: string;
   name: string;
   flag_emoji?: string;
-  // ...other fields if needed
+}
+
+interface FormData {
+  name: string;
+  description: string;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  location: string;
+  country_code: string;
+  type: string;
+  expected_attendance: number;
+  status: string;
+  priority: string;
 }
 
 interface EventTypeConfig {
@@ -80,7 +95,7 @@ interface DayViewProps {
   navigateToDate: (date: Date) => void;
   viewEventDetails: (event: Event) => void;
   getEventColor: (eventType: string) => string;
-  createNewEvent: () => void;
+  createNewEvent: (date: Date) => void;
   formatDate: (date: Date) => string;
 }
 
@@ -98,6 +113,7 @@ interface MonthViewProps {
   calendarDays: CalendarDay[];
   currentMonthEvents: Event[];
   todayEvents: Event[];
+  createNewEvent: (date: Date) => void;
 }
 
 interface WeekViewProps {
@@ -109,6 +125,7 @@ interface WeekViewProps {
   viewEventDetails: (event: Event) => void;
   getEventColor: (eventType: string) => string;
   formatDate: (date: Date) => string;
+  createNewEvent: (date: Date) => void;
 }
 
 interface AgendaViewProps {
@@ -116,7 +133,7 @@ interface AgendaViewProps {
   eventTypeConfig: EventTypeConfig;
   navigateToDate: (date: Date) => void;
   viewEventDetails: (event: Event) => void;
-  createNewEvent: () => void;
+  createNewEvent: (date: Date) => void;
 }
 
 interface EventModalProps {
@@ -125,6 +142,12 @@ interface EventModalProps {
   onClose: () => void;
   onEdit: () => void;
   getEventColor: (eventType: string) => string;
+}
+
+interface CreateEventModalProps {
+  selectedDate: Date;
+  onClose: () => void;
+  onSubmit: (formData: FormData) => Promise<void>;
 }
 
 const VIEW_MODES: ViewMode[] = [
@@ -156,125 +179,6 @@ const STATUS_CONFIG = {
   completed: { color: 'bg-blue-100 text-blue-800', label: 'Completed' },
   cancelled: { color: 'bg-red-100 text-red-800', label: 'Cancelled' }
 };
-
-// Mock data
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Lagos Model College - STEM Workshop',
-    date: '2024-12-18',
-    startTime: '09:00',
-    endTime: '12:00',
-    type: 'workshop',
-    location: 'Lagos Model College, Ikeja',
-    ambassador: {
-      name: 'Aisha Bello',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=50&h=50&fit=crop&crop=face',
-      role: 'Lead Ambassador'
-    },
-    status: 'confirmed',
-    priority: 'high',
-    description: 'Interactive STEM workshop for 45 high school students',
-    attendees: 45,
-    leadsGenerated: 28,
-    country: 'NG',
-    flag: '🇳🇬',
-    color: '#8B5CF6',
-    tags: ['STEM', 'Workshop', 'High School']
-  },
-  {
-    id: '2',
-    title: 'Partnership Meeting - Accra Technical University',
-    date: '2024-12-20',
-    startTime: '14:00',
-    endTime: '16:30',
-    type: 'meeting',
-    location: 'Virtual (Zoom)',
-    ambassador: {
-      name: 'Kwame Mensah',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-      role: 'Country Coordinator'
-    },
-    status: 'scheduled',
-    priority: 'critical',
-    description: 'Finalizing engineering scholarship partnership agreement',
-    attendees: 8,
-    leadsGenerated: 0,
-    country: 'GH',
-    flag: '🇬🇭',
-    color: '#10B981',
-    tags: ['Partnership', 'Engineering', 'University']
-  },
-  {
-    id: '3',
-    title: 'Women in Tech Webinar',
-    date: '2024-12-22',
-    startTime: '18:00',
-    endTime: '19:30',
-    type: 'webinar',
-    location: 'YouTube Live',
-    ambassador: {
-      name: 'Fatima Ali',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face',
-      role: 'Field Ambassador'
-    },
-    status: 'confirmed',
-    priority: 'medium',
-    description: 'Virtual event for female STEM students across East Africa',
-    attendees: 120,
-    leadsGenerated: 67,
-    country: 'multi',
-    flag: '🌍',
-    color: '#F59E0B',
-    tags: ['Webinar', 'Women in Tech', 'STEM']
-  },
-  {
-    id: '4',
-    title: 'Q4 Ambassador Training Bootcamp',
-    date: '2024-12-28',
-    startTime: '09:00',
-    endTime: '17:00',
-    type: 'training',
-    location: 'Hybrid (Lagos & Virtual)',
-    ambassador: {
-      name: 'Thabo Mthembu',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-      role: 'Regional Lead'
-    },
-    status: 'scheduled',
-    priority: 'high',
-    description: 'Comprehensive training for new and existing ambassadors',
-    attendees: 89,
-    leadsGenerated: 0,
-    country: 'NG',
-    flag: '🇳🇬',
-    color: '#6366F1',
-    tags: ['Training', 'Bootcamp', 'Professional Development']
-  },
-  {
-    id: '5',
-    title: 'Scholarship Fair - University of Nairobi',
-    date: '2024-12-15',
-    startTime: '10:00',
-    endTime: '15:00',
-    type: 'visit',
-    location: 'University of Nairobi, Kikuyu Campus',
-    ambassador: {
-      name: 'James Otieno',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50&h=50&fit=crop&crop=face',
-      role: 'Field Ambassador'
-    },
-    status: 'completed',
-    priority: 'medium',
-    description: 'Annual scholarship fair with 200+ student attendees',
-    attendees: 200,
-    leadsGenerated: 156,
-    country: 'KE',
-    flag: '🇰🇪',
-    color: '#3B82F6',
-    tags: ['Scholarship Fair', 'University', 'Student Outreach']
-  }
-];
 
 // Utility Functions
 const formatDate = (date: Date): string => {
@@ -326,13 +230,231 @@ const generateCalendarDays = (date: Date): CalendarDay[] => {
 
 const getEventsForView = (events: Event[], startDate: Date, endDate: Date): Event[] => {
   return events.filter(event => {
-    const eventDate = new Date(event.date);
+    const eventDate = new Date(event.event_date);
     return eventDate >= startDate && eventDate <= endDate;
   });
 };
 
 const getEventColor = (eventType: string, eventTypeConfig: EventTypeConfig): string => {
   return eventTypeConfig[eventType as keyof typeof EVENT_TYPE_CONFIG]?.color || '#6B7280';
+};
+
+// Create Event Modal Component
+const CreateEventModal: React.FC<CreateEventModalProps> = ({ selectedDate, onClose, onSubmit }) => {
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    description: '',
+    event_date: formatDate(selectedDate),
+    start_time: '09:00',
+    end_time: '',
+    location: '',
+    country_code: '',
+    type: 'visit',
+    expected_attendance: 0,
+    status: 'scheduled',
+    priority: 'low'
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof FormData, string>> = {};
+    if (!formData.name) newErrors.name = 'Event name is required';
+    if (!formData.event_date) newErrors.event_date = 'Event date is required';
+    if (!formData.start_time) newErrors.start_time = 'Start time is required';
+    if (!formData.type) newErrors.type = 'Event type is required';
+    if (!formData.country_code) newErrors.country_code = 'Country code is required';
+    if (!formData.location) newErrors.location = 'Location is required';
+    if (formData.expected_attendance < 0) newErrors.expected_attendance = 'Attendance cannot be negative';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (field: keyof FormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    setErrors(prev => ({ ...prev, [field]: undefined }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setIsLoading(true);
+    try {
+      await onSubmit(formData);
+      onClose();
+    } catch (error: any) {
+      alert(`Failed to create event: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-2xl bg-white rounded-xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Create New Event</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Event Name</label>
+            <input
+              className={`w-full mt-1 p-3 border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all`}
+              placeholder="e.g. School Outreach"
+              value={formData.name}
+              onChange={e => handleInputChange('name', e.target.value)}
+              required
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Date</label>
+              <input
+                type="date"
+                className={`w-full mt-1 p-3 border ${errors.event_date ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                value={formData.event_date}
+                onChange={e => handleInputChange('event_date', e.target.value)}
+                required
+              />
+              {errors.event_date && <p className="text-red-500 text-xs mt-1">{errors.event_date}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Start Time</label>
+              <input
+                type="time"
+                className={`w-full mt-1 p-3 border ${errors.start_time ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+                value={formData.start_time}
+                onChange={e => handleInputChange('start_time', e.target.value)}
+                required
+              />
+              {errors.start_time && <p className="text-red-500 text-xs mt-1">{errors.start_time}</p>}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">End Time</label>
+            <input
+              type="time"
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={formData.end_time}
+              onChange={e => handleInputChange('end_time', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Event Type</label>
+            <select
+              className={`w-full mt-1 p-3 border ${errors.type ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              value={formData.type}
+              onChange={e => handleInputChange('type', e.target.value)}
+              required
+            >
+              <option value="">Select type</option>
+              {Object.entries(EVENT_TYPE_CONFIG).map(([key, config]) => (
+                <option key={key} value={key}>{config.label}</option>
+              ))}
+            </select>
+            {errors.type && <p className="text-red-500 text-xs mt-1">{errors.type}</p>}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Priority</label>
+              <select
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={formData.priority}
+                onChange={e => handleInputChange('priority', e.target.value)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <select
+                className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={formData.status}
+                onChange={e => handleInputChange('status', e.target.value)}
+              >
+                <option value="scheduled">Scheduled</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Country Code</label>
+            <input
+              className={`w-full mt-1 p-3 border ${errors.country_code ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              placeholder="e.g. NG"
+              value={formData.country_code}
+              onChange={e => handleInputChange('country_code', e.target.value)}
+              required
+            />
+            {errors.country_code && <p className="text-red-500 text-xs mt-1">{errors.country_code}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Location</label>
+            <input
+              className={`w-full mt-1 p-3 border ${errors.location ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              placeholder="Enter event location"
+              value={formData.location}
+              onChange={e => handleInputChange('location', e.target.value)}
+              required
+            />
+            {errors.location && <p className="text-red-500 text-xs mt-1">{errors.location}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Expected Attendance</label>
+            <input
+              type="number"
+              className={`w-full mt-1 p-3 border ${errors.expected_attendance ? 'border-red-300' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
+              placeholder="e.g. 100"
+              value={formData.expected_attendance}
+              onChange={e => handleInputChange('expected_attendance', Number(e.target.value))}
+              min={0}
+              required
+            />
+            {errors.expected_attendance && <p className="text-red-500 text-xs mt-1">{errors.expected_attendance}</p>}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <textarea
+              className="w-full mt-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter event description"
+              value={formData.description}
+              onChange={e => handleInputChange('description', e.target.value)}
+              rows={4}
+            />
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <button
+              type="button"
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200"
+              onClick={onClose}
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-2"
+              disabled={isLoading}
+            >
+              <Save size={18} /> {isLoading ? 'Creating...' : 'Create Event'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 // Main Calendar Component
@@ -347,8 +469,12 @@ export const CalendarPage: React.FC = () => {
     priority: 'all'
   });
   const [showEventModal, setShowEventModal] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [createModalDate, setCreateModalDate] = useState<Date>(new Date());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [countries, setCountries] = useState<Country[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   // Fetch countries from Supabase
@@ -362,18 +488,46 @@ export const CalendarPage: React.FC = () => {
     fetchCountries();
   }, []);
 
+  // Fetch events from Supabase
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase.from('events').select('*');
+        if (error) throw error;
+        const mappedEvents = (data ?? []).map(event => ({
+          ...event,
+          title: event.name,
+          date: event.event_date,
+          startTime: event.start_time,
+          endTime: event.end_time,
+          ambassador: {
+            name: event.organizer || 'Unknown',
+            avatar: event.ambassador?.avatar || 'https://via.placeholder.com/40',
+            role: event.ambassador?.role || 'Ambassador'
+          },
+          color: EVENT_TYPE_CONFIG[event.type]?.color || '#6B7280'
+        }));
+        setEvents(mappedEvents);
+      } catch (error: any) {
+        console.error('Error fetching events:', error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
   // Filter events
   const filteredEvents = useMemo(() => {
-    return mockEvents.filter(event => {
+    return events.filter(event => {
       const matchesType = filters.type === 'all' || event.type === filters.type;
       const matchesStatus = filters.status === 'all' || event.status === filters.status;
-      const matchesCountry = filters.country === 'all' || 
-        (event.country === filters.country);
+      const matchesCountry = filters.country === 'all' || event.country === filters.country;
       const matchesPriority = filters.priority === 'all' || event.priority === filters.priority;
-      
       return matchesType && matchesStatus && matchesCountry && matchesPriority;
     });
-  }, [filters]);
+  }, [events, filters]);
 
   // Generate calendar days for current month
   const calendarDays = useMemo(() => {
@@ -412,9 +566,58 @@ export const CalendarPage: React.FC = () => {
     setViewMode('day');
   }, []);
 
-  const createNewEvent = useCallback(() => {
-    navigate('/dashboard/management/outreaches/events/new');
-  }, [navigate]);
+  const createNewEvent = useCallback((date: Date) => {
+    setCreateModalDate(date);
+    setShowCreateModal(true);
+  }, []);
+
+  const handleCreateEvent = async (formData: FormData) => {
+    // Map UI status to backend status
+    const statusMap: Record<string, string> = {
+      scheduled: 'planned',
+      confirmed: 'in-progress',
+      completed: 'completed',
+      cancelled: 'cancelled'
+    };
+    try {
+      const eventToCreate = {
+        name: formData.name,
+        description: formData.description,
+        event_date: formData.event_date,
+        start_time: formData.start_time,
+        end_time: formData.end_time || null,
+        location: formData.location,
+        country_code: formData.country_code,
+        type: formData.type,
+        expected_attendance: Number(formData.expected_attendance) || 0,
+        status: statusMap[formData.status] as 'planned' | 'in-progress' | 'completed' | 'cancelled',
+        priority: formData.priority as 'low' | 'medium' | 'high' | 'critical',
+        created_by: (await supabase.auth.getUser()).data.user?.id || '',
+        organizer: (await supabase.auth.getUser()).data.user?.email || 'Unknown',
+        region: '', // Provide a default or get from form if needed
+        budget: 0   // Provide a default or get from form if needed
+      };
+      await createEvent(eventToCreate);
+      // Refresh events
+      const { data } = await supabase.from('events').select('*');
+      const mappedEvents = (data ?? []).map(event => ({
+        ...event,
+        title: event.name,
+        date: event.event_date,
+        startTime: event.start_time,
+        endTime: event.end_time,
+        ambassador: {
+          name: event.organizer || 'Unknown',
+          avatar: event.ambassador?.avatar || 'https://via.placeholder.com/40',
+          role: event.ambassador?.role || 'Ambassador'
+        },
+        color: EVENT_TYPE_CONFIG[event.type]?.color || '#6B7280'
+      }));
+      setEvents(mappedEvents);
+    } catch (error: any) {
+      throw new Error(`Failed to create event: ${error.message}`);
+    }
+  };
 
   const viewEventDetails = useCallback((event: Event) => {
     setSelectedEvent(event);
@@ -425,6 +628,7 @@ export const CalendarPage: React.FC = () => {
   const getCountryDisplay = useCallback(
     (code?: string) => {
       if (!code) return '';
+      if (code === 'multi') return <>🌍 Multi-country</>;
       const country = countries.find(c => c.code === code);
       if (!country) return code;
       return (
@@ -475,7 +679,7 @@ export const CalendarPage: React.FC = () => {
           {/* Actions */}
           <div className="flex gap-2 w-full sm:w-auto">
             <button
-              onClick={createNewEvent}
+              onClick={() => createNewEvent(new Date())}
               className="flex items-center justify-center gap-2 px-3 py-2 sm:px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg transition-all w-full sm:w-auto"
             >
               <Plus size={16} />
@@ -567,58 +771,68 @@ export const CalendarPage: React.FC = () => {
 
       {/* Calendar Views */}
       <div className="space-y-6">
-        {viewMode === 'month' && (
-          <MonthView
-            currentDate={currentDate}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            navigateToDate={navigateToDate}
-            events={filteredEvents}
-            eventTypeConfig={EVENT_TYPE_CONFIG}
-            navigateMonth={navigateMonth}
-            viewEventDetails={viewEventDetails}
-            getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
-            formatDate={formatDate}
-            calendarDays={calendarDays}
-            currentMonthEvents={currentMonthEvents}
-            todayEvents={todayEvents}
-          />
-        )}
-        
-        {viewMode === 'week' && (
-          <WeekView
-            currentDate={currentDate}
-            events={filteredEvents}
-            eventTypeConfig={EVENT_TYPE_CONFIG}
-            navigateToDate={navigateToDate}
-            setCurrentDate={setCurrentDate}
-            viewEventDetails={viewEventDetails}
-            getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
-            formatDate={formatDate}
-          />
-        )}
-        
-        {viewMode === 'day' && (
-          <DayView
-            selectedDate={selectedDate}
-            events={getEventsForView(filteredEvents, selectedDate, selectedDate)}
-            eventTypeConfig={EVENT_TYPE_CONFIG}
-            navigateToDate={navigateToDate}
-            viewEventDetails={viewEventDetails}
-            getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
-            createNewEvent={createNewEvent}
-            formatDate={formatDate}
-          />
-        )}
-        
-        {viewMode === 'agenda' && (
-          <AgendaView 
-            events={currentMonthEvents}
-            eventTypeConfig={EVENT_TYPE_CONFIG}
-            navigateToDate={navigateToDate}
-            viewEventDetails={viewEventDetails}
-            createNewEvent={createNewEvent}
-          />
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center rounded-lg border border-gray-200 bg-white">
+            <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          </div>
+        ) : (
+          <>
+            {viewMode === 'month' && (
+              <MonthView
+                currentDate={currentDate}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                navigateToDate={navigateToDate}
+                events={filteredEvents}
+                eventTypeConfig={EVENT_TYPE_CONFIG}
+                navigateMonth={navigateMonth}
+                viewEventDetails={viewEventDetails}
+                getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
+                formatDate={formatDate}
+                calendarDays={calendarDays}
+                currentMonthEvents={currentMonthEvents}
+                todayEvents={todayEvents}
+                createNewEvent={createNewEvent}
+              />
+            )}
+            
+            {viewMode === 'week' && (
+              <WeekView
+                currentDate={currentDate}
+                events={filteredEvents}
+                eventTypeConfig={EVENT_TYPE_CONFIG}
+                navigateToDate={navigateToDate}
+                setCurrentDate={setCurrentDate}
+                viewEventDetails={viewEventDetails}
+                getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
+                formatDate={formatDate}
+                createNewEvent={createNewEvent}
+              />
+            )}
+            
+            {viewMode === 'day' && (
+              <DayView
+                selectedDate={selectedDate}
+                events={getEventsForView(filteredEvents, selectedDate, selectedDate)}
+                eventTypeConfig={EVENT_TYPE_CONFIG}
+                navigateToDate={navigateToDate}
+                viewEventDetails={viewEventDetails}
+                getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
+                createNewEvent={createNewEvent}
+                formatDate={formatDate}
+              />
+            )}
+            
+            {viewMode === 'agenda' && (
+              <AgendaView 
+                events={currentMonthEvents}
+                eventTypeConfig={EVENT_TYPE_CONFIG}
+                navigateToDate={navigateToDate}
+                viewEventDetails={viewEventDetails}
+                createNewEvent={createNewEvent}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -635,6 +849,15 @@ export const CalendarPage: React.FC = () => {
             }
           }}
           getEventColor={(type) => getEventColor(type, EVENT_TYPE_CONFIG)}
+        />
+      )}
+
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <CreateEventModal
+          selectedDate={createModalDate}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateEvent}
         />
       )}
     </div>
@@ -655,11 +878,12 @@ const MonthView: React.FC<MonthViewProps> = ({
   formatDate,
   calendarDays,
   currentMonthEvents,
-  todayEvents
+  todayEvents,
+  createNewEvent
 }) => {
   const getEventsForDay = useCallback((date: Date): Event[] => {
     return events.filter(event => {
-      const eventDate = new Date(event.date);
+      const eventDate = new Date(event.event_date);
       return eventDate.toDateString() === date.toDateString();
     });
   }, [events]);
@@ -745,7 +969,7 @@ const MonthView: React.FC<MonthViewProps> = ({
                   ${isSelected ? 'bg-blue-50 border-2 border-blue-200 ring-1 ring-blue-200/20' : ''}
                   ${hasEvents ? 'cursor-pointer' : ''}
                 `}
-                onClick={() => date && setSelectedDate(date)}
+                onClick={() => date && (hasEvents ? setSelectedDate(date) : createNewEvent(date))}
               >
                 {date && (
                   <>
@@ -776,9 +1000,9 @@ const MonthView: React.FC<MonthViewProps> = ({
                           <div className="relative flex items-center h-full px-1">
                             <div className="flex-shrink-0 w-2 h-2 rounded-full border-2 border-white" />
                             <span className="ml-1.5 text-xs font-medium text-white truncate leading-none">
-                              {event.title.length > 20 
-                                ? `${event.title.substring(0, 17)}...` 
-                                : event.title
+                              {event.name.length > 20 
+                                ? `${event.name.substring(0, 17)}...` 
+                                : event.name
                               }
                             </span>
                           </div>
@@ -819,7 +1043,8 @@ const WeekView: React.FC<WeekViewProps> = ({
   setCurrentDate, 
   viewEventDetails, 
   getEventColor, 
-  formatDate 
+  formatDate,
+  createNewEvent
 }) => {
   const startOfWeek = useMemo(() => {
     const start = new Date(currentDate);
@@ -839,7 +1064,7 @@ const WeekView: React.FC<WeekViewProps> = ({
     return days.map(day => ({
       day,
       events: events.filter(event => {
-        const eventDate = new Date(event.date);
+        const eventDate = new Date(event.event_date);
         return eventDate.toDateString() === day.toDateString();
       })
     }));
@@ -931,10 +1156,10 @@ const WeekView: React.FC<WeekViewProps> = ({
                       }`} />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs font-medium text-gray-900 truncate">
-                          {event.title}
+                          {event.name}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          {event.startTime} - {event.endTime || 'TBD'}
+                          {event.start_time} - {event.end_time || 'TBD'}
                         </div>
                         <div className="flex items-center gap-1 mt-1">
                           <div className={`w-1.5 h-1.5 rounded-full`} style={{ backgroundColor: getEventColor(event.type) }} />
@@ -955,8 +1180,7 @@ const WeekView: React.FC<WeekViewProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigateToDate(dayEvents.day);
-                  // This would open a create event modal for this specific day
+                  createNewEvent(dayEvents.day);
                 }}
                 className="mt-auto w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
               >
@@ -1073,8 +1297,8 @@ const DayView: React.FC<DayViewProps> = ({
             
             {/* Events */}
             {events.map(event => {
-              const startTime = new Date(`${event.date}T${event.startTime}`);
-              const endTime = event.endTime ? new Date(`${event.date}T${event.endTime}`) : undefined;
+              const startTime = new Date(`${event.event_date}T${event.start_time}`);
+              const endTime = event.end_time ? new Date(`${event.event_date}T${event.end_time}`) : undefined;
               
               const startHour = startTime.getHours();
               const startMinute = startTime.getMinutes();
@@ -1108,7 +1332,7 @@ const DayView: React.FC<DayViewProps> = ({
                     {/* Event Content */}
                     <div className="relative h-full flex flex-col p-3 text-white">
                       <div className="flex items-center justify-between mb-1">
-                        <h4 className="text-sm font-semibold truncate">{event.title}</h4>
+                        <h4 className="text-sm font-semibold truncate">{event.name}</h4>
                         <div className={`text-xs px-2 py-0.5 rounded-full ${
                           STATUS_CONFIG[event.status].color.replace('text-', 'bg-').replace('800', '100')
                         } text-gray-800`}>
@@ -1116,16 +1340,16 @@ const DayView: React.FC<DayViewProps> = ({
                         </div>
                       </div>
                       
-                      {event.startTime && (
+                      {event.start_time && (
                         <div className="text-xs opacity-90 mb-2">
-                          {event.startTime} - {event.endTime || 'TBD'}
+                          {event.start_time} - {event.end_time || 'TBD'}
                         </div>
                       )}
                       
                       <div className="flex items-center gap-2 text-xs opacity-90">
                         <div className="flex-shrink-0 w-6 h-6 rounded-full overflow-hidden">
                           <img 
-                            src={event.ambassador.avatar || 'https://via.placeholder.com/24'} 
+                            src={event.ambassador.avatar} 
                             alt={event.ambassador.name}
                             className="w-full h-full object-cover"
                           />
@@ -1147,7 +1371,7 @@ const DayView: React.FC<DayViewProps> = ({
       {/* Quick Add Event */}
       <div className="flex justify-center">
         <button
-          onClick={createNewEvent}
+          onClick={() => createNewEvent(selectedDate)}
           className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-dashed border-gray-300 rounded-xl text-sm font-medium text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
         >
           <Plus size={16} />
@@ -1172,7 +1396,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
 }) => {
   const groupedEvents = useMemo(() => {
     const groups = events.reduce((acc, event) => {
-      const dateKey = new Date(event.date).toLocaleDateString('en-US', {
+      const dateKey = new Date(event.event_date).toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'short',
         day: 'numeric'
@@ -1188,15 +1412,15 @@ const AgendaView: React.FC<AgendaViewProps> = ({
     return Object.entries(groups)
       .map(([date, dayEvents]) => ({
         date: new Date(events.find(e => 
-          new Date(e.date).toLocaleDateString('en-US', { 
+          new Date(e.event_date).toLocaleDateString('en-US', { 
             weekday: 'long', 
             month: 'short', 
             day: 'numeric' 
           }) === date 
-        )?.date || Date.now()),
+        )?.event_date || Date.now()),
         events: dayEvents.sort((a, b) => {
-          const timeA = new Date(`${a.date}T${a.startTime}`).getTime();
-          const timeB = new Date(`${b.date}T${b.startTime}`).getTime();
+          const timeA = new Date(`${a.event_date}T${a.start_time}`).getTime();
+          const timeB = new Date(`${b.event_date}T${b.start_time}`).getTime();
           return timeA - timeB;
         })
       }))
@@ -1266,7 +1490,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="text-xs font-medium text-gray-900 truncate flex-1">
-                          {event.title}
+                          {event.name}
                         </div>
                         <div className={`px-2 py-1 text-xs font-medium rounded-full ${
                           PRIORITY_CONFIG[event.priority].color
@@ -1275,7 +1499,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>{event.startTime} - {event.endTime || 'TBD'}</span>
+                        <span>{event.start_time} - {event.end_time || 'TBD'}</span>
                         <span>{event.ambassador.name}</span>
                         {event.location && (
                           <span className="flex items-center gap-1 truncate">
@@ -1306,7 +1530,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({
             <h3 className="text-lg font-medium text-gray-900 mb-2">No events scheduled</h3>
             <p className="text-gray-500 mb-6">Your outreach calendar is looking pretty empty</p>
             <button 
-              onClick={createNewEvent}
+              onClick={() => createNewEvent(new Date())}
               className="flex items-center gap-2 px-4 py-2 mx-auto bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
             >
               <Plus size={16} />
@@ -1331,30 +1555,10 @@ const EventModal: React.FC<EventModalProps> = ({
   const statusConfig = STATUS_CONFIG[event.status as keyof typeof STATUS_CONFIG];
   const priorityConfig = PRIORITY_CONFIG[event.priority as keyof typeof PRIORITY_CONFIG];
 
-  function getCountryDisplay(code?: string): React.ReactNode {
-    if (!code) return '';
-    // Try to find the country in the eventTypeConfig (not available), fallback to emoji for multi, else show code
-    if (code === 'multi') return <>🌍 Multi-country</>;
-    // Common flags for demo, you may want to pass countries as prop for real data
-    const FLAGS: Record<string, string> = {
-      NG: '🇳🇬',
-      GH: '🇬🇭',
-      KE: '🇰🇪',
-      // Add more as needed
-    };
-    const NAMES: Record<string, string> = {
-      NG: 'Nigeria',
-      GH: 'Ghana',
-      KE: 'Kenya',
-      // Add more as needed
-    };
-    return (
-      <>
-        {FLAGS[code] && <span>{FLAGS[code]} </span>}
-        {NAMES[code] || code}
-      </>
-    );
+  function getCountryDisplay(country: string): React.ReactNode {
+    throw new Error('Function not implemented.');
   }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -1369,9 +1573,9 @@ const EventModal: React.FC<EventModalProps> = ({
                 {config?.icon}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{event.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{event.name}</h2>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>{event.startTime} - {event.endTime || 'TBD'}</span>
+                  <span>{event.start_time} - {event.end_time || 'TBD'}</span>
                   <span>•</span>
                   <span>{event.ambassador.role}</span>
                 </div>
@@ -1407,7 +1611,7 @@ const EventModal: React.FC<EventModalProps> = ({
             </div>
             {event.country && (
               <span className="flex items-center gap-1 px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700">
-                {getCountryDisplay(event.country)}
+                {event.country === 'multi' ? '🌍 Multi-country' : getCountryDisplay(event.country)}
               </span>
             )}
           </div>
@@ -1432,7 +1636,7 @@ const EventModal: React.FC<EventModalProps> = ({
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200">
               <img 
-                src={event.ambassador.avatar || 'https://via.placeholder.com/40'} 
+                src={event.ambassador.avatar} 
                 alt={event.ambassador.name}
                 className="w-full h-full object-cover"
               />
@@ -1444,18 +1648,18 @@ const EventModal: React.FC<EventModalProps> = ({
           </div>
 
           {/* Stats */}
-          {(event.attendees || event.leadsGenerated) && (
+          {(event.expected_attendance || event.actual_attendance) && (
             <div className="grid grid-cols-2 gap-4">
-              {event.attendees && (
+              {event.expected_attendance && (
                 <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{event.attendees}</div>
-                  <div className="text-xs text-blue-700 uppercase tracking-wide">Attendees</div>
+                  <div className="text-2xl font-bold text-blue-600">{event.expected_attendance}</div>
+                  <div className="text-xs text-blue-700 uppercase tracking-wide">Expected Attendees</div>
                 </div>
               )}
-              {event.leadsGenerated && (
+              {event.actual_attendance && (
                 <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{event.leadsGenerated}</div>
-                  <div className="text-xs text-green-700 uppercase tracking-wide">Leads</div>
+                  <div className="text-2xl font-bold text-green-600">{event.actual_attendance}</div>
+                  <div className="text-xs text-green-700 uppercase tracking-wide">Actual Attendees</div>
                 </div>
               )}
             </div>
@@ -1479,7 +1683,7 @@ const EventModal: React.FC<EventModalProps> = ({
         {/* Footer Actions */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 rounded-b-2xl space-y-3">
           <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Created {new Date(event.date).toLocaleDateString()}</span>
+            <span>Created {new Date(event.event_date).toLocaleDateString()}</span>
             <span>Last updated {new Date().toLocaleDateString()}</span>
           </div>
           
