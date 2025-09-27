@@ -593,7 +593,10 @@ export const SchoolProspectsPage = () => {
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">Add New Prospect</h3>
               <button
-                onClick={() => setShowAddProspectModal(false)}
+                onClick={() => {
+                  setShowAddProspectModal(false);
+                  setNewProspect(getEmptyProspect());
+                }}
                 className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
               >
                 <XCircleIcon size={20} />
@@ -620,19 +623,7 @@ export const SchoolProspectsPage = () => {
                   setProspects(prev => [data, ...prev]);
                   setFilteredProspects(prev => [data, ...prev]);
                   setShowAddProspectModal(false);
-                  setNewProspect({
-                    name: '',
-                    location: '',
-                    address: '',
-                    country_code: '',
-                    region: '',
-                    contact_person: '',
-                    contact_email: '',
-                    contact_phone: '',
-                    student_count: 0,
-                    priority: 'medium',
-                    status: 'prospect',
-                  });
+                  setNewProspect(getEmptyProspect());
                 }
               }}
               className="space-y-4"
@@ -642,6 +633,7 @@ export const SchoolProspectsPage = () => {
                 <input
                   className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
                   required
+                  placeholder="e.g. St. Mary's College"
                   value={newProspect.name}
                   onChange={e => setNewProspect({ ...newProspect, name: e.target.value })}
                 />
@@ -651,6 +643,7 @@ export const SchoolProspectsPage = () => {
                 <input
                   className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
                   required
+                  placeholder="e.g. Lagos"
                   value={newProspect.location}
                   onChange={e => setNewProspect({ ...newProspect, location: e.target.value })}
                 />
@@ -659,6 +652,7 @@ export const SchoolProspectsPage = () => {
                 <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
                 <input
                   className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  placeholder="e.g. 123 Main St, Ikeja"
                   value={newProspect.address}
                   onChange={e => setNewProspect({ ...newProspect, address: e.target.value })}
                 />
@@ -682,6 +676,7 @@ export const SchoolProspectsPage = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Region</label>
                   <input
                     className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    placeholder="e.g. South West"
                     value={newProspect.region}
                     onChange={e => setNewProspect({ ...newProspect, region: e.target.value })}
                   />
@@ -692,6 +687,7 @@ export const SchoolProspectsPage = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Contact Person</label>
                   <input
                     className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    placeholder="e.g. Jane Doe"
                     value={newProspect.contact_person}
                     onChange={e => setNewProspect({ ...newProspect, contact_person: e.target.value })}
                   />
@@ -701,6 +697,7 @@ export const SchoolProspectsPage = () => {
                   <input
                     type="email"
                     className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    placeholder="e.g. jane@email.com"
                     value={newProspect.contact_email}
                     onChange={e => setNewProspect({ ...newProspect, contact_email: e.target.value })}
                   />
@@ -711,6 +708,7 @@ export const SchoolProspectsPage = () => {
                   <label className="block text-xs font-medium text-gray-500 mb-1">Contact Phone</label>
                   <input
                     className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    placeholder="e.g. +2348012345678"
                     value={newProspect.contact_phone}
                     onChange={e => setNewProspect({ ...newProspect, contact_phone: e.target.value })}
                   />
@@ -721,6 +719,7 @@ export const SchoolProspectsPage = () => {
                     type="number"
                     min={0}
                     className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    placeholder="e.g. 500"
                     value={newProspect.student_count}
                     onChange={e => setNewProspect({ ...newProspect, student_count: Number(e.target.value) })}
                   />
@@ -758,7 +757,10 @@ export const SchoolProspectsPage = () => {
                 <button
                   type="button"
                   className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  onClick={() => setShowAddProspectModal(false)}
+                  onClick={() => {
+                    setShowAddProspectModal(false);
+                    setNewProspect(getEmptyProspect());
+                  }}
                 >
                   Cancel
                 </button>
@@ -945,3 +947,20 @@ export const SchoolProspectsPage = () => {
       )}
     </div>;
 };
+
+// Helper function (place at the top of your component)
+function getEmptyProspect(): Partial<School> {
+  return {
+    name: '',
+    location: '',
+    address: '',
+    country_code: '',
+    region: '',
+    contact_person: '',
+    contact_email: '',
+    contact_phone: '',
+    student_count: 0,
+    priority: 'medium',
+    status: 'prospect',
+  };
+}
