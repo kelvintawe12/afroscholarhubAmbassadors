@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { 
-  Users, 
-  MapPin, 
-  Award, 
-  TrendingUp, 
-  Star, 
-  Calendar, 
-  Phone, 
-  Mail, 
-  Download, 
-  Filter, 
-  Search, 
-  Plus, 
+import {
+  Users,
+  MapPin,
+  Award,
+  TrendingUp,
+  Star,
+  Calendar,
+  Phone,
+  Mail,
+  Download,
+  Filter,
+  Search,
+  Plus,
   Shield,
   Zap,
   GraduationCap,
@@ -26,6 +26,8 @@ import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { LineChart } from '../../../ui/widgets/LineChart';
+import { getAmbassadorsData } from '../../../../api/management';
+import { useDashboardData } from '../../../../hooks/useDashboardData';
 
 // Types
 interface Ambassador {
@@ -36,7 +38,7 @@ interface Ambassador {
   country: string;
   flag: string;
   region: string;
-  role: 'lead' | 'coordinator' | 'field' | 'trainee';
+  role: 'lead' | 'coordinator' | 'field' | 'trainee' | 'ambassador';
   status: 'active' | 'inactive' | 'training' | 'on-leave';
   joinDate: string;
   lastActivity: string;
@@ -343,7 +345,8 @@ const roleConfig = {
   lead: { color: 'bg-blue-100 text-blue-800', label: 'Lead Ambassador' },
   coordinator: { color: 'bg-purple-100 text-purple-800', label: 'Coordinator' },
   field: { color: 'bg-green-100 text-green-800', label: 'Field Ambassador' },
-  trainee: { color: 'bg-yellow-100 text-yellow-800', label: 'Trainee' }
+  trainee: { color: 'bg-yellow-100 text-yellow-800', label: 'Trainee' },
+  ambassador: { color: 'bg-blue-100 text-blue-800', label: 'Ambassador' }
 };
 
 // Components
@@ -598,6 +601,11 @@ const PerformanceSummary: React.FC<{
 };
 
 const AmbassadorsPage: React.FC = () => {
+  const { data: dashboardData, loading, error } = useDashboardData(
+    async () => await getAmbassadorsData(),
+    []
+  );
+
   const [activeTab, setActiveTab] = useState('directory');
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -608,41 +616,83 @@ const AmbassadorsPage: React.FC = () => {
     performance: 'all'
   });
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-gray-500">Loading ambassadors data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 text-center py-12">
+        Error loading ambassadors data: {String(error)}
+      </div>
+    );
+  }
+
+  const ambassadors = dashboardData?.ambassadors || [];
+  const metrics = dashboardData?.metrics || [];
+  const charts = dashboardData?.charts || {};
+
   const tabs = [
-    { id: 'directory', label: 'Directory (1,247)', icon: <Users className="h-4 w-4" /> },
+    { id: 'directory', label: `Directory (${ambassadors.length})`, icon: <Users className="h-4 w-4" /> },
     { id: 'analytics', label: 'Analytics', icon: <TrendingUp className="h-4 w-4" /> },
-    { id: 'performance', label: 'Performance (156)', icon: <Award className="h-4 w-4" /> },
-    { id: 'training', label: 'Training (89)', icon: <GraduationCap className="h-4 w-4" /> }
+    { id: 'performance', label: 'Performance', icon: <Award className="h-4 w-4" /> },
+    { id: 'training', label: 'Training', icon: <GraduationCap className="h-4 w-4" /> }
   ];
 
   const countries = [
     { value: 'all', label: 'All Countries' },
-    { value: 'NG', label: 'Nigeria 🇳🇬' },
-    { value: 'GH', label: 'Ghana 🇬🇭' },
-    { value: 'KE', label: 'Kenya 🇰🇪' },
-    { value: 'ZA', label: 'South Africa 🇿🇦' },
-    { value: 'UG', label: 'Uganda 🇺🇬' },
-    { value: 'EG', label: 'Egypt 🇪🇬' }
+    ...[...new Set(ambassadors.map(a => a.country))].map(c => ({ value: c, label: `${c}` })).sort((a, b) => a.value.localeCompare(b.value))
   ];
 
   const roles = [
     { value: 'all', label: 'All Roles' },
-    { value: 'lead', label: 'Lead Ambassadors' },
-    { value: 'coordinator', label: 'Coordinators' },
-    { value: 'field', label: 'Field Ambassadors' },
-    { value: 'trainee', label: 'Trainees' }
+    { value: 'ambassador', label: 'Ambassadors' }
   ];
 
   const statuses = [
     { value: 'all', label: 'All Statuses' },
     { value: 'active', label: 'Active' },
     { value: 'inactive', label: 'Inactive' },
-    { value: 'training', label: 'Training' },
-    { value: 'on-leave', label: 'On Leave' }
+    { value: 'training', label: 'Training' }
   ];
 
+  // Map API data to component expected format
+  const mappedAmbassadors: Ambassador[] = ambassadors.map(a => ({
+    id: a.id,
+    name: a.name,
+    email: a.email,
+    phone: '', // Not available in API
+    country: a.country,
+    flag: '', // Not available, can add mapping if needed
+    region: a.region,
+    role: 'ambassador' as const,
+    status: a.status as any,
+    joinDate: new Date().toISOString().split('T')[0], // Approximate - API doesn't provide join date
+    lastActivity: a.lastActivity,
+    performanceScore: a.performance,
+    certifications: 0, // Mock, can add if available
+    schoolsReached: a.schoolsCount || 0,
+    scholarshipsGenerated: 0, // Mock
+    leadsGenerated: a.leadsGenerated || 0,
+    conversionRate: 0, // Mock
+    avgResponseTime: '', // Mock
+    trainingCompletion: 0, // Mock
+    satisfactionRating: 0, // Mock
+    assignedRegion: a.region,
+    contact: {
+      email: a.email,
+      phone: ''
+    },
+    profilePicture: a.avatar,
+    bio: '' // Mock
+  }));
+
   // Filter ambassadors
-  const filteredAmbassadors = ambassadorsData.filter(ambassador => {
+  const filteredAmbassadors = mappedAmbassadors.filter((ambassador: Ambassador) => {
     const matchesSearch = ambassador.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          ambassador.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          ambassador.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -658,7 +708,7 @@ const AmbassadorsPage: React.FC = () => {
     return matchesSearch && matchesCountry && matchesRole && matchesStatus && matchesPerformance;
   });
 
-  // Recent activities
+  // Recent activities - mock for now, can integrate real if available
   const recentActivities = [
     {
       id: '1',
@@ -750,19 +800,24 @@ const AmbassadorsPage: React.FC = () => {
       {/* Content Based on Active Tab */}
       {activeTab === 'directory' && (
         <div className="space-y-6">
-          {/* KPI Metrics */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {ambassadorMetrics.map((metric, index) => (
-              <KpiCard 
-                key={index}
-                title={metric.title}
-                value={metric.value}
-                icon={metric.icon}
-                trend={metric.trend}
-                color={metric.color}
-              />
-            ))}
-          </div>
+      {/* KPI Metrics */}
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {metrics.map((metric, index) => (
+          <KpiCard 
+            key={index}
+            title={metric.title}
+            value={metric.value}
+            icon={
+              metric.title.includes('Performance') ? <TrendingUp className="h-5 w-5 text-green-600" /> :
+              metric.title.includes('Active') ? <Users className="h-5 w-5 text-blue-600" /> :
+              metric.title.includes('Completion') ? <CheckCircle className="h-5 w-5 text-purple-600" /> :
+              <Award className="h-5 w-5 text-yellow-500" />
+            }
+            trend={metric.change > 0 ? `+${metric.change}%` : `${metric.change}%`}
+            color="from-blue-500 to-blue-600"
+          />
+        ))}
+      </div>
 
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -930,7 +985,7 @@ const AmbassadorsPage: React.FC = () => {
                   header: 'Country', 
                   accessor: (row: Ambassador) => (
                     <div className="flex items-center">
-                      <span className="mr-2">{row.flag}</span>
+                      <span className="mr-2">{row.flag || '🏳️'}</span>
                       <span className="text-sm font-medium">{row.country}</span>
                     </div>
                   )
@@ -938,8 +993,8 @@ const AmbassadorsPage: React.FC = () => {
                 { 
                   header: 'Role', 
                   accessor: (row: Ambassador) => (
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${roleConfig[row.role].color}`}>
-                      {roleConfig[row.role].label}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800`}>
+                      Ambassador
                     </span>
                   )
                 },
@@ -959,15 +1014,15 @@ const AmbassadorsPage: React.FC = () => {
                   sortable: true
                 },
                 { 
-                  header: 'Scholarships', 
-                  accessor: (row: Ambassador) => row.scholarshipsGenerated.toString(),
+                  header: 'Schools Reached', 
+                  accessor: (row: Ambassador) => row.schoolsReached.toString(),
                   sortable: true
                 },
                 { 
                   header: 'Status', 
                   accessor: (row: Ambassador) => (
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig[row.status].color}`}>
-                      {statusConfig[row.status].icon}
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig[row.status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                      {statusConfig[row.status]?.icon || <Clock className="h-4 w-4" />}
                       {row.status}
                     </span>
                   )
@@ -991,7 +1046,7 @@ const AmbassadorsPage: React.FC = () => {
                   )
                 }
               ]}
-              data={ambassadorsData}
+              data={mappedAmbassadors}
               keyField="id"
               rowsPerPage={10}
             />
@@ -1045,23 +1100,29 @@ const AmbassadorsPage: React.FC = () => {
               </div>
               <BarChart
                 title="Performance by Country"
-                data={performanceByCountryData}
+                data={(charts as any)?.performanceByCountry || performanceByCountryData}
                 height={300}
               />
             </div>
 
-            {/* Role Distribution */}
+            {/* Role Distribution - All ambassadors for now */}
             <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900 flex items-center">
                   <Users className="h-5 w-5 mr-2 text-green-600" />
                   Role Distribution
                 </h3>
-                <span className="text-sm text-gray-500">Total: 1,247</span>
+                <span className="text-sm text-gray-500">Total: {ambassadors.length}</span>
               </div>
               <PieChart
                 title="Role Distribution"
-                data={roleDistributionData}
+                data={{
+                  labels: ['Ambassador'],
+                  datasets: [{
+                    data: [ambassadors.length],
+                    backgroundColor: ['rgba(26, 95, 122, 0.8)']
+                  }]
+                }}
                 height={300}
               />
             </div>
@@ -1072,15 +1133,15 @@ const AmbassadorsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900 flex items-center">
                 <Activity className="h-5 w-5 mr-2 text-purple-600" />
-                Activity Trends
+                Performance Trends
               </h3>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Last 30 days</span>
+                <span className="text-sm text-gray-500">Last 6 months</span>
               </div>
             </div>
             <LineChart
-              title="Activity Trends"
-              data={activityTrendsData}
+              title="Performance Trends"
+              data={(charts as any)?.performanceTrend || activityTrendsData}
               height={300}
             />
           </div>

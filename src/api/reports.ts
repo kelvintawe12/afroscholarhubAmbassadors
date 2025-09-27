@@ -325,5 +325,77 @@ export const generateQuarterlyReport = async (quarter: number, year: number, cou
     metrics
   });
 
+  // Calculate countries covered
+  if (countryCode && countryCode !== 'all') {
+    data.countries_covered = 1;
+  } else {
+    // Count distinct countries with visits in the selected quarter
+    const { data: visitsData, error } = await supabase
+      .from('visits')
+      .select(`
+        schools!inner(country_code)
+      `)
+      .gte('visit_date', startDate.toISOString().split('T')[0])
+      .lte('visit_date', endDate.toISOString().split('T')[0]);
+
+    if (error) {
+      console.error('Error fetching countries covered:', error);
+      data.countries_covered = 0;
+    } else {
+      // Get unique country codes from the visits
+      const uniqueCountries = new Set(visitsData?.map((visit: any) => visit.schools?.country_code).filter(Boolean));
+      data.countries_covered = uniqueCountries.size;
+    }
+  }
+
+  // Add country breakdown if all countries selected
+  if (!countryCode) {
+    const { data: countryVisitsData, error: countryError } = await supabase
+      .from('visits')
+      .select(`
+        schools!inner(country_code, name),
+        students_reached
+      `)
+      .gte('visit_date', startDate.toISOString().split('T')[0])
+      .lte('visit_date', endDate.toISOString().split('T')[0]);
+
+    if (!countryError && countryVisitsData) {
+      const breakdown: Record<string, { code: string; name: string; students: number; visits: number }> = {};
+      countryVisitsData.forEach((visit: any) => {
+        const code = visit.schools.country_code;
+        if (!breakdown[code]) {
+          breakdown[code] = { code, name: visit.schools.name, students: 0, visits: 0 };
+        }
+        breakdown[code].students += visit.students_reached || 0;
+        breakdown[code].visits += 1;
+      });
+      data.countryBreakdown = Object.values(breakdown);
+    } else {
+      console.error('Error fetching country breakdown:', countryError);
+      data.countryBreakdown = [];
+    }
+
+    // Active ambassadors per country
+    const { data: ambassadorsData, error: ambError } = await supabase
+      .from('users')
+      .select('country_code, id')
+      .eq('role', 'ambassador')
+      .eq('status', 'active');
+
+    if (!ambError && ambassadorsData) {
+      const ambBreakdown: Record<string, number> = {};
+      ambassadorsData.forEach((user: any) => {
+        const code = user.country_code;
+        if (code) {
+          ambBreakdown[code] = (ambBreakdown[code] || 0) + 1;
+        }
+      });
+      data.activeAmbassadorsPerCountry = ambBreakdown;
+    } else {
+      console.error('Error fetching ambassadors breakdown:', ambError);
+      data.activeAmbassadorsPerCountry = {};
+    }
+  }
+
   return data;
 };

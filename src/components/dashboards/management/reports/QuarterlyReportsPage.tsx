@@ -67,7 +67,10 @@ export const QuarterlyReportsPage = () => {
     newPartnerships: quarterlyData.partnerships || 0,
     activeAmbassadors: quarterlyData.active_ambassadors || 0,
     totalVisits: quarterlyData.visits_count || 0,
-    countriesCovered: selectedCountry === 'all' ? 4 : 1,
+    countriesCovered: quarterlyData.countries_covered || 0,
+    totalSchools: quarterlyData.total_schools || 0,
+    visits_count: quarterlyData.visits_count || 0,
+    events_organized: quarterlyData.events_organized || 0,
     avgStudentsPerVisit: quarterlyData.visits_count ? Math.round((quarterlyData.students_reached || 0) / quarterlyData.visits_count) : 0,
     growthRate: previousData && previousData.students_reached > 0
       ? Math.round(((quarterlyData.students_reached - previousData.students_reached) / previousData.students_reached) * 100)
@@ -79,6 +82,9 @@ export const QuarterlyReportsPage = () => {
     activeAmbassadors: 0,
     totalVisits: 0,
     countriesCovered: 0,
+    totalSchools: 0,
+    visits_count: 0,
+    events_organized: 0,
     avgStudentsPerVisit: 0,
     growthRate: 0,
     targetAchievement: 0
@@ -94,7 +100,14 @@ export const QuarterlyReportsPage = () => {
     }]
   };
 
-  const countryPerformance = {
+  const countryPerformance = quarterlyData?.countryBreakdown ? {
+    labels: quarterlyData.countryBreakdown.map((country: any) => country.name),
+    datasets: [{
+      label: 'Students Reached',
+      data: quarterlyData.countryBreakdown.map((country: any) => country.students),
+      backgroundColor: ['#1A5F7A', '#2D7A8C', '#3F959E', '#51B0B0', '#63CBC2']
+    }]
+  } : {
     labels: [],
     datasets: [{
       label: 'Students Reached',
@@ -138,12 +151,13 @@ export const QuarterlyReportsPage = () => {
   };
 
   // Generate strategic recommendations based on real data
-  const generateStrategicRecommendations = (metrics: typeof quarterlyMetrics) => {
+  const generateStrategicRecommendations = (metrics: typeof quarterlyMetrics, data?: any) => {
     const immediate: string[] = [];
     const longTerm: string[] = [];
 
+    // Immediate actions based on metrics
     if (metrics.growthRate < 10) {
-      immediate.push("Increase focus on South Africa market penetration");
+      immediate.push("Increase focus on market penetration in underperforming regions");
     }
     if (metrics.activeAmbassadors < 50) {
       immediate.push("Launch ambassador recruitment drive in underperforming regions");
@@ -151,15 +165,42 @@ export const QuarterlyReportsPage = () => {
     if (metrics.targetAchievement < 80) {
       immediate.push("Implement advanced training programs for existing ambassadors");
     }
+    if (metrics.newPartnerships < 5) {
+      immediate.push("Strengthen partnership development initiatives");
+    }
+    if (metrics.avgStudentsPerVisit < 20) {
+      immediate.push("Optimize visit strategies to increase student engagement");
+    }
 
-    longTerm.push("Expand to additional African countries (Tanzania, Uganda)");
-    longTerm.push("Develop comprehensive digital learning platform");
-    longTerm.push("Establish regional training hubs for better support");
+    // Long-term strategies based on expansion opportunities
+    if (metrics.countriesCovered < 5) {
+      longTerm.push("Expand to additional African countries");
+    }
+    if (metrics.totalSchools < 200) {
+      longTerm.push("Develop comprehensive digital learning platform");
+    }
+    if (metrics.activeAmbassadors < 100) {
+      longTerm.push("Establish regional training hubs for better support");
+    }
+    if (metrics.visits_count < 100) {
+      longTerm.push("Scale outreach programs across more schools");
+    }
+    if (metrics.events_organized < 10) {
+      longTerm.push("Increase community engagement through events");
+    }
+
+    // Add country-specific recommendations if data available
+    if (data?.countryBreakdown) {
+      const lowPerformingCountries = data.countryBreakdown.filter((country: any) => country.students < 100);
+      if (lowPerformingCountries.length > 0) {
+        immediate.push(`Focus on improving performance in ${lowPerformingCountries.map((c: any) => c.name).join(', ')}`);
+      }
+    }
 
     return { immediate, longTerm };
   };
 
-  const recommendations = generateStrategicRecommendations(quarterlyMetrics);
+  const recommendations = generateStrategicRecommendations(quarterlyMetrics, quarterlyData);
 
   if (loading) {
     return (
