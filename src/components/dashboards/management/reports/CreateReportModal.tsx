@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, FileText } from 'lucide-react';
 import { Button } from '../../../ui/Button';
 import { Input } from '../../../ui/Input';
-import { supabase } from '../../../../utils/supabase';
+import { createReport } from '../../../../api/reports';
 import { LoadingSpinner } from '../../../LoadingSpinner';
 import toast from 'react-hot-toast';
 
@@ -59,21 +59,13 @@ const CreateReportModal: React.FC<CreateReportModalProps> = ({
 
     setLoading(true);
     try {
-      // Note: This assumes a 'reports' table exists. If not, this will need to be created.
-      const { data, error } = await supabase
-        .from('reports')
-        .insert({
-          name: formData.name,
-          type: formData.type,
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          metrics: formData.metrics,
-          created_by: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      await createReport({
+        name: formData.name,
+        type: formData.type,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        metrics: formData.metrics,
+      });
 
       toast.success('Report created successfully!');
       onSuccess?.();

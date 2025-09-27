@@ -4,6 +4,8 @@ import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
+import { generateWeeklyReport } from '../../../../api/reports';
+import toast from 'react-hot-toast';
 export const WeeklyReportsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedWeek, setSelectedWeek] = useState('current');
@@ -11,135 +13,74 @@ export const WeeklyReportsPage = () => {
   const [expandedSection, setExpandedSection] = useState<string | null>('overview');
   const [reportData, setReportData] = useState<any>(null);
   useEffect(() => {
-    // Simulate API fetch
-    setTimeout(() => {
-      const mockReportData = {
-        weekNumber: 24,
-        dateRange: 'June 10 - June 16, 2025',
-        overview: {
-          newSchoolContacts: 15,
-          newSchoolContactsTrend: 8,
-          schoolVisits: 32,
-          schoolVisitsTrend: 5,
-          studentsReached: 850,
-          studentsReachedTrend: 12,
-          leadsGenerated: 210,
-          leadsGeneratedTrend: -3
-        },
-        ambassadorActivity: {
-          activeAmbassadors: 42,
-          activeAmbassadorsTrend: 2,
-          taskCompletion: 85,
-          taskCompletionTrend: 3,
-          totalTasks: 120,
-          completedTasks: 102
-        },
-        topPerformers: [{
-          id: 1,
-          name: 'Aisha Mohammed',
-          country: 'Nigeria',
-          schoolsVisited: 5,
-          studentsReached: 180,
-          leadsGenerated: 45,
-          performance: 95
-        }, {
-          id: 2,
-          name: 'John Kamau',
-          country: 'Kenya',
-          schoolsVisited: 4,
-          studentsReached: 150,
-          leadsGenerated: 38,
-          performance: 90
-        }, {
-          id: 3,
-          name: 'Grace Osei',
-          country: 'Ghana',
-          schoolsVisited: 3,
-          studentsReached: 120,
-          leadsGenerated: 30,
-          performance: 88
-        }],
-        countryPerformance: [{
-          country: 'Nigeria',
-          schoolsVisited: 12,
-          studentsReached: 320,
-          leadsGenerated: 85,
-          conversionRate: 22
-        }, {
-          country: 'Kenya',
-          schoolsVisited: 10,
-          studentsReached: 280,
-          leadsGenerated: 65,
-          conversionRate: 18
-        }, {
-          country: 'Ghana',
-          schoolsVisited: 6,
-          studentsReached: 150,
-          leadsGenerated: 40,
-          conversionRate: 20
-        }, {
-          country: 'South Africa',
-          schoolsVisited: 4,
-          studentsReached: 100,
-          leadsGenerated: 20,
-          conversionRate: 15
-        }],
-        schoolVisits: [{
-          id: 1,
-          schoolName: 'Lagos Model School',
-          location: 'Lagos, Nigeria',
-          ambassador: 'Aisha Mohammed',
-          date: 'June 12, 2025',
-          studentsReached: 85,
-          leadsGenerated: 22,
-          notes: 'Successful visit with high student engagement'
-        }, {
-          id: 2,
-          schoolName: 'Nairobi Academy',
-          location: 'Nairobi, Kenya',
-          ambassador: 'John Kamau',
-          date: 'June 11, 2025',
-          studentsReached: 75,
-          leadsGenerated: 18,
-          notes: 'Presented scholarship opportunities to senior students'
-        }, {
-          id: 3,
-          schoolName: 'Accra High School',
-          location: 'Accra, Ghana',
-          ambassador: 'Grace Osei',
-          date: 'June 14, 2025',
-          studentsReached: 65,
-          leadsGenerated: 15,
-          notes: 'Focused on STEM career paths'
-        }, {
-          id: 4,
-          schoolName: 'Cape Town Secondary',
-          location: 'Cape Town, South Africa',
-          ambassador: 'Samuel Dlamini',
-          date: 'June 13, 2025',
-          studentsReached: 50,
-          leadsGenerated: 12,
-          notes: 'Initial visit to establish partnership'
-        }, {
-          id: 5,
-          schoolName: 'Kano Model College',
-          location: 'Kano, Nigeria',
-          ambassador: 'Fatima Abdullahi',
-          date: 'June 15, 2025',
-          studentsReached: 70,
-          leadsGenerated: 20,
-          notes: 'Follow-up visit with interactive workshop'
-        }],
-        weeklyTrends: {
-          schoolVisits: [28, 30, 27, 32, 35, 30, 32],
-          studentsReached: [720, 680, 750, 850, 800, 780, 850],
-          leadsGenerated: [180, 175, 190, 210, 200, 215, 210]
-        }
-      };
-      setReportData(mockReportData);
-      setIsLoading(false);
-    }, 1000);
+    const fetchWeeklyData = async () => {
+      setIsLoading(true);
+      try {
+        // Calculate week start (Monday of current week for 'current')
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        const monday = new Date(now);
+        monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        const weekStart = monday.toISOString().split('T')[0];
+
+        const countryCode = selectedCountry === 'all' ? undefined : selectedCountry.toLowerCase().slice(0,2); // Simple mapping, e.g., 'Nigeria' -> 'ng'
+
+        const metrics = await generateWeeklyReport(weekStart, countryCode);
+
+        // Transform metrics to match component structure
+        // Note: For full implementation, additional queries for topPerformers, schoolVisits, etc., would be needed
+        const reportData = {
+          weekNumber: getWeekNumber(now),
+          dateRange: `${weekStart} - ${new Date(weekStart).setDate(monday.getDate() + 6)}`, // Approximate
+          overview: {
+            newSchoolContacts: metrics.partnerships || 0,
+            newSchoolContactsTrend: 0, // Would need previous week comparison
+            schoolVisits: metrics.visits_count || 0,
+            schoolVisitsTrend: 0,
+            studentsReached: metrics.students_reached || 0,
+            studentsReachedTrend: 0,
+            leadsGenerated: metrics.tasks_completed || 0, // Approximate
+            leadsGeneratedTrend: 0
+          },
+          ambassadorActivity: {
+            activeAmbassadors: metrics.active_ambassadors || 0,
+            activeAmbassadorsTrend: 0,
+            taskCompletion: 85, // Would need calculation
+            taskCompletionTrend: 0,
+            totalTasks: 120, // Mock for now
+            completedTasks: Math.round(120 * 0.85)
+          },
+          // topPerformers, countryPerformance, schoolVisits, weeklyTrends would require additional API calls or keep mock for now
+          topPerformers: [], // Fetch from users/visits aggregate
+          countryPerformance: [], // Aggregate by country
+          schoolVisits: [], // Fetch from visits table
+          weeklyTrends: {
+            schoolVisits: [], // Previous weeks data
+            studentsReached: [],
+            leadsGenerated: []
+          }
+        };
+
+        setReportData(reportData);
+      } catch (error) {
+        console.error('Error fetching weekly data:', error);
+        toast.error('Failed to load weekly report data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWeeklyData();
   }, [selectedWeek, selectedCountry]);
+
+  // Helper function to get week number
+  const getWeekNumber = (d: Date) => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  };
   // Weekly trends chart data
   const weeklyTrendsData = reportData?.weeklyTrends ? {
     labels: ['Week 18', 'Week 19', 'Week 20', 'Week 21', 'Week 22', 'Week 23', 'Week 24'],

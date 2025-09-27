@@ -1,22 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalendarIcon, DownloadIcon, FilterIcon, TrendingUpIcon, UsersIcon, SchoolIcon, MapPinIcon, BarChart3Icon, PieChartIcon, FileTextIcon } from 'lucide-react';
 import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
+import { generateReportMetrics, generateMonthlyReport } from '../../../../api/reports';
+import { LoadingSpinner } from '../../../LoadingSpinner';
+import toast from 'react-hot-toast';
 
 export const MonthlyReportsPage = () => {
   const [selectedMonth, setSelectedMonth] = useState('2024-01');
   const [selectedCountry, setSelectedCountry] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [monthlyData, setMonthlyData] = useState<any>(null);
 
-  // Mock data for monthly reports
-  const monthlyMetrics = {
-    totalStudents: 1250,
-    newPartnerships: 15,
-    activeAmbassadors: 52,
-    totalVisits: 89,
-    countriesCovered: 4,
-    avgStudentsPerVisit: 14
+  useEffect(() => {
+    const fetchMonthlyData = async () => {
+      setLoading(true);
+      try {
+        const [year, month] = selectedMonth.split('-');
+        const countryCode = selectedCountry === 'all' ? undefined : selectedCountry;
+
+        const data = await generateMonthlyReport(month, parseInt(year), countryCode);
+        setMonthlyData(data);
+      } catch (error) {
+        console.error('Error fetching monthly data:', error);
+        toast.error('Failed to load monthly report data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMonthlyData();
+  }, [selectedMonth, selectedCountry]);
+
+  // Calculate metrics from real data
+  const monthlyMetrics = monthlyData ? {
+    totalStudents: monthlyData.students_reached || 0,
+    newPartnerships: monthlyData.partnerships || 0,
+    activeAmbassadors: monthlyData.active_ambassadors || 0,
+    totalVisits: monthlyData.visits_count || 0,
+    countriesCovered: selectedCountry === 'all' ? 4 : 1, // This would need to be calculated from data
+    avgStudentsPerVisit: monthlyData.visits_count ? Math.round((monthlyData.students_reached || 0) / monthlyData.visits_count) : 0
+  } : {
+    totalStudents: 0,
+    newPartnerships: 0,
+    activeAmbassadors: 0,
+    totalVisits: 0,
+    countriesCovered: 0,
+    avgStudentsPerVisit: 0
   };
 
   const monthlyTrends = {
@@ -62,11 +94,29 @@ export const MonthlyReportsPage = () => {
     { header: 'Date', accessor: 'date' }
   ];
 
-  const exportReport = (format: string) => {
-    // Mock export functionality
-    console.log(`Exporting monthly report in ${format} format`);
-    alert(`Monthly report exported as ${format.toUpperCase()}`);
+  const exportReport = async (format: string) => {
+    try {
+      if (format === 'pdf') {
+        // For now, just show a message. In a real implementation, you'd call a PDF generation service
+        toast.success('PDF export feature coming soon!');
+      } else {
+        // For Excel, you could use a library like xlsx
+        toast.success('Excel export feature coming soon!');
+      }
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast.error('Failed to export report');
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <LoadingSpinner />
+        <span className="ml-2 text-sm text-gray-600">Loading monthly report...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
