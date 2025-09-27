@@ -77,12 +77,30 @@ export const SchoolProspectsPage = () => {
   useEffect(() => {
     const fetchProspects = async () => {
       setIsLoading(true);
-      // Fetch only schools with status 'prospect' or similar
-      const { data, error } = await supabase
+
+      // Calculate date filter
+      let fromDate: Date | null = null;
+      const now = new Date();
+      if (timeRange === 'month') {
+        fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      } else if (timeRange === 'quarter') {
+        const quarterStartMonth = now.getMonth() - (now.getMonth() % 3);
+        fromDate = new Date(now.getFullYear(), quarterStartMonth, 1);
+      } else if (timeRange === 'year') {
+        fromDate = new Date(now.getFullYear(), 0, 1);
+      }
+
+      let query = supabase
         .from('schools')
         .select('*')
-        .in('status', ['prospect', 'contacted', 'meeting_scheduled', 'proposal_sent', 'new']) // adjust as needed
+        .in('status', ['prospect', 'contacted', 'meeting_scheduled', 'proposal_sent', 'new'])
         .order('created_at', { ascending: false });
+
+      if (fromDate) {
+        query = query.gte('created_at', fromDate.toISOString());
+      }
+
+      const { data, error } = await query;
       if (!error && data) {
         setProspects(data);
         setFilteredProspects(data);
@@ -90,7 +108,7 @@ export const SchoolProspectsPage = () => {
       setIsLoading(false);
     };
     fetchProspects();
-  }, []);
+  }, [timeRange]);
   useEffect(() => {
     if (prospects.length > 0) {
       let filtered = [...prospects];
