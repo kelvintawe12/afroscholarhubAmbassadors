@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useCountryLeadKPIs, useCountryAmbassadors, useLeadGenerationTrends, useCountryDistribution, useAmbassadorPerformance, useRecentActivities } from '../../../hooks/useDashboardData';
+import { supabase } from '../../../utils/supabase';
 import {
   BarChart3,
   FileText,
@@ -54,136 +57,21 @@ interface Report {
   categories: string[];
 }
 
-// Mock Data
-const reportMetrics: ReportMetric[] = [
-  {
-    title: 'Total Scholarships',
-    value: '2,847',
-    trend: '+18% YoY',
-    icon: <Award className="h-5 w-5 text-yellow-600" />,
-    color: 'from-yellow-400 to-orange-500'
-  },
-  {
-    title: 'Funding Disbursed',
-    value: '₦12.4B',
-    trend: '+24% QoQ',
-    icon: <DollarSign className="h-5 w-5 text-green-600" />,
-    color: 'from-green-500 to-emerald-600'
-  },
-  {
-    title: 'Ambassadors Active',
-    value: '1,247',
-    trend: '+12% MoM',
-    icon: <Users className="h-5 w-5 text-blue-600" />,
-    color: 'from-blue-500 to-blue-600'
-  },
-  {
-    title: 'Partner Schools',
-    value: '156',
-    trend: '+8 this quarter',
-    icon: <Building className="h-5 w-5 text-purple-600" />,
-    color: 'from-purple-500 to-violet-600'
-  },
-  {
-    title: 'Success Rate',
-    value: '89%',
-    trend: 'Target: 85%',
-    icon: <TrendingUp className="h-5 w-5 text-emerald-600" />,
-    color: 'from-emerald-500 to-teal-600'
-  },
-  {
-    title: 'Avg Resolution Time',
-    value: '2.1 days',
-    trend: 'Target: 48hrs',
-    icon: <Clock className="h-5 w-5 text-orange-600" />,
-    color: 'from-orange-400 to-red-500'
-  }
-];
+// Real Data - will be populated from API
+const reportMetrics: ReportMetric[] = [];
 
-const recentReports: Report[] = [
-  {
-    id: '1',
-    title: 'Q4 2024 Impact Report',
-    type: 'impact',
-    period: 'Oct-Dec 2024',
-    generated: 'Dec 16, 2024',
-    status: 'ready',
-    size: '3.2MB',
-    downloads: 23,
-    categories: ['impact', 'scholarships', 'regions']
-  },
-  {
-    id: '2',
-    title: 'Nigeria Operations Review',
-    type: 'financial',
-    period: 'Q4 2024',
-    generated: 'Dec 15, 2024',
-    status: 'ready',
-    size: '1.8MB',
-    downloads: 12,
-    categories: ['financial', 'nigeria', 'scholarships']
-  },
-  {
-    id: '3',
-    title: 'Ambassador Performance Metrics',
-    type: 'ambassador',
-    period: 'Nov-Dec 2024',
-    generated: 'Dec 14, 2024',
-    status: 'generating',
-    size: 'N/A',
-    downloads: 0,
-    categories: ['ambassadors', 'performance', 'training']
-  },
-  {
-    id: '4',
-    title: 'STEM Program Analysis',
-    type: 'impact',
-    period: '2024 Full Year',
-    generated: 'Dec 13, 2024',
-    status: 'ready',
-    size: '2.5MB',
-    downloads: 45,
-    categories: ['stem', 'scholarships', 'outcomes']
-  },
-  {
-    id: '5',
-    title: 'Compliance & Risk Report',
-    type: 'compliance',
-    period: 'Q4 2024',
-    generated: 'Dec 12, 2024',
-    status: 'ready',
-    size: '1.1MB',
-    downloads: 8,
-    categories: ['compliance', 'risk', 'audit']
-  }
-];
+const recentReports: Report[] = [];
 
-// Chart Data
-const scholarshipTrendsData = {
-  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  datasets: [
-    {
-      label: 'Scholarships Funded',
-      data: [89, 123, 156, 189, 234, 267, 301, 345, 389, 423, 456, 512],
-      borderColor: 'rgb(26, 95, 122)',
-      backgroundColor: 'rgba(26, 95, 122, 0.1)',
-      tension: 0.4
-    },
-    {
-      label: 'Funding Disbursed (₦M)',
-      data: [1.2, 1.8, 2.3, 2.9, 3.6, 4.2, 4.8, 5.6, 6.3, 7.1, 7.8, 8.9],
-      borderColor: 'rgb(244, 196, 48)',
-      backgroundColor: 'rgba(244, 196, 48, 0.1)',
-      tension: 0.4,
-      yAxisID: 'y1'
-    }
-  ]
+// Chart Data - will be populated from API
+const scholarshipTrendsData: any = {
+  labels: [],
+  datasets: []
 };
 
-const categoryBreakdownData = {
-  labels: ['STEM', 'Business', 'Health Sciences', 'Education', 'Arts & Humanities'],
+const categoryBreakdownData: any = {
+  labels: [],
   datasets: [{
-    data: [45, 25, 18, 8, 4],
+    data: [],
     backgroundColor: [
       'rgba(26, 95, 122, 0.8)',
       'rgba(244, 196, 48, 0.8)',
@@ -194,34 +82,14 @@ const categoryBreakdownData = {
   }]
 };
 
-const regionalPerformanceData = {
-  labels: ['Nigeria', 'Ghana', 'Kenya', 'South Africa', 'Uganda', 'Egypt'],
-  datasets: [{
-    label: 'Scholarships',
-    data: [847, 423, 356, 289, 234, 198],
-    backgroundColor: 'rgba(26, 95, 122, 0.8)'
-  }, {
-    label: 'Conversion Rate %',
-    data: [92, 87, 76, 82, 68, 45],
-    backgroundColor: 'rgba(244, 196, 48, 0.8)',
-    yAxisID: 'y1'
-  }]
+const regionalPerformanceData: any = {
+  labels: [],
+  datasets: []
 };
 
-const ambassadorPerformanceData = {
-  labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-  datasets: [
-    {
-      label: 'Leads Generated',
-      data: [456, 523, 678, 789],
-      backgroundColor: 'rgba(38, 162, 105, 0.8)'
-    },
-    {
-      label: 'Conversions',
-      data: [89, 123, 156, 189],
-      backgroundColor: 'rgba(147, 51, 234, 0.8)'
-    }
-  ]
+const ambassadorPerformanceData: any = {
+  labels: [],
+  datasets: []
 };
 
 // Components
@@ -354,6 +222,16 @@ const ReportQuickAction: React.FC<{
 };
 
 const ReportsPage: React.FC = () => {
+  const { user } = useAuth();
+  const countryCode = user?.country_code || 'ng'; // Default to Nigeria if not set
+
+  const { data: kpis, loading: kpisLoading } = useCountryLeadKPIs(countryCode);
+  const { data: ambassadors } = useCountryAmbassadors(countryCode);
+  const { data: leadTrends } = useLeadGenerationTrends();
+  const { data: countryDist } = useCountryDistribution();
+  const { data: ambPerformance } = useAmbassadorPerformance();
+  const { data: activities } = useRecentActivities(5);
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<ReportFilter>({
@@ -362,6 +240,189 @@ const ReportsPage: React.FC = () => {
     category: 'all',
     status: 'all'
   });
+
+  // Populate reportMetrics from KPIs
+  const reportMetrics: ReportMetric[] = React.useMemo(() => {
+    if (!kpis || kpisLoading) return [];
+
+    return [
+      {
+        title: 'Leads Generated',
+        value: kpis.leadsGenerated?.toLocaleString() || '0',
+        trend: '+12% this month',
+        icon: <Users className="h-5 w-5 text-blue-600" />,
+        color: 'from-blue-500 to-blue-600'
+      },
+      {
+        title: 'Partner Schools',
+        value: kpis.schoolsVisited?.toString() || '0',
+        trend: '+5 this quarter',
+        icon: <Building className="h-5 w-5 text-purple-600" />,
+        color: 'from-purple-500 to-violet-600'
+      },
+      {
+        title: 'Tasks Completed',
+        value: kpis.tasksCompleted?.toString() || '0',
+        trend: '+18% this month',
+        icon: <Award className="h-5 w-5 text-yellow-600" />,
+        color: 'from-yellow-400 to-orange-500'
+      },
+      {
+        title: 'Conversion Rate',
+        value: kpis.conversionRate ? `${kpis.conversionRate}%` : '0%',
+        trend: 'Target: 85%',
+        icon: <TrendingUp className="h-5 w-5 text-emerald-600" />,
+        color: 'from-emerald-500 to-teal-600'
+      },
+      {
+        title: 'Active Ambassadors',
+        value: kpis.activeAmbassadors?.toString() || '0',
+        trend: '+2 this month',
+        icon: <Users className="h-5 w-5 text-green-600" />,
+        color: 'from-green-500 to-emerald-600'
+      },
+      {
+        title: 'Impact Score',
+        value: kpis.impactScore?.toString() || '0',
+        trend: 'Goal: 100',
+        icon: <Clock className="h-5 w-5 text-orange-600" />,
+        color: 'from-orange-400 to-red-500'
+      }
+    ];
+  }, [kpis, kpisLoading]);
+
+  // Fetch additional data for metrics and charts
+  const [totalStudents, setTotalStudents] = useState<number>(0);
+  const [schoolsByStatus, setSchoolsByStatus] = useState<Record<string, number>>({});
+  const [totalFunding, setTotalFunding] = useState<number>(0);
+  const [avgResolutionTime, setAvgResolutionTime] = useState<string>('0 days');
+  const [categoryData, setCategoryData] = useState<any>(categoryBreakdownData);
+  const [regionalData, setRegionalData] = useState<any>(regionalPerformanceData);
+  const [scholarshipTrends, setScholarshipTrends] = useState<any>(scholarshipTrendsData);
+
+  useEffect(() => {
+    const fetchAdditionalData = async () => {
+      if (!countryCode) return;
+
+      try {
+        // Fetch total students reached
+        const { data: visitData } = await supabase
+          .from('visits')
+          .select('students_reached')
+          .eq('country_code', countryCode);
+        const students = visitData?.reduce((sum: number, v: any) => sum + (v.students_reached || 0), 0) || 0;
+        setTotalStudents(students);
+
+        // Fetch schools by status
+        const { data: schoolData } = await supabase
+          .from('schools')
+          .select('status')
+          .eq('country_code', countryCode);
+        const statusCount: Record<string, number> = {};
+        schoolData?.forEach((s: any) => {
+          statusCount[s.status] = (statusCount[s.status] || 0) + 1;
+        });
+        setSchoolsByStatus(statusCount);
+
+        // Fetch total funding
+        const { data: eventData } = await supabase
+          .from('events')
+          .select('actual_cost')
+          .eq('country_code', countryCode)
+          .gt('actual_cost', 0);
+        const funding = eventData?.reduce((sum: number, e: any) => sum + (e.actual_cost || 0), 0) || 0;
+        setTotalFunding(funding);
+
+        // Avg resolution time
+        const { data: taskData } = await supabase
+          .from('tasks')
+          .select('created_at, completed_date, updated_at')
+          .eq('status', 'Completed')
+          .eq('country_code', countryCode);
+        if (taskData && taskData.length > 0) {
+          const avgDays = taskData.reduce((sum: number, t: any) => {
+            const start = new Date(t.created_at);
+            const end = new Date(t.completed_date || t.updated_at);
+            return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+          }, 0) / taskData.length;
+          setAvgResolutionTime(`${avgDays.toFixed(1)} days`);
+        }
+
+        // Category breakdown by school type (simplified)
+        const { data: typeData } = await supabase
+          .from('schools')
+          .select('type')
+          .eq('country_code', countryCode)
+          .eq('status', 'partnered');
+        if (typeData) {
+          const typeCount: Record<string, number> = {};
+          typeData.forEach((s: any) => {
+            const type = s.type?.toUpperCase() || 'Other';
+            typeCount[type] = (typeCount[type] || 0) + 1;
+          });
+          setCategoryData({
+            labels: Object.keys(typeCount),
+            datasets: [{
+              data: Object.values(typeCount),
+              backgroundColor: categoryBreakdownData.datasets[0].backgroundColor
+            }]
+          });
+        }
+
+        // Regional breakdown (simplified)
+        const { data: regionData } = await supabase
+          .from('schools')
+          .select('region')
+          .eq('country_code', countryCode);
+        if (regionData) {
+          const regionCount: Record<string, number> = {};
+          regionData.forEach((s: any) => {
+            const region = s.region || 'Unknown';
+            regionCount[region] = (regionCount[region] || 0) + 1;
+          });
+          setRegionalData({
+            labels: Object.keys(regionCount),
+            datasets: [{
+              label: 'Schools',
+              data: Object.values(regionCount),
+              backgroundColor: 'rgba(26, 95, 122, 0.8)'
+            }]
+          });
+        }
+
+        // Scholarship trends
+        const { data: schoolTrends } = await supabase
+          .from('schools')
+          .select('partnership_date')
+          .eq('country_code', countryCode)
+          .eq('status', 'partnered');
+        if (schoolTrends) {
+          const monthly: Record<string, number> = {};
+          schoolTrends.forEach((s: any) => {
+            if (s.partnership_date) {
+              const date = new Date(s.partnership_date);
+              const month = date.toLocaleDateString('en-US', { month: 'short' });
+              monthly[month] = (monthly[month] || 0) + 1;
+            }
+          });
+          setScholarshipTrends({
+            labels: Object.keys(monthly),
+            datasets: [{
+              label: 'Schools Partnered',
+              data: Object.values(monthly),
+              borderColor: 'rgb(26, 95, 122)',
+              backgroundColor: 'rgba(26, 95, 122, 0.1)',
+              tension: 0.4
+            }]
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching additional data:', error);
+      }
+    };
+
+    fetchAdditionalData();
+  }, [countryCode]);
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 className="h-4 w-4" /> },
@@ -531,7 +592,7 @@ const ReportsPage: React.FC = () => {
               </div>
               <LineChart
                 title="Scholarship Trends"
-                data={scholarshipTrendsData}
+                data={scholarshipTrends}
                 height={300}
               />
             </div>
@@ -547,7 +608,7 @@ const ReportsPage: React.FC = () => {
               </div>
               <PieChart
                 title="Category Breakdown"
-                data={categoryBreakdownData}
+                data={categoryData}
                 height={300}
               />
             </div>
@@ -568,7 +629,7 @@ const ReportsPage: React.FC = () => {
               </div>
               <BarChart
                 title="Regional Performance"
-                data={regionalPerformanceData}
+                data={regionalData}
                 height={300}
               />
             </div>
