@@ -24,7 +24,6 @@ interface PWAInstallPromptProps {
   features?: Array<{
     icon: React.ComponentType<{ className?: string; size?: number }>;
     text: string;
-    color: string;
   }>;
   onInstall?: () => void;
   onDismiss?: () => void;
@@ -36,22 +35,19 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
   screenshots = ["/screenshot1.png", "/screenshot2.png"],
   learnMoreUrl = "/about",
   features = [
-    { icon: Shield, text: "Secure, private dashboards", color: "text-green-600" },
-    { icon: Bell, text: "Push notifications for updates", color: "text-blue-600" },
-    { icon: Zap, text: "Fast, offline access", color: "text-yellow-500" },
-    { icon: Smartphone, text: "Easy home screen access", color: "text-purple-600" }
+    { icon: Shield, text: "Secure, private dashboards" },
+    { icon: Bell, text: "Push notifications for updates" },
+    { icon: Zap, text: "Fast, offline access" },
+    { icon: Smartphone, text: "Easy home screen access" }
   ],
   onInstall,
   onDismiss
 }) => {
-  // Only use state hooks - no callbacks
   const [isVisible, setIsVisible] = useState(false);
   const [showScreenshots, setShowScreenshots] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [currentFeatureIndex, setCurrentFeatureIndex] = useState(0);
-
-  // Refs for mutable values that don't trigger re-renders
   const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const componentMountedRef = useRef(true);
 
@@ -133,17 +129,16 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
 
     const interval = setInterval(() => {
       setCurrentFeatureIndex((prevIndex) => (prevIndex + 1) % features.length);
-    }, 3000); // Change slide every 3 seconds
+    }, 4000); // Change slide every 4 seconds for a smoother pace
 
     return () => clearInterval(interval);
   }, [isVisible, features.length]);
 
-  // Setup event listeners - only runs once
+  // Setup event listeners
   useEffect(() => {
     componentMountedRef.current = true;
     checkInstallationStatus();
 
-    // Create event handlers inside effect to avoid closure issues
     const beforeInstallHandler = (event: any) => {
       if (
         event &&
@@ -167,63 +162,54 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
       window.removeEventListener('beforeinstallprompt', beforeInstallHandler);
       window.removeEventListener('appinstalled', appInstalledHandler);
     };
-  }, []); // Empty dependency array - runs once
+  }, []);
 
-  // Don't render if not visible or already installed
   if (!isVisible || isInstalled) return null;
-
-
 
   // Screenshot gallery
   const screenshotGallery = screenshots.map((src, index) => (
     <div
       key={index}
-      className="relative group overflow-hidden rounded-xl shadow-lg"
+      className="relative group overflow-hidden rounded-lg shadow-md"
       style={{ aspectRatio: '9/16' }}
     >
       <img
         src={src}
         alt={`${appName} screenshot ${index + 1}`}
-        className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-110"
+        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
         loading="lazy"
       />
-      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-0 bg-gray-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
     </div>
   ));
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6 pointer-events-none"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 pointer-events-none"
       role="dialog"
       aria-modal="true"
       aria-label={`Install ${appName}`}
     >
       {/* Backdrop */}
-      {isVisible && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-          onClick={dismissPrompt}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity duration-500"
+        onClick={dismissPrompt}
+        aria-hidden="true"
+      />
 
       <div
         className={`
-          w-full max-w-md bg-white border border-gray-200/50
-          shadow-2xl rounded-2xl overflow-hidden transition-all duration-500
-          ease-out transform pointer-events-auto
-          ${isVisible
-            ? 'translate-y-0 opacity-100 scale-100'
-            : 'translate-y-8 opacity-0 scale-95'
-          }
+          w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden
+          pointer-events-auto transform transition-all duration-500 ease-in-out
+          ${isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'}
         `}
       >
         {/* Header */}
-        <div className="relative p-6 pb-4">
+        <div className="relative p-6 pb-4 bg-gray-50">
           <button
-            className="absolute -top-2 -right-2 p-2 text-gray-400 hover:text-gray-600
-                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                     rounded-full transition-colors duration-200 hover:bg-gray-100"
+            className="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-700
+                     rounded-full transition-colors duration-200 hover:bg-gray-100
+                     focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2"
             onClick={dismissPrompt}
             aria-label="Close install prompt"
           >
@@ -231,30 +217,24 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           </button>
 
           <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <img
-                src={appIcon}
-                alt={`${appName} icon`}
-                className="w-16 h-16 rounded-2xl border-2 border-gray-200 shadow-lg"
-              />
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur opacity-20 animate-pulse" />
-            </div>
-
+            <img
+              src={appIcon}
+              alt={`${appName} icon`}
+              className="w-16 h-16 rounded-xl border border-gray-200 shadow-sm"
+            />
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-1 leading-tight">
-                Add to Home Screen
-              </h2>
-              <p className="text-sm text-gray-600 max-w-[280px]">
-                Get {appName} on your home screen for the best experience
+              <h2 className="text-xl font-semibold text-gray-900 mb-1">Install {appName}</h2>
+              <p className="text-sm text-gray-600 max-w-xs">
+                Add to your home screen for a seamless, app-like experience.
               </p>
             </div>
           </div>
         </div>
 
         {/* Features Slideshow */}
-        <div className="px-6 pb-4">
+        <div className="px-6 py-4 bg-white">
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-2">
+            <div className="flex items-center justify-center gap-4 mb-3">
               {features.map((feature, index) => {
                 const Icon = feature.icon;
                 return (
@@ -262,24 +242,24 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
                     key={index}
                     size={24}
                     className={`${
-                      index === currentFeatureIndex ? feature.color : 'text-gray-400'
-                    } transition-colors duration-500`}
+                      index === currentFeatureIndex ? 'text-teal-600' : 'text-gray-400'
+                    } transition-colors duration-500 ease-in-out`}
                   />
                 );
               })}
             </div>
             <div className="h-12 flex items-center justify-center">
-              <p className="text-sm text-gray-700 leading-relaxed transition-opacity duration-500">
+              <p className="text-sm font-medium text-gray-700 transition-opacity duration-500">
                 {features[currentFeatureIndex].text}
               </p>
             </div>
-            <div className="flex justify-center gap-2 mt-2">
+            <div className="flex justify-center gap-2 mt-3">
               {features.map((_, index) => (
                 <button
                   key={index}
                   className={`w-2 h-2 rounded-full transition-all duration-300 ${
                     index === currentFeatureIndex
-                      ? 'bg-blue-600 scale-125'
+                      ? 'bg-teal-600 scale-125'
                       : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                   onClick={() => setCurrentFeatureIndex(index)}
@@ -291,15 +271,15 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="px-6 pb-6 space-y-3">
+        <div className="px-6 pb-6 bg-white space-y-3">
           <button
             className={`
-              w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-              font-semibold text-white shadow-lg transition-all duration-200
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white
+              w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg
+              font-semibold text-white shadow-md transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2
               ${isInstalling
                 ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 active:scale-95'
+                : 'bg-teal-600 hover:bg-teal-700 active:scale-98'
               }
             `}
             onClick={installApp}
@@ -322,32 +302,38 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
 
           <div className="flex gap-2">
             <button
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700
-                       bg-gray-100/80 hover:bg-gray-200 rounded-lg transition-colors
-                       focus:outline-none focus:ring-2 focus:ring-gray-300
+              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700
+                       bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2
                        disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={toggleScreenshots}
               disabled={isInstalling}
             >
-              {showScreenshots ? 'Hide Preview' : 'Preview'}
+              {showScreenshots ? 'Hide Preview' : 'Show Preview'}
             </button>
 
-            <button
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600
-                       bg-gray-100/80 hover:bg-gray-200 rounded-lg transition-colors
-                       focus:outline-none focus:ring-2 focus:ring-gray-300
-                       disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={dismissPrompt}
-              disabled={isInstalling}
+            <a
+              href={isInstalling ? undefined : learnMoreUrl}
+              className={`flex-1 px-4 py-2 text-sm font-medium text-gray-700
+                       bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors
+                       focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2
+                       text-center ${isInstalling ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}
+              tabIndex={isInstalling ? -1 : 0}
+              aria-disabled={isInstalling}
+              onClick={e => {
+                if (isInstalling) {
+                  e.preventDefault();
+                }
+              }}
             >
-              Dismiss
-            </button>
+              Learn More
+            </a>
           </div>
         </div>
 
         {/* Screenshot Gallery */}
         {showScreenshots && (
-          <div className="bg-gray-50 px-6 pb-6 pt-0">
+          <div className="bg-gray-50 px-6 pb-6 pt-4">
             <div className="flex gap-3 justify-center">
               {screenshotGallery}
             </div>
@@ -359,12 +345,15 @@ const PWAInstallPrompt: React.FC<PWAInstallPromptProps> = ({
           @keyframes slideInUp {
             from {
               opacity: 0;
-              transform: translateY(24px) scale(0.95);
+              transform: translateY(16px) scale(0.98);
             }
             to {
               opacity: 1;
               transform: translateY(0) scale(1);
             }
+          }
+          .animate-slideInUp {
+            animation: slideInUp 0.5s ease-in-out forwards;
           }
         `}</style>
       </div>
