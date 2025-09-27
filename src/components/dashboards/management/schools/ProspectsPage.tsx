@@ -16,7 +16,9 @@ type School = {
   id: string;
   name: string;
   location: string;
+  address?: string;
   country_code: string;
+  region?: string;
   contact_person: string;
   contact_email: string;
   contact_phone: string;
@@ -49,6 +51,29 @@ export const SchoolProspectsPage = () => {
     // Add other fields as needed
   };
   const [ambassadors, setAmbassadors] = useState<User[]>([]);
+  const [showAddProspectModal, setShowAddProspectModal] = useState(false);
+  const [showScheduleFollowupModal, setShowScheduleFollowupModal] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+
+  // Add Prospect form state
+  const [newProspect, setNewProspect] = useState<Partial<School>>({
+    name: '',
+    location: '',
+    address: '',
+    country_code: '',
+    region: '',
+    contact_person: '',
+    contact_email: '',
+    contact_phone: '',
+    student_count: 0,
+    priority: 'medium',
+    status: 'prospect',
+  });
+
+  // Reassign state
+  const [selectedProspectId, setSelectedProspectId] = useState<string | null>(null);
+  const [selectedAmbassadorId, setSelectedAmbassadorId] = useState<string>('');
+
   useEffect(() => {
     const fetchProspects = async () => {
       setIsLoading(true);
@@ -445,7 +470,7 @@ export const SchoolProspectsPage = () => {
             </div>
             <input type="search" placeholder="Search prospects..." className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
-          <button className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90">
+          <button className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90" onClick={() => setShowAddProspectModal(true)}>
             <PlusIcon size={16} className="mr-2" />
             Add Prospect
           </button>
@@ -515,19 +540,368 @@ export const SchoolProspectsPage = () => {
           Quick Actions
         </h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
-            <PlusIcon size={16} className="mr-2" />
-            Add New Prospect
-          </button>
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
-            <CalendarIcon size={16} className="mr-2" />
-            Schedule Follow-ups
-          </button>
-          <button className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10">
-            <UserIcon size={16} className="mr-2" />
-            Reassign Prospects
-          </button>
+          <button
+  className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10"
+  onClick={() => setShowAddProspectModal(true)}
+>
+  <PlusIcon size={16} className="mr-2" />
+  Add New Prospect
+</button>
+<button
+  className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10"
+  onClick={() => setShowScheduleFollowupModal(true)}
+>
+  <CalendarIcon size={16} className="mr-2" />
+  Schedule Follow-ups
+</button>
+<button
+  className="flex items-center justify-center rounded-md border border-ash-teal bg-white px-4 py-3 text-sm font-medium text-ash-teal hover:bg-ash-teal/10"
+  onClick={() => setShowReassignModal(true)}
+>
+  <UserIcon size={16} className="mr-2" />
+  Reassign Prospects
+</button>
         </div>
       </div>
+
+      {/* Add New Prospect Modal */}
+      {showAddProspectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Add New Prospect</h3>
+              <button
+                onClick={() => setShowAddProspectModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              >
+                <XCircleIcon size={20} />
+              </button>
+            </div>
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                const payload = {
+                  ...newProspect,
+                  student_count: Number(newProspect.student_count) || 0,
+                  created_at: new Date().toISOString(),
+                };
+                const { data, error } = await supabase
+                  .from('schools')
+                  .insert([payload])
+                  .select()
+                  .single();
+                if (error) {
+                  alert('Failed to add prospect: ' + error.message);
+                  return;
+                }
+                if (data) {
+                  setProspects(prev => [data, ...prev]);
+                  setFilteredProspects(prev => [data, ...prev]);
+                  setShowAddProspectModal(false);
+                  setNewProspect({
+                    name: '',
+                    location: '',
+                    address: '',
+                    country_code: '',
+                    region: '',
+                    contact_person: '',
+                    contact_email: '',
+                    contact_phone: '',
+                    student_count: 0,
+                    priority: 'medium',
+                    status: 'prospect',
+                  });
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">School Name</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={newProspect.name}
+                  onChange={e => setNewProspect({ ...newProspect, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Location</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                  value={newProspect.location}
+                  onChange={e => setNewProspect({ ...newProspect, location: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Address</label>
+                <input
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={newProspect.address}
+                  onChange={e => setNewProspect({ ...newProspect, address: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Country</label>
+                  <select
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    required
+                    value={newProspect.country_code}
+                    onChange={e => setNewProspect({ ...newProspect, country_code: e.target.value })}
+                  >
+                    <option value="">Select country</option>
+                    {countries.map(country =>
+                      <option key={country.code} value={country.code}>{country.name}</option>
+                    )}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Region</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.region}
+                    onChange={e => setNewProspect({ ...newProspect, region: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Person</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.contact_person}
+                    onChange={e => setNewProspect({ ...newProspect, contact_person: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Email</label>
+                  <input
+                    type="email"
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.contact_email}
+                    onChange={e => setNewProspect({ ...newProspect, contact_email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Contact Phone</label>
+                  <input
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.contact_phone}
+                    onChange={e => setNewProspect({ ...newProspect, contact_phone: e.target.value })}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Student Count</label>
+                  <input
+                    type="number"
+                    min={0}
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.student_count}
+                    onChange={e => setNewProspect({ ...newProspect, student_count: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Priority</label>
+                  <select
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.priority}
+                    onChange={e => setNewProspect({ ...newProspect, priority: e.target.value as 'high' | 'medium' | 'low' })}
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                  <select
+                    className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                    value={newProspect.status}
+                    onChange={e => setNewProspect({ ...newProspect, status: e.target.value })}
+                  >
+                    <option value="prospect">Prospect</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="meeting_scheduled">Meeting Scheduled</option>
+                    <option value="proposal_sent">Proposal Sent</option>
+                    <option value="lost">Lost</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowAddProspectModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+                >
+                  Add Prospect
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Follow-ups Modal */}
+      {showScheduleFollowupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Schedule Follow-ups</h3>
+              <button
+                onClick={() => setShowScheduleFollowupModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              >
+                <XCircleIcon size={20} />
+              </button>
+            </div>
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                // Implement your follow-up scheduling logic here
+                alert('Follow-up scheduling logic goes here.');
+                setShowScheduleFollowupModal(false);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Select Prospect</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={selectedProspectId || ''}
+                  onChange={e => setSelectedProspectId(e.target.value)}
+                >
+                  <option value="">Select a prospect</option>
+                  {prospects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Follow-up Date</label>
+                <input
+                  type="date"
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Notes</label>
+                <textarea
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  rows={3}
+                />
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowScheduleFollowupModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+                >
+                  Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reassign Prospects Modal */}
+      {showReassignModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-2 sm:p-4">
+          <div className="w-full max-w-md sm:max-w-lg rounded-lg bg-white p-2 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Reassign Prospect</h3>
+              <button
+                onClick={() => setShowReassignModal(false)}
+                className="rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              >
+                <XCircleIcon size={20} />
+              </button>
+            </div>
+            <form
+              onSubmit={async e => {
+                e.preventDefault();
+                if (!selectedProspectId || !selectedAmbassadorId) {
+                  alert('Please select a prospect and an ambassador.');
+                  return;
+                }
+                // Update the prospect's ambassador_id in Supabase
+                const { error } = await supabase
+                  .from('schools')
+                  .update({ ambassador_id: selectedAmbassadorId })
+                  .eq('id', selectedProspectId);
+                if (error) {
+                  alert('Failed to reassign prospect: ' + error.message);
+                  return;
+                }
+                setShowReassignModal(false);
+                setSelectedProspectId(null);
+                setSelectedAmbassadorId('');
+                // Optionally, refresh prospects list here
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Select Prospect</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={selectedProspectId || ''}
+                  onChange={e => setSelectedProspectId(e.target.value)}
+                >
+                  <option value="">Select a prospect</option>
+                  {prospects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Select Ambassador</label>
+                <select
+                  className="w-full rounded-md border border-gray-300 py-2 px-3 text-sm"
+                  value={selectedAmbassadorId}
+                  onChange={e => setSelectedAmbassadorId(e.target.value)}
+                >
+                  <option value="">Select ambassador</option>
+                  {ambassadors.map(a => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowReassignModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+                >
+                  Reassign
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>;
 };
