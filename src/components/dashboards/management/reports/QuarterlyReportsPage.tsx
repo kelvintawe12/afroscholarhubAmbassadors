@@ -4,7 +4,7 @@ import { LineChart } from '../../../ui/widgets/LineChart';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { DataTable } from '../../../ui/widgets/DataTable';
-import { generateQuarterlyReport } from '../../../../api/reports';
+import { generateQuarterlyReport, getCountries } from '../../../../api/reports';
 import toast from 'react-hot-toast';
 import { LoadingSpinner } from '../../../LoadingSpinner';
 
@@ -13,6 +13,21 @@ export const QuarterlyReportsPage = () => {
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [loading, setLoading] = useState(false);
   const [quarterlyData, setQuarterlyData] = useState<any>(null);
+  const [previousData, setPreviousData] = useState<any>(null);
+  const [countries, setCountries] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const countriesData = await getCountries();
+        setCountries(countriesData);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      }
+    };
+
+    fetchCountries();
+  }, []);
 
   useEffect(() => {
     const fetchQuarterlyData = async () => {
@@ -23,7 +38,18 @@ export const QuarterlyReportsPage = () => {
         const countryCode = selectedCountry === 'all' ? undefined : selectedCountry;
 
         const data = await generateQuarterlyReport(quarterNum, parseInt(year), countryCode);
+
+        // Fetch previous quarter data for growth calculation
+        let prevQuarterNum = quarterNum - 1;
+        let prevYearNum = parseInt(year);
+        if (prevQuarterNum < 1) {
+          prevQuarterNum = 4;
+          prevYearNum -= 1;
+        }
+        const prevData = await generateQuarterlyReport(prevQuarterNum, prevYearNum, countryCode);
+
         setQuarterlyData(data);
+        setPreviousData(prevData);
       } catch (error) {
         console.error('Error fetching quarterly data:', error);
         toast.error('Failed to load quarterly report data');
@@ -43,8 +69,10 @@ export const QuarterlyReportsPage = () => {
     totalVisits: quarterlyData.visits_count || 0,
     countriesCovered: selectedCountry === 'all' ? 4 : 1,
     avgStudentsPerVisit: quarterlyData.visits_count ? Math.round((quarterlyData.students_reached || 0) / quarterlyData.visits_count) : 0,
-    growthRate: 0, // Would need previous quarter comparison
-    targetAchievement: 0 // Would need target data
+    growthRate: previousData && previousData.students_reached > 0
+      ? Math.round(((quarterlyData.students_reached - previousData.students_reached) / previousData.students_reached) * 100)
+      : 0,
+    targetAchievement: Math.min(100, Math.round((quarterlyData.students_reached / 1000) * 100)) // Assuming target of 1000 students
   } : {
     totalStudents: 0,
     newPartnerships: 0,
@@ -109,6 +137,30 @@ export const QuarterlyReportsPage = () => {
     }
   };
 
+  // Generate strategic recommendations based on real data
+  const generateStrategicRecommendations = (metrics: typeof quarterlyMetrics) => {
+    const immediate: string[] = [];
+    const longTerm: string[] = [];
+
+    if (metrics.growthRate < 10) {
+      immediate.push("Increase focus on South Africa market penetration");
+    }
+    if (metrics.activeAmbassadors < 50) {
+      immediate.push("Launch ambassador recruitment drive in underperforming regions");
+    }
+    if (metrics.targetAchievement < 80) {
+      immediate.push("Implement advanced training programs for existing ambassadors");
+    }
+
+    longTerm.push("Expand to additional African countries (Tanzania, Uganda)");
+    longTerm.push("Develop comprehensive digital learning platform");
+    longTerm.push("Establish regional training hubs for better support");
+
+    return { immediate, longTerm };
+  };
+
+  const recommendations = generateStrategicRecommendations(quarterlyMetrics);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -121,14 +173,14 @@ export const QuarterlyReportsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quarterly Reports</h1>
           <p className="text-sm text-gray-500">Strategic overview and performance analysis for the quarter</p>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap gap-3">
           <select
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+            className="w-full sm:w-auto rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
             value={selectedQuarter}
             onChange={(e) => setSelectedQuarter(e.target.value)}
           >
@@ -137,15 +189,16 @@ export const QuarterlyReportsPage = () => {
             <option value="Q3-2023">Q3 2023</option>
           </select>
           <select
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+            className="w-full sm:w-auto rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
           >
             <option value="all">All Countries</option>
-            <option value="ng">Nigeria</option>
-            <option value="ke">Kenya</option>
-            <option value="gh">Ghana</option>
-            <option value="za">South Africa</option>
+            {countries.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.name}
+              </option>
+            ))}
           </select>
           <button
             onClick={() => exportReport('pdf')}
@@ -289,35 +342,27 @@ export const QuarterlyReportsPage = () => {
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Immediate Actions</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-red-500"></div>
-                Increase focus on South Africa market penetration
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-red-500"></div>
-                Launch ambassador recruitment drive in underperforming regions
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-red-500"></div>
-                Implement advanced training programs for existing ambassadors
-              </li>
+              {recommendations.immediate.length > 0 ? (
+                recommendations.immediate.map((action, index) => (
+                  <li key={index} className="flex items-start">
+                    <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-red-500"></div>
+                    {action}
+                  </li>
+                ))
+              ) : (
+                <li className="text-sm text-gray-500">All immediate goals on track</li>
+              )}
             </ul>
           </div>
           <div>
             <h4 className="font-medium text-gray-900 mb-2">Long-term Strategy</h4>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                Expand to additional African countries (Tanzania, Uganda)
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                Develop comprehensive digital learning platform
-              </li>
-              <li className="flex items-start">
-                <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-blue-500"></div>
-                Establish regional training hubs for better support
-              </li>
+              {recommendations.longTerm.map((strategy, index) => (
+                <li key={index} className="flex items-start">
+                  <div className="mr-2 mt-0.5 h-1.5 w-1.5 rounded-full bg-blue-500"></div>
+                  {strategy}
+                </li>
+              ))}
             </ul>
           </div>
         </div>

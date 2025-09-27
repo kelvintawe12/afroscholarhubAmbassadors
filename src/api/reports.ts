@@ -277,6 +277,29 @@ export const generateMonthlyReport = async (month: string, year: number, country
     metrics
   });
 
+  // Calculate countries covered
+  if (countryCode && countryCode !== 'all') {
+    data.countries_covered = 1;
+  } else {
+    // Count distinct countries with visits in the selected month
+    const { data: visitsData, error } = await supabase
+      .from('visits')
+      .select(`
+        schools!inner(country_code)
+      `)
+      .gte('visit_date', startDate.toISOString().split('T')[0])
+      .lte('visit_date', endDate.toISOString().split('T')[0]);
+
+    if (error) {
+      console.error('Error fetching countries covered:', error);
+      data.countries_covered = 0;
+    } else {
+      // Get unique country codes from the visits
+      const uniqueCountries = new Set(visitsData?.map((visit: any) => visit.schools?.country_code).filter(Boolean));
+      data.countries_covered = uniqueCountries.size;
+    }
+  }
+
   return data;
 };
 

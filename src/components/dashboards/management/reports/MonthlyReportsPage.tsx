@@ -98,7 +98,7 @@ export const MonthlyReportsPage = () => {
     newPartnerships: monthlyData.partnerships || 0,
     activeAmbassadors: monthlyData.active_ambassadors || 0,
     totalVisits: monthlyData.visits_count || 0,
-    countriesCovered: selectedCountry === 'all' ? 4 : 1, // This would need to be calculated from data
+    countriesCovered: monthlyData.countries_covered || 0,
     avgStudentsPerVisit: monthlyData.visits_count ? Math.round((monthlyData.students_reached || 0) / monthlyData.visits_count) : 0
   } : {
     totalStudents: 0,
@@ -173,50 +173,54 @@ export const MonthlyReportsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Monthly Reports</h1>
           <p className="text-sm text-gray-500">Comprehensive overview of monthly performance and activities</p>
         </div>
-        <div className="flex space-x-3">
-          <select
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          >
-            {monthsArray.map((month) => (
-              <option key={month.value} value={month.value}>
-                {month.label}
-              </option>
-            ))}
-          </select>
-          <select
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-            value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value)}
-            disabled={countriesLoading}
-          >
-            <option value="all">All Countries</option>
-            {countries.map((country) => (
-              <option key={country.code} value={country.code}>
-                {country.flag_emoji} {country.name}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => exportReport('pdf')}
-            className="flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            <DownloadIcon size={16} className="mr-2" />
-            Export PDF
-          </button>
-          <button
-            onClick={() => exportReport('excel')}
-            className="flex items-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
-          >
-            <DownloadIcon size={16} className="mr-2" />
-            Export Excel
-          </button>
+        <div className="flex flex-col space-y-3 sm:flex-row sm:space-x-3 sm:space-y-0">
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+            <select
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm min-w-0"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+            >
+              {monthsArray.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm min-w-0"
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              disabled={countriesLoading}
+            >
+              <option value="all">All Countries</option>
+              {countries.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.flag_emoji} {country.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2 sm:space-y-0">
+            <button
+              onClick={() => exportReport('pdf')}
+              className="flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              <DownloadIcon size={16} className="mr-2" />
+              Export PDF
+            </button>
+            <button
+              onClick={() => exportReport('excel')}
+              className="flex items-center justify-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+            >
+              <DownloadIcon size={16} className="mr-2" />
+              Export Excel
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-# Database Schema-Code Mismatch Fixed
+# Management Reports Implementation Plan
 
 ## Completed Tasks
 - [x] Fixed database schema mismatch: Changed `escalated_by` to `reporter_id` in Escalation interface and API queries
@@ -14,6 +14,33 @@
   - Ambassador: `/dashboard/ambassador/global`
   - Support: `/dashboard/support/global`
   - Country Lead: `/dashboard/country-lead/:countryCode/global` (already existed)
+
+## In Progress: Management Reports Enhancement
+
+### Database Updates
+- [x] Create migration `backend/sql/migrations/009_create_reports_table.sql` for 'reports' table with id, name, type, start_date, end_date, metrics, data, status, created_by, timestamps
+- [x] Enable RLS on reports table with policy for management role access
+
+### API Layer
+- [x] Create `src/api/reports.ts` with functions: createReport, getReports, getReportById, generateReportMetrics (aggregate from schools, ambassadors, visits tables)
+- [x] Extend `src/api/management.ts` for broader management queries if needed
+
+### Component Updates
+- [x] Update `CreateReportModal.tsx`: Replace mock insert with real Supabase call; add error handling
+- [x] Update `CustomReportsPage.tsx`: Fetch saved reports via API; integrate filters with generateReportMetrics; update preview with real data
+- [x] Update `MonthlyReportsPage.tsx`: Replace mock data with API calls based on month/country; enhance export (add jsPDF dep if needed)
+- [x] Update `WeeklyReportsPage.tsx`: Fetch real data in useEffect; replace mock reportData with dynamic queries
+- [x] Update `QuarterlyReportsPage.tsx`: Fetch quarterly aggregates; update goals progress with DB targets
+
+### UI/UX Enhancements
+- [x] Add loading states and error handling across report pages
+- [x] Ensure role-based access (management only)
+- [x] Update Sidebar.tsx if new sub-routes needed
+
+### Testing & Validation
+- [x] Add Vitest tests for reports API
+- [x] Verify RLS policies and DB schema
+- [x] Test pages with real data via `npm run dev`
 
 ## Summary
 The original error "Could not find a relationship between 'escalations' and 'escalated_by'" was caused by a mismatch between the database schema (using `reporter_id` from migration 002) and the code (using `escalated_by` from migration 006). The code has been updated to align with the actual database schema using `reporter_id` as the foreign key column.
