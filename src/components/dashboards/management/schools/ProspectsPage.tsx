@@ -111,32 +111,84 @@ export const SchoolProspectsPage = () => {
     value: totalPotentialStudents.toLocaleString(),
     icon: <BarChart3Icon size={20} />
   }];
-  // Pipeline trend chart data
-  const pipelineTrendData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [{
-      label: 'New Prospects',
-      data: [12, 15, 18, 22, 25, 30],
-      borderColor: '#1A5F7A',
-      backgroundColor: 'rgba(26, 95, 122, 0.1)',
-      fill: true
-    }, {
-      label: 'Conversions',
-      data: [5, 7, 8, 10, 12, 15],
-      borderColor: '#26A269',
-      backgroundColor: 'rgba(38, 162, 105, 0.1)',
-      fill: true
-    }]
-  };
-  // Prospects by country chart data
-  const prospectsByCountryData = {
-    labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
-    datasets: [{
-      label: 'Number of Prospects',
-      data: [15, 12, 8, 5],
-      backgroundColor: 'rgba(26, 95, 122, 0.8)'
-    }]
-  };
+  // Generate pipeline trend data dynamically from prospects
+  const pipelineTrendData = React.useMemo(() => {
+    // Group prospects by month (created_at)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1);
+      return { label: months[d.getMonth()], year: d.getFullYear(), month: d.getMonth() };
+    });
+
+    const newProspects = last6Months.map(({ year, month }) =>
+      prospects.filter(p => {
+        const created = p.created_at ? new Date(p.created_at) : null;
+        return created && created.getFullYear() === year && created.getMonth() === month;
+      }).length
+    );
+
+    const conversions = last6Months.map(({ year, month }) =>
+      prospects.filter(p => {
+        // Conversion: status changed to 'proposal_sent' or similar in this month
+        if (!p.status_history || !Array.isArray(p.status_history)) return false;
+        return p.status_history.some((h: any) => {
+          if (!h.status || !h.changed_at) return false;
+          const changed = new Date(h.changed_at);
+          return (
+            (h.status === 'proposal_sent' || h.status === 'won') &&
+            changed.getFullYear() === year &&
+            changed.getMonth() === month
+          );
+        });
+      }).length
+    );
+
+    return {
+      labels: last6Months.map(m => m.label),
+      datasets: [
+        {
+          label: 'New Prospects',
+          data: newProspects,
+          borderColor: '#1A5F7A',
+          backgroundColor: 'rgba(26, 95, 122, 0.1)',
+          fill: true
+        },
+        {
+          label: 'Conversions',
+          data: conversions,
+          borderColor: '#26A269',
+          backgroundColor: 'rgba(38, 162, 105, 0.1)',
+          fill: true
+        }
+      ]
+    };
+  }, [prospects]);
+
+  // Prospects by country chart data (dynamic)
+  const prospectsByCountryData = React.useMemo(() => {
+    const countryCounts: Record<string, number> = {};
+    prospects.forEach(p => {
+      const code = p.country_code || p.country || 'Unknown';
+      countryCounts[code] = (countryCounts[code] || 0) + 1;
+    });
+    const labels = Object.keys(countryCounts).map(code => {
+      const country = countries.find(c => c.code === code);
+      return country ? country.name : code;
+    });
+    const data = Object.values(countryCounts);
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Number of Prospects',
+          data,
+          backgroundColor: 'rgba(26, 95, 122, 0.8)'
+        }
+      ]
+    };
+  }, [prospects, countries]);
   // Status badge component
   const getStatusBadge = (status: string) => {
     switch (status) {
