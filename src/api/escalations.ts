@@ -7,7 +7,7 @@ export const getCountryEscalations = async (countryCode: string) => {
     .from('escalations')
     .select(`
       *,
-      escalated_by_user:escalated_by(full_name, email, country_code),
+      reporter_user:escalated_by(full_name, email, country_code),
       assigned_to_user:assigned_to(full_name, email),
       school:school_id(name, location, country_code),
       team:team_id(name)
@@ -94,7 +94,7 @@ export const createEscalation = async (escalationData: {
     })
     .select(`
       *,
-      escalated_by_user:escalated_by(full_name, email, country_code),
+      reporter_user:escalated_by(full_name, email, country_code),
       assigned_to_user:assigned_to(full_name, email),
       school:school_id(name, location, country_code),
       team:team_id(name)
@@ -115,7 +115,7 @@ export const updateEscalation = async (id: string, updates: Partial<Escalation>)
     .eq('id', id)
     .select(`
       *,
-      escalated_by_user:escalated_by(full_name, email, country_code),
+      reporter_user:escalated_by(full_name, email, country_code),
       assigned_to_user:assigned_to(full_name, email),
       school:school_id(name, location, country_code),
       team:team_id(name)
@@ -138,7 +138,7 @@ export const assignEscalation = async (id: string, assignedTo: string) => {
     .eq('id', id)
     .select(`
       *,
-      escalated_by_user:escalated_by(full_name, email, country_code),
+      reporter_user:escalated_by(full_name, email, country_code),
       assigned_to_user:assigned_to(full_name, email),
       school:school_id(name, location, country_code),
       team:team_id(name)
@@ -163,7 +163,7 @@ export const resolveEscalation = async (id: string, resolutionNotes: string, cus
     .eq('id', id)
     .select(`
       *,
-      escalated_by_user:escalated_by(full_name, email, country_code),
+      reporter_user:escalated_by(full_name, email, country_code),
       assigned_to_user:assigned_to(full_name, email),
       school:school_id(name, location, country_code),
       team:team_id(name)
@@ -185,7 +185,7 @@ export const getEscalationActivities = async (countryCode: string, limit: number
       created_at,
       updated_at,
       resolved_at,
-      escalated_by_user:escalated_by(full_name, email)
+      reporter_user:escalated_by(full_name, email)
     `)
     .or(`school_id.in.(select id from schools where country_code = '${countryCode}'),escalated_by.in.(select id from users where country_code = '${countryCode}'),team_id.in.(select id from teams where country_code = '${countryCode}')`)
     .order('updated_at', { ascending: false })
@@ -204,7 +204,7 @@ export const getEscalationActivities = async (countryCode: string, limit: number
       description: `New escalation was created`,
       timestamp: escalation.created_at,
       user: {
-        name: escalation.escalated_by_user?.full_name || 'Unknown User'
+        name: escalation.reporter_user?.[0]?.full_name || 'Unknown User'
       },
       escalation_id: escalation.id
     });
@@ -218,7 +218,7 @@ export const getEscalationActivities = async (countryCode: string, limit: number
         description: `Escalation was marked as resolved`,
         timestamp: escalation.resolved_at,
         user: {
-          name: escalation.escalated_by_user?.full_name || 'Unknown User'
+          name: escalation.reporter_user?.[0]?.full_name || 'Unknown User'
         },
         escalation_id: escalation.id
       });

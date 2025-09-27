@@ -11,69 +11,79 @@ import { Escalation, EscalationStat, EscalationActivity } from '../../../types';
 
 // Category configurations
 const categoryConfig = {
-  school_issue: {
+  scholarship: {
     color: 'text-orange-600 bg-orange-50 border-orange-200',
     icon: <Award className="h-4 w-4" />
-  },
-  ambassador_issue: {
-    color: 'text-red-600 bg-red-50 border-red-200',
-    icon: <Shield className="h-4 w-4" />
-  },
-  technical: {
-    color: 'text-blue-600 bg-blue-50 border-blue-200',
-    icon: <Zap className="h-4 w-4" />
   },
   compliance: {
     color: 'text-green-600 bg-green-50 border-green-200',
     icon: <User className="h-4 w-4" />
   },
-  finance: {
-    color: 'text-purple-600 bg-purple-50 border-purple-200',
-    icon: <Building className="h-4 w-4" />
+  technical: {
+    color: 'text-blue-600 bg-blue-50 border-blue-200',
+    icon: <Zap className="h-4 w-4" />
   },
-  partnership: {
+  ambassador: {
+    color: 'text-red-600 bg-red-50 border-red-200',
+    icon: <Shield className="h-4 w-4" />
+  },
+  partner: {
     color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
     icon: <TrendingUp className="h-4 w-4" />
   },
-  training: {
+  system: {
     color: 'text-gray-600 bg-gray-50 border-gray-200',
-    icon: <Award className="h-4 w-4" />
+    icon: <Building className="h-4 w-4" />
+  },
+  finance: {
+    color: 'text-purple-600 bg-purple-50 border-purple-200',
+    icon: <Building className="h-4 w-4" />
   }
-};
+} as const;
+
+type CategoryKey = keyof typeof categoryConfig;
 
 // Priority colors
 const priorityConfig = {
-  Low: { color: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
-  Medium: { color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
-  High: { color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
-  Critical: { color: 'bg-red-100 text-red-800', dot: 'bg-red-500' }
+  low: { color: 'bg-green-100 text-green-800', dot: 'bg-green-500' },
+  medium: { color: 'bg-yellow-100 text-yellow-800', dot: 'bg-yellow-500' },
+  high: { color: 'bg-orange-100 text-orange-800', dot: 'bg-orange-500' },
+  critical: { color: 'bg-red-100 text-red-800', dot: 'bg-red-500' }
 };
 
 // Status colors
 const statusConfig = {
-  Open: { color: 'bg-gray-100 text-gray-800', label: 'Open' },
-  Assigned: { color: 'bg-blue-100 text-blue-800', label: 'Assigned' },
+  'Open': { color: 'bg-gray-100 text-gray-800', label: 'Open' },
+  'Assigned': { color: 'bg-blue-100 text-blue-800', label: 'Assigned' },
   'In Progress': { color: 'bg-yellow-100 text-yellow-800', label: 'In Progress' },
-  Pending: { color: 'bg-orange-100 text-orange-800', label: 'Pending' },
-  Resolved: { color: 'bg-green-100 text-green-800', label: 'Resolved' },
-  Closed: { color: 'bg-gray-200 text-gray-600', label: 'Closed' },
-  Reopened: { color: 'bg-purple-100 text-purple-800', label: 'Reopened' }
+  'Pending': { color: 'bg-orange-100 text-orange-800', label: 'Pending' },
+  'Resolved': { color: 'bg-green-100 text-green-800', label: 'Resolved' },
+  'Closed': { color: 'bg-gray-200 text-gray-600', label: 'Closed' }
 };
 
 // Impact levels
 const impactConfig = {
-  Low: { label: 'Low Impact', color: 'text-gray-600' },
-  Medium: { label: 'Medium Impact', color: 'text-blue-600' },
-  High: { label: 'High Impact', color: 'text-purple-600' },
-  Critical: { label: 'Critical Impact', color: 'text-red-600' }
+  single_student: { label: 'Single Student', color: 'text-gray-600' },
+  multiple_students: { label: 'Multiple Students', color: 'text-blue-600' },
+  regional: { label: 'Regional', color: 'text-purple-600' },
+  national: { label: 'National', color: 'text-orange-600' },
+  system_wide: { label: 'System Wide', color: 'text-red-600' }
 };
-
-// Components
 const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> = ({ escalation, onClick }) => {
-  const category = categoryConfig[escalation.category];
-  const priority = priorityConfig[escalation.priority];
-  const status = statusConfig[escalation.status];
-  const impact = impactConfig[escalation.impact];
+  const getCategoryConfig = (category: string) => {
+    if (category in categoryConfig) {
+      return categoryConfig[category as CategoryKey];
+    }
+    // fallback for unknown categories
+    return {
+      color: 'text-gray-600 bg-gray-50 border-gray-200',
+      icon: <Award className="h-4 w-4" />
+    };
+  };
+  const category = getCategoryConfig(escalation.category);
+  const priority = priorityConfig[escalation.priority as keyof typeof priorityConfig];
+  const status = statusConfig[escalation.status as keyof typeof statusConfig];
+  const impact = impactConfig[escalation.impact as keyof typeof impactConfig];
 
   const timeAgo = (dateString: string) => {
     const now = new Date();
@@ -127,11 +137,11 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
               <span className="flex items-center">
                 <span className="flex items-center mr-4">
                   <User className="h-3 w-3 mr-1" />
-                  {escalation.escalated_by_user?.full_name || 'Unknown User'}
+                  {escalation.reporter_user?.full_name || 'Unknown User'}
                 </span>
                 <span className="flex items-center">
                   <span className="mr-1">🇳🇬</span>
-                  <span className="truncate">{escalation.escalated_by_user?.country_code || 'Unknown'}</span>
+                  <span className="truncate">{escalation.reporter_user?.country_code || 'Unknown'}</span>
                 </span>
               </span>
             </div>
@@ -149,17 +159,17 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
               {status.label}
             </span>
           </div>
-          {escalation.due_date && (
-            <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-              <span>Due: {new Date(escalation.due_date).toLocaleDateString()}</span>
-              {escalation.assigned_to && (
-                <span className="flex items-center gap-1">
-                  <span className="w-1 h-1 bg-gray-400 rounded-full" />
-                  {escalation.assigned_to_user?.full_name || escalation.assigned_to}
-                </span>
+              {escalation.due_date && (
+                <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                  <span>Due: {new Date(escalation.due_date).toLocaleDateString()}</span>
+                  {escalation.assigned_to && (
+                    <span className="flex items-center gap-1">
+                      <span className="w-1 h-1 bg-gray-400 rounded-full" />
+                      {escalation.assigned_to_user?.full_name || escalation.assigned_to}
+                    </span>
+                  )}
+                </div>
               )}
-            </div>
-          )}
         </div>
 
         {/* Impact & Description */}
@@ -176,7 +186,7 @@ const EscalationCard: React.FC<{ escalation: Escalation; onClick: () => void }> 
           <div className="flex items-center text-sm text-gray-500 space-x-4">
             <button className="flex items-center gap-1 hover:text-ash-teal transition-colors">
               <Mail className="h-3 w-3" />
-              <span>{escalation.escalated_by_user?.email || 'No email'}</span>
+              <span>{escalation.reporter_user?.email || 'No email'}</span>
             </button>
           </div>
 
@@ -285,20 +295,20 @@ const EscalationsPage: React.FC = () => {
   const tabs: TabConfig[] = [
     { id: 'open', label: `Open (${escalationsData?.filter((e: Escalation) => ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length || 0})`, icon: <AlertTriangle className="h-4 w-4" /> },
     { id: 'in-progress', label: `In Progress (${escalationsData?.filter((e: Escalation) => e.status === 'In Progress').length || 0})`, icon: <Clock className="h-4 w-4" /> },
-    { id: 'critical', label: `Critical (${escalationsData?.filter((e: Escalation) => e.priority === 'Critical').length || 0})`, icon: <Shield className="h-4 w-4" /> },
+    { id: 'critical', label: `Critical (${escalationsData?.filter((e: Escalation) => e.priority === 'critical').length || 0})`, icon: <Shield className="h-4 w-4" /> },
     { id: 'resolved', label: `Resolved (${escalationsData?.filter((e: Escalation) => ['Resolved', 'Closed'].includes(e.status)).length || 0})`, icon: <CheckCircle className="h-4 w-4" /> },
     { id: 'all', label: `All (${escalationsData?.length || 0})`, icon: <TrendingUp className="h-4 w-4" /> }
   ];
 
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'school_issue', label: 'School Issues' },
-    { value: 'ambassador_issue', label: 'Ambassador Issues' },
-    { value: 'technical', label: 'Technical' },
+    { value: 'scholarship', label: 'Scholarship' },
     { value: 'compliance', label: 'Compliance' },
-    { value: 'finance', label: 'Finance' },
-    { value: 'partnership', label: 'Partnership' },
-    { value: 'training', label: 'Training' }
+    { value: 'technical', label: 'Technical' },
+    { value: 'ambassador', label: 'Ambassador' },
+    { value: 'partner', label: 'Partner' },
+    { value: 'system', label: 'System' },
+    { value: 'finance', label: 'Finance' }
   ];
 
   const priorities = [
@@ -328,20 +338,20 @@ const EscalationsPage: React.FC = () => {
 
   const filteredEscalations: Escalation[] = (escalationsData || []).filter((escalation: Escalation) => {
     const matchesTab: boolean = activeTab === 'open' ? ['Open', 'Assigned', 'In Progress', 'Pending'].includes(escalation.status) :
-                      activeTab === 'critical' ? escalation.priority === 'Critical' :
+                      activeTab === 'critical' ? escalation.priority === 'critical' :
                       activeTab === 'resolved' ? ['Resolved', 'Closed'].includes(escalation.status) :
                       activeTab === 'in-progress' ? escalation.status === 'In Progress' : true;
 
     const matchesSearch: boolean = escalation.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          escalation.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         escalation.escalated_by_user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         escalation.reporter_user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          false;
 
     const matchesCategory: boolean = filters.category === 'all' || escalation.category === filters.category;
     const matchesPriority: boolean = filters.priority === 'all' || escalation.priority === filters.priority;
     const matchesStatus: boolean = filters.status === 'all' || escalation.status === filters.status;
     const matchesCountry: boolean = filters.country === 'all' ||
-                          escalation.escalated_by_user?.country_code === filters.country ||
+                          escalation.reporter_user?.country_code === filters.country ||
                           false;
 
     return matchesTab && matchesSearch && matchesCategory && matchesPriority && matchesStatus && matchesCountry;
@@ -395,11 +405,11 @@ const EscalationsPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <EscalationQuickAction
           icon={<Award className="h-5 w-5 text-white" />}
-          title="School Issues"
+          title="Scholarship"
           description="School partnerships, student enrollment, academic programs"
-          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'school_issue' }))}
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'scholarship' }))}
           color="from-orange-500 to-red-500"
-          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'school_issue' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'scholarship' && ['new', 'assigned', 'in_progress', 'escalated'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<Shield className="h-5 w-5 text-white" />}
@@ -407,7 +417,7 @@ const EscalationsPage: React.FC = () => {
           description="KYC, regulatory, documentation requirements"
           onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'compliance' }))}
           color="from-red-500 to-pink-500"
-          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'compliance' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'compliance' && ['new', 'assigned', 'in_progress', 'escalated'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<Zap className="h-5 w-5 text-white" />}
@@ -415,15 +425,15 @@ const EscalationsPage: React.FC = () => {
           description="Portal outages, system errors, access issues"
           onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'technical' }))}
           color="from-blue-500 to-cyan-500"
-          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'technical' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'technical' && ['new', 'assigned', 'in_progress', 'escalated'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<User className="h-5 w-5 text-white" />}
           title="Ambassador Issues"
           description="Training, performance, regional challenges"
-          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'ambassador_issue' }))}
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'ambassador' }))}
           color="from-green-500 to-emerald-500"
-          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'ambassador_issue' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'ambassador' && ['new', 'assigned', 'in_progress', 'escalated'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<Building className="h-5 w-5 text-white" />}
@@ -431,13 +441,13 @@ const EscalationsPage: React.FC = () => {
           description="Funding commitments, payments, financial reporting"
           onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'finance' }))}
           color="from-purple-500 to-violet-500"
-          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'finance' && ['Open', 'Assigned', 'In Progress', 'Pending'].includes(e.status)).length} Open`}
+          badge={`${(escalationsData || []).filter((e: Escalation) => e.category === 'finance' && ['new', 'assigned', 'in_progress', 'escalated'].includes(e.status)).length} Open`}
         />
         <EscalationQuickAction
           icon={<TrendingUp className="h-5 w-5 text-white" />}
-          title="Partnership"
+          title="Partner"
           description="Partner relations, contract disputes, collaborations"
-          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'partnership' }))}
+          onClick={() => setFilters((prev: typeof filters) => ({ ...prev, category: 'partner' }))}
           color="from-indigo-500 to-blue-600"
         />
       </div>
@@ -525,9 +535,9 @@ const EscalationsPage: React.FC = () => {
             {filteredEscalations.length > 0 ? (
               <div className="grid grid-cols-1 gap-6">
                 {filteredEscalations.slice(0, 8).map((escalation) => (
-                  <EscalationCard 
-                    key={escalation.id} 
-                    escalation={escalation} 
+                  <EscalationCard
+                    key={escalation.id}
+                    escalation={escalation}
                     onClick={() => console.log('View escalation:', escalation.ticket_number)}
                   />
                 ))}

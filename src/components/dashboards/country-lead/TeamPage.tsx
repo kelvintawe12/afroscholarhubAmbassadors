@@ -1,6 +1,114 @@
 import React, { useEffect, useState } from 'react';
 import { UsersIcon, PlusIcon, FilterIcon, SearchIcon, MailIcon, PhoneIcon, CheckCircleIcon, XCircleIcon, ClockIcon, MoreHorizontalIcon, ArrowUpCircleIcon, ArrowDownCircleIcon, MessageSquareIcon, FileTextIcon, MapPinIcon, AlertTriangleIcon } from 'lucide-react';
 import { getCountryAmbassadors } from '../../../api/country-lead';
+const AddAmbassadorModal: React.FC<{ onClose: () => void; onAdd?: (ambassador: any) => void }> = ({ onClose, onAdd }) => {
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    region: '',
+    role: 'Ambassador'
+  });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    // TODO: Call your API to add ambassador here
+    setTimeout(() => {
+      setSubmitting(false);
+      if (onAdd) onAdd(form);
+      onClose();
+    }, 1000);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative animate-fade-in">
+        <button
+          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <svg width={20} height={20} fill="none" viewBox="0 0 20 20"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6l8 8M6 14L14 6" /></svg>
+        </button>
+        <h2 className="text-xl font-bold mb-4 text-gray-900">Add New Ambassador</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+            <input
+              type="text"
+              name="name"
+              required
+              value={form.name}
+              onChange={handleChange}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-ash-teal focus:ring-ash-teal"
+              placeholder="Enter full name"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              name="email"
+              required
+              value={form.email}
+              onChange={handleChange}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-ash-teal focus:ring-ash-teal"
+              placeholder="Enter email address"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Phone</label>
+            <input
+              type="tel"
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-ash-teal focus:ring-ash-teal"
+              placeholder="Enter phone number"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Region</label>
+            <input
+              type="text"
+              name="region"
+              value={form.region}
+              onChange={handleChange}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-ash-teal focus:ring-ash-teal"
+              placeholder="Enter region"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Role</label>
+            <select
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-ash-teal focus:ring-ash-teal"
+            >
+              <option value="Ambassador">Ambassador</option>
+              <option value="Lead">Lead</option>
+              <option value="Coordinator">Coordinator</option>
+            </select>
+          </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full rounded-md bg-ash-teal px-4 py-2 text-white font-medium hover:bg-ash-teal/90 transition"
+          >
+            {submitting ? 'Adding...' : 'Add Ambassador'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 export const TeamPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [ambassadors, setAmbassadors] = useState<any[]>([]);
@@ -15,108 +123,26 @@ export const TeamPage = () => {
     const fetchAmbassadors = async () => {
       try {
         setIsLoading(true);
-        // In a real app, this would use the API client
-        // const data = await getCountryAmbassadors('ng')
-        // For now, use mock data
-        const mockData = [{
-          id: '1',
-          name: 'Jamal Ibrahim',
-          email: 'jamal@afroscholarhub.org',
-          phone: '+234 812 345 6789',
-          region: 'Lagos',
-          status: 'active',
-          role: 'Senior Ambassador',
-          joinDate: '2023-05-15',
-          performance: 92,
-          schoolsCount: 7,
-          studentsReached: 450,
-          lastActivity: '2 hours ago',
-          avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-          bio: 'Education advocate with 5+ years experience in community outreach and student mentorship.',
-          skills: ['Public Speaking', 'Event Planning', 'Recruitment']
-        }, {
-          id: '2',
-          name: 'Amina Yusuf',
-          email: 'amina@afroscholarhub.org',
-          phone: '+234 803 987 6543',
-          region: 'Abuja',
-          status: 'active',
-          role: 'Ambassador',
-          joinDate: '2023-08-10',
-          performance: 85,
-          schoolsCount: 5,
-          studentsReached: 320,
-          lastActivity: '1 day ago',
-          avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-          bio: 'Former teacher passionate about creating educational opportunities for young Nigerians.',
-          skills: ['Mentoring', 'Curriculum Development', 'Community Engagement']
-        }, {
-          id: '3',
-          name: 'Chidi Okonkwo',
-          email: 'chidi@afroscholarhub.org',
-          phone: '+234 705 123 4567',
-          region: 'Enugu',
-          status: 'inactive',
-          role: 'Ambassador',
-          joinDate: '2023-06-22',
-          performance: 45,
-          schoolsCount: 3,
-          studentsReached: 180,
-          lastActivity: '2 weeks ago',
-          avatar: 'https://randomuser.me/api/portraits/men/67.jpg',
-          bio: 'Educational consultant with background in school administration and policy development.',
-          skills: ['School Relations', 'Program Management', 'Data Analysis']
-        }, {
-          id: '4',
-          name: 'Fatima Mohammed',
-          email: 'fatima@afroscholarhub.org',
-          phone: '+234 908 765 4321',
-          region: 'Kano',
-          status: 'active',
-          role: 'Ambassador',
-          joinDate: '2024-01-05',
-          performance: 78,
-          schoolsCount: 4,
-          studentsReached: 210,
-          lastActivity: 'Today',
-          avatar: 'https://randomuser.me/api/portraits/women/22.jpg',
-          bio: 'Graduate student with passion for expanding educational access in northern Nigeria.',
-          skills: ['Youth Engagement', 'Social Media', 'Workshop Facilitation']
-        }, {
-          id: '5',
-          name: 'Tunde Adeyemi',
-          email: 'tunde@afroscholarhub.org',
-          phone: '+234 802 111 2222',
-          region: 'Ibadan',
-          status: 'training',
-          role: 'Junior Ambassador',
-          joinDate: '2024-03-10',
-          performance: 60,
-          schoolsCount: 1,
-          studentsReached: 45,
-          lastActivity: '3 days ago',
-          avatar: 'https://randomuser.me/api/portraits/men/45.jpg',
-          bio: 'Recent graduate with strong communication skills and community service background.',
-          skills: ['Digital Marketing', 'Event Coordination', 'Content Creation']
-        }, {
-          id: '6',
-          name: 'Grace Ojo',
-          email: 'grace@afroscholarhub.org',
-          phone: '+234 701 333 4444',
-          region: 'Port Harcourt',
-          status: 'active',
-          role: 'Ambassador',
-          joinDate: '2023-11-15',
-          performance: 88,
-          schoolsCount: 6,
-          studentsReached: 275,
-          lastActivity: 'Yesterday',
-          avatar: 'https://randomuser.me/api/portraits/women/33.jpg',
-          bio: 'Education policy expert with focus on creating sustainable school partnerships.',
-          skills: ['Partnership Development', 'Strategic Planning', 'Training']
-        }];
-        setAmbassadors(mockData);
-        setFilteredAmbassadors(mockData);
+        const data = await getCountryAmbassadors('ng');
+        const mappedData = data.map((user: any) => ({
+          id: user.id,
+          name: user.full_name || 'Unknown',
+          email: user.email,
+          phone: user.phone || '',
+          region: user.country_code || 'Unknown',
+          status: 'active', // Default; can be enhanced with real status logic
+          role: user.role || 'Ambassador',
+          joinDate: user.created_at || new Date().toISOString().split('T')[0],
+          performance: 0, // Placeholder; fetch from visits or metrics
+          schoolsCount: 0, // Placeholder; count assigned schools
+          studentsReached: 0, // Placeholder; sum from visits
+          lastActivity: 'Unknown', // Placeholder; fetch from recent activity
+          avatar: user.avatar_url || 'https://randomuser.me/api/portraits/lego/1.jpg',
+          bio: user.bio || '',
+          skills: [] // Placeholder; fetch from profiles or skills table
+        }));
+        setAmbassadors(mappedData);
+        setFilteredAmbassadors(mappedData);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching ambassadors:', error);
@@ -206,6 +232,24 @@ export const TeamPage = () => {
       setSortField(field);
       setSortDirection('asc');
     }
+  };
+  // Add this handler to update ambassadors list after adding
+  const handleAddAmbassador = (newAmbassador: any) => {
+    setAmbassadors(prev => [
+      {
+        ...newAmbassador,
+        id: Date.now(), // Temporary ID for demo
+        performance: 0,
+        schoolsCount: 0,
+        studentsReached: 0,
+        lastActivity: 'Just now',
+        avatar: 'https://randomuser.me/api/portraits/lego/1.jpg',
+        status: 'active',
+        bio: '',
+        skills: []
+      },
+      ...prev
+    ]);
   };
   return <div>
       <div className="mb-6">
@@ -581,5 +625,13 @@ export const TeamPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Add this just before the closing </div> of your main return */}
+      {showAddAmbassador && (
+        <AddAmbassadorModal
+          onClose={() => setShowAddAmbassador(false)}
+          onAdd={handleAddAmbassador}
+        />
+      )}
     </div>;
 };
