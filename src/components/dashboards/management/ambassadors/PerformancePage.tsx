@@ -69,54 +69,13 @@ export const AmbassadorPerformancePage = () => {
     return <div className="text-red-500">Error loading performance data: {error}</div>;
   }
 
-  const ambassadors: Ambassador[] = ambassadorsData?.ambassadors || [];
-  const metrics = ambassadorsData?.metrics || [];
-  const charts = ambassadorsData?.charts || {
-    performanceTrend: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [{
-        label: 'Average Performance Score',
-        data: [72, 75, 78, 80, 82, 85],
-        borderColor: '#1A5F7A',
-        backgroundColor: 'rgba(26, 95, 122, 0.1)',
-        fill: true
-      }, {
-        label: 'Goal',
-        data: [80, 80, 80, 80, 80, 80],
-        borderColor: '#F4C430',
-        borderDash: [5, 5],
-        backgroundColor: 'transparent',
-        fill: false
-      }]
-    },
-    performanceByCountry: {
-      labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
-      datasets: [{
-        label: 'Average Performance Score',
-        data: [85, 82, 78, 75],
-        backgroundColor: 'rgba(26, 95, 122, 0.8)'
-      }]
-    },
-    studentsReached: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [{
-        label: 'Students Reached',
-        data: [320, 450, 520, 680, 750, 920],
-        borderColor: '#26A269',
-        backgroundColor: 'rgba(38, 162, 105, 0.1)',
-        fill: true
-      }]
-    },
-    completionRate: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      datasets: [{
-        label: 'Task Completion Rate',
-        data: [75, 78, 80, 82, 85, 88],
-        borderColor: '#F4C430',
-        backgroundColor: 'rgba(244, 196, 48, 0.1)',
-        fill: true
-      }]
-    }
+  const ambassadors: Ambassador[] = ambassadorsData?.ambassadors ?? [];
+  const metrics = ambassadorsData?.metrics ?? [];
+  const charts = ambassadorsData?.charts ?? {
+    performanceTrend: { labels: [], datasets: [] },
+    performanceByCountry: { labels: [], datasets: [] },
+    studentsReached: { labels: [], datasets: [] },
+    completionRate: { labels: [], datasets: [] }
   };
 
   // Filter ambassadors

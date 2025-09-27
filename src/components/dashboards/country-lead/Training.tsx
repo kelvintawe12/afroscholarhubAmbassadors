@@ -33,7 +33,7 @@ interface TrainingSession {
   status: 'planned' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
 }
 
-export const AmbassadorTrainingViewPage: React.FC = () => {
+export const TrainingViewPage: React.FC = () => {
   const [trainingModules, setTrainingModules] = useState<TrainingModule[]>([]);
   const [trainingSessions, setTrainingSessions] = useState<TrainingSession[]>([]);
   const [selectedModule, setSelectedModule] = useState<TrainingModule | null>(null);
@@ -380,4 +380,4 @@ export const AmbassadorTrainingViewPage: React.FC = () => {
   );
 };
 
-export default AmbassadorTrainingViewPage;
+export default TrainingViewPage;

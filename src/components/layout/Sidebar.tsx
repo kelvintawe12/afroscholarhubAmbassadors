@@ -63,6 +63,7 @@ export const Sidebar = ({
         <SidebarItem title="School Pipeline" icon={<SchoolIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/pipeline`} active={isActive(`/country-lead/${countryCode}/pipeline`)} onNavigate={onNavigate} />
         <SidebarItem title="Events" icon={<CalendarIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/events`} active={isActive(`/country-lead/${countryCode}/events`)} onNavigate={onNavigate} />
         <SidebarItem title="Resources" icon={<FolderIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/resources`} active={isActive(`/country-lead/${countryCode}/resources`)} onNavigate={onNavigate} />
+        <SidebarItem title="Training" icon={<FileTextIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/training`} active={isActive(`/country-lead/${countryCode}/training`)} onNavigate={onNavigate} />
         <SidebarItem title="Escalations" icon={<MessageSquareIcon size={18} />} href={`/dashboard/country-lead/${countryCode}/escalations`} active={isActive(`/country-lead/${countryCode}/escalations`)} onNavigate={onNavigate} />
         <div className="my-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
           Insights
@@ -76,6 +77,7 @@ export const Sidebar = ({
       <SidebarItem title="My Schools" icon={<SchoolIcon size={18} />} href="/dashboard/ambassador/schools" active={isActive('/ambassador/schools')} onNavigate={onNavigate} />
       <SidebarItem title="Activity Log" icon={<ClipboardListIcon size={18} />} href="/dashboard/ambassador/activity" active={isActive('/ambassador/activity')} onNavigate={onNavigate} />
       <SidebarItem title="Resources" icon={<BookOpenIcon size={18} />} href="/dashboard/ambassador/resources" active={isActive('/ambassador/resources')} onNavigate={onNavigate} />
+      <SidebarItem title="Training" icon={<FileTextIcon size={18} />} href="/dashboard/ambassador/training" active={isActive('/ambassador/training')} onNavigate={onNavigate} />
       <SidebarItem title="My Impact" icon={<LineChartIcon size={18} />} href="/dashboard/ambassador/impact" active={isActive('/ambassador/impact')} onNavigate={onNavigate} />
       <SidebarItem title="Support" icon={<HelpCircleIcon size={18} />} href="/dashboard/ambassador/support" active={isActive('/ambassador/support')} onNavigate={onNavigate} />
     </nav>;

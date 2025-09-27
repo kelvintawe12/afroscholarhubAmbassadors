@@ -496,3 +496,49 @@ export const assignCountryToAmbassador = async (ambassadorId: string, countryCod
   if (error) throw error;
   return data[0] as User;
 };
+
+interface TrainingModuleData {
+  title: string;
+  description: string;
+  type: 'Required' | 'Optional';
+  format: 'Video' | 'Interactive' | 'Document' | 'Video + Quiz' | 'Document + Quiz';
+  duration: string;
+  target_audience: 'All Ambassadors' | 'New Ambassadors' | 'Senior Ambassadors';
+  difficulty_level: 'beginner' | 'intermediate' | 'advanced';
+  learning_objectives: string[];
+  applicable_countries: string[];
+  resource_id?: string;
+  created_by: string;
+  completion_rate: number;
+  last_updated: string;
+}
+
+export const createTrainingModule = async (data: TrainingModuleData) => {
+  const { error } = await supabase
+    .from('training_modules')
+    .insert({
+      title: data.title,
+      description: data.description,
+      type: data.type,
+      format: data.format,
+      duration: data.duration,
+      target_audience: data.target_audience,
+      difficulty_level: data.difficulty_level,
+      learning_objectives: data.learning_objectives,
+      applicable_countries: data.applicable_countries,
+      resource_id: data.resource_id,
+      created_by: data.created_by,
+      completion_rate: data.completion_rate,
+      last_updated: data.last_updated,
+      status: 'draft', // Default status for new modules
+      metadata: {}, // Default empty JSONB
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+
+  if (error) {
+    throw new Error(`Failed to create training module: ${error.message}`);
+  }
+
+  return { success: true };
+};

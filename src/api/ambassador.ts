@@ -97,3 +97,30 @@ export const getAllAmbassadors = async () => {
   if (error) throw error;
   return data as User[];
 };
+
+interface TrainingProgressData {
+  user_id: string;
+  training_module_id: string;
+  progress: number;
+  status: 'Not Started' | 'In Progress' | 'Completed' | 'Behind';
+}
+
+export const updateTrainingProgress = async (data: TrainingProgressData) => {
+  const { data: updatedData, error } = await supabase
+    .from('ambassador_training_progress')
+    .upsert({
+      user_id: data.user_id,
+      training_module_id: data.training_module_id,
+      progress: data.progress,
+      status: data.status,
+      last_activity: new Date().toISOString()
+    }, { onConflict: 'user_id,training_module_id' })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update training progress: ${error.message}`);
+  }
+
+  return updatedData;
+};

@@ -35,6 +35,11 @@ const ImpactPage = React.lazy(() => import('./components/dashboards/ambassador/I
 const SupportPage = React.lazy(() => import('./components/dashboards/ambassador/SupportPage').then(module => ({ default: module.SupportPage })));
 const ProfilePage = React.lazy(() => import('./components/dashboards/ambassador/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const SettingsPage = React.lazy(() => import('./components/dashboards/ambassador/SettingsPage').then(module => ({ default: module.SettingsPage })));
+const AmbassadorTrainingViewPage = React.lazy(() =>
+  import('./components/dashboards/ambassador/TrainingPage').then(module => ({
+    default: module.AmbassadorTrainingViewPage
+  }))
+);
 
 // Management Ambassador Components
 const AmbassadorsPage = React.lazy(() => import('./components/dashboards/management/ambassadors/AmbassadorsPage').then(module => ({ default: module.default })));
@@ -262,6 +267,16 @@ function App() {
                   </DashboardLayout>
                 }
               />
+                {/* add that for the TrainingViewPage */}
+              <Route
+                path="/dashboard/country-lead/:countryCode/training"
+                element={
+                  <DashboardLayout>
+                  <AmbassadorTrainingViewPage />
+                  </DashboardLayout>
+                }
+              />
+
               <Route
                 path="/dashboard/country-lead/:countryCode/team"
                 element={
@@ -396,6 +411,14 @@ function App() {
                 element={
                   <DashboardLayout>
                     <SettingsPage />
+                  </DashboardLayout>
+                }
+              />
+              <Route
+                path="/dashboard/ambassador/training"
+                element={
+                  <DashboardLayout>
+                    <AmbassadorTrainingViewPage />
                   </DashboardLayout>
                 }
               />
