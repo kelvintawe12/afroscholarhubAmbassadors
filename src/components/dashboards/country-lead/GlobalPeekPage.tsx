@@ -177,9 +177,9 @@ const GlobalPeekPage: React.FC = () => {
         setError(null);
 
         const [countriesData, quickStatsData, activitiesData] = await Promise.all([
-          getGlobalCountriesStats(),
-          getGlobalQuickStats(),
-          getGlobalRecentActivities()
+          getGlobalCountriesStats(timeRange),
+          getGlobalQuickStats(timeRange),
+          getGlobalRecentActivities(timeRange)
         ]);
 
         // Add icons to quick stats
@@ -212,7 +212,7 @@ const GlobalPeekPage: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, [timeRange]);
 
   if (loading) {
     return (

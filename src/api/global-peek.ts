@@ -31,8 +31,38 @@ export interface RecentActivity {
   icon: any;
 }
 
+// Helper function to get date filter based on time range
+const getDateFilter = (timeRange: string) => {
+  const now = new Date();
+  let startDate: Date;
+
+  switch (timeRange) {
+    case '7D':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '30D':
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '90D':
+      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case 'YTD':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    case '12M':
+      startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+      break;
+    default:
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // Default to 30D
+  }
+
+  return startDate.toISOString();
+};
+
 // Global Peek API functions
-export const getGlobalCountriesStats = async (): Promise<CountryStats[]> => {
+export const getGlobalCountriesStats = async (timeRange: string = '30D'): Promise<CountryStats[]> => {
+  const startDate = getDateFilter(timeRange);
+
   // Get all active countries
   const { data: countriesData, error: countriesError } = await supabase
     .from('countries')
@@ -45,33 +75,36 @@ export const getGlobalCountriesStats = async (): Promise<CountryStats[]> => {
   // For each country, get stats
   const countriesStats = await Promise.all(
     countriesData.map(async (country) => {
-      // Count ambassadors
+      // Count ambassadors created in time range
       const { data: ambassadorsData, error: ambassadorsError } = await supabase
         .from('users')
         .select('id')
         .eq('role', 'ambassador')
-        .eq('country_code', country.code);
+        .eq('country_code', country.code)
+        .gte('created_at', startDate);
 
       if (ambassadorsError) throw ambassadorsError;
 
       const ambassadorsCount = ambassadorsData.length;
 
-      // Count partnered schools (as scholarships)
+      // Count partnered schools in time range
       const { data: scholarshipsData, error: scholarshipsError } = await supabase
         .from('schools')
         .select('id')
         .eq('country_code', country.code)
-        .eq('status', 'partnered');
+        .eq('status', 'partnered')
+        .gte('partnership_date', startDate);
 
       if (scholarshipsError) throw scholarshipsError;
 
       const scholarshipsCount = scholarshipsData.length;
 
-      // Sum event budgets as funding
+      // Sum event budgets as funding in time range
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select('budget')
-        .eq('country_code', country.code);
+        .eq('country_code', country.code)
+        .gte('event_date', startDate);
 
       if (eventsError) throw eventsError;
 
@@ -118,46 +151,52 @@ export const getGlobalCountriesStats = async (): Promise<CountryStats[]> => {
   return countriesStats;
 };
 
-export const getGlobalQuickStats = async (): Promise<QuickStat[]> => {
-  // Total Ambassadors
+export const getGlobalQuickStats = async (timeRange: string = '30D'): Promise<QuickStat[]> => {
+  const startDate = getDateFilter(timeRange);
+
+  // Total Ambassadors created in time range
   const { data: ambassadorsData, error: ambassadorsError } = await supabase
     .from('users')
     .select('id')
-    .eq('role', 'ambassador');
+    .eq('role', 'ambassador')
+    .gte('created_at', startDate);
 
   if (ambassadorsError) throw ambassadorsError;
 
   const totalAmbassadors = ambassadorsData.length;
 
-  // Scholarships Funded (partnered schools)
+  // Scholarships Funded (partnered schools) in time range
   const { data: scholarshipsData, error: scholarshipsError } = await supabase
     .from('schools')
     .select('id')
-    .eq('status', 'partnered');
+    .eq('status', 'partnered')
+    .gte('partnership_date', startDate);
 
   if (scholarshipsError) throw scholarshipsError;
 
   const scholarshipsFunded = scholarshipsData.length;
 
-  // Total Schools (for success rate calculation)
+  // Total Schools created in time range (for success rate calculation)
   const { data: totalSchoolsData, error: totalSchoolsError } = await supabase
     .from('schools')
-    .select('id');
+    .select('id')
+    .gte('created_at', startDate);
 
   if (totalSchoolsError) throw totalSchoolsError;
 
   const totalSchools = totalSchoolsData.length;
 
-  // Total Impact (students reached)
+  // Total Impact (students reached) in time range
   const { data: visitsData, error: visitsError } = await supabase
     .from('visits')
-    .select('students_reached');
+    .select('students_reached')
+    .gte('visit_date', startDate);
 
   if (visitsError) throw visitsError;
 
   const totalImpact = visitsData.reduce((sum, visit) => sum + (visit.students_reached || 0), 0);
 
-  // Active Countries
+  // Active Countries (all active, as it's global)
   const { data: countriesData, error: countriesError } = await supabase
     .from('countries')
     .select('code')
@@ -167,7 +206,7 @@ export const getGlobalQuickStats = async (): Promise<QuickStat[]> => {
 
   const activeCountries = countriesData.length;
 
-  // Calculate success rate (partnered schools / total schools)
+  // Calculate success rate (partnered schools / total schools in period)
   const successRate = totalSchools > 0 ? Math.round((scholarshipsFunded / totalSchools) * 100) : 0;
 
   // Calculate changes (simplified - would need historical data)
@@ -210,8 +249,10 @@ export const getGlobalQuickStats = async (): Promise<QuickStat[]> => {
   ];
 };
 
-export const getGlobalRecentActivities = async (): Promise<RecentActivity[]> => {
-  // Get recent events
+export const getGlobalRecentActivities = async (timeRange: string = '30D'): Promise<RecentActivity[]> => {
+  const startDate = getDateFilter(timeRange);
+
+  // Get recent events in time range
   const { data: eventsData, error: eventsError } = await supabase
     .from('events')
     .select(`
@@ -220,12 +261,13 @@ export const getGlobalRecentActivities = async (): Promise<RecentActivity[]> => 
       event_date,
       countries!inner (name)
     `)
-    .order('created_at', { ascending: false })
+    .gte('event_date', startDate)
+    .order('event_date', { ascending: false })
     .limit(4);
 
   if (eventsError) throw eventsError;
 
-  // Get recent partnerships (schools becoming partnered)
+  // Get recent partnerships (schools becoming partnered) in time range
   const { data: partnershipsData, error: partnershipsError } = await supabase
     .from('schools')
     .select(`
@@ -236,12 +278,13 @@ export const getGlobalRecentActivities = async (): Promise<RecentActivity[]> => 
     `)
     .eq('status', 'partnered')
     .not('partnership_date', 'is', null)
+    .gte('partnership_date', startDate)
     .order('partnership_date', { ascending: false })
     .limit(2);
 
   if (partnershipsError) throw partnershipsError;
 
-  // Get recent visits
+  // Get recent visits in time range
   const { data: visitsData, error: visitsError } = await supabase
     .from('visits')
     .select(`
@@ -250,6 +293,7 @@ export const getGlobalRecentActivities = async (): Promise<RecentActivity[]> => 
       students_reached,
       schools!inner (name, countries!inner (name))
     `)
+    .gte('visit_date', startDate)
     .order('visit_date', { ascending: false })
     .limit(2);
 
