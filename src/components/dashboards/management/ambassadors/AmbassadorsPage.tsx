@@ -1229,7 +1229,7 @@ const AmbassadorsPage: React.FC = () => {
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Country Name
                     </label>
                     <input
@@ -1242,7 +1242,7 @@ const AmbassadorsPage: React.FC = () => {
                     <p className="text-xs text-gray-500 mt-1">Full country name - code will be auto-generated</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Assign Country Lead <span className="text-gray-400">(optional)</span>
                     </label>
                     <div className="flex gap-2 mb-2">
@@ -1294,37 +1294,93 @@ const AmbassadorsPage: React.FC = () => {
 
       {/* Add Ambassador Modal */}
       {showAddAmbassador && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg font-semibold mb-4">Add Ambassador</h2>
-            <div className="flex flex-col gap-3">
-              <input
-                className="border rounded px-2 py-1"
-                placeholder="Name"
-                value={newAmbassador.name}
-                onChange={e => setNewAmbassador(a => ({ ...a, name: e.target.value }))}
-              />
-              <input
-                className="border rounded px-2 py-1"
-                placeholder="Email"
-                value={newAmbassador.email}
-                onChange={e => setNewAmbassador(a => ({ ...a, email: e.target.value }))}
-              />
-              <select
-                className="border rounded px-2 py-1"
-                value={newAmbassador.countryCode}
-                onChange={e => setNewAmbassador(a => ({ ...a, countryCode: e.target.value }))}
-              >
-                <option value="">Select Country</option>
-                {countries.map(c => (
-                  <option key={c.code} value={c.code}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button className="px-4 py-2 rounded bg-gray-100" onClick={() => setShowAddAmbassador(false)}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-ash-teal text-white" onClick={handleAddAmbassador}>Add</button>
-            </div>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 transition-all">
+          <div className="bg-white rounded-xl p-8 w-full max-w-md shadow-2xl relative animate-fadeIn">
+            {/* Close Button */}
+            <button
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+              onClick={() => setShowAddAmbassador(false)}
+              aria-label="Close"
+            >
+              <X className="h-5 w-5 text-gray-500" />
+            </button>
+
+            <h2 className="text-2xl font-bold mb-2 text-gray-900 flex items-center gap-2">
+              <Plus className="h-6 w-6 text-ash-teal" />
+              Add Ambassador
+            </h2>
+            <p className="text-gray-500 mb-6 text-sm">Fill in the details to onboard a new ambassador.</p>
+
+            <form
+              className="flex flex-col gap-4"
+              onSubmit={e => {
+                e.preventDefault();
+                handleAddAmbassador();
+              }}
+            >
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+                <input
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                  placeholder="e.g. Aisha Bello"
+                  value={newAmbassador.name}
+                  onChange={e => setNewAmbassador(a => ({ ...a, name: e.target.value }))}
+                  required
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
+                <input
+                  type="email"
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                  placeholder="e.g. aisha@email.com"
+                  value={newAmbassador.email}
+                  onChange={e => setNewAmbassador(a => ({ ...a, email: e.target.value }))}
+                  required
+                />
+              </div>
+
+              {/* Country */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country <span className="text-red-500">*</span></label>
+                <select
+                  className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-ash-teal focus:border-transparent"
+                  value={newAmbassador.countryCode}
+                  onChange={e => setNewAmbassador(a => ({ ...a, countryCode: e.target.value }))}
+                  required
+                >
+                  <option value="">Select Country</option>
+                  {countries.map(c => (
+                    <option key={c.code} value={c.code}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                  onClick={() => setShowAddAmbassador(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-gradient-to-r from-ash-teal to-ash-gold text-white font-semibold shadow hover:from-ash-teal/90 hover:to-ash-gold/90 transition"
+                  disabled={
+                    !newAmbassador.name.trim() ||
+                    !newAmbassador.email.trim() ||
+                    !newAmbassador.countryCode
+                  }
+                >
+                  Add Ambassador
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
