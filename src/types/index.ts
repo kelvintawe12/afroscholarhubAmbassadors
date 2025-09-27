@@ -349,13 +349,13 @@ export interface Escalation {
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'Open' | 'Assigned' | 'In Progress' | 'Pending' | 'Resolved' | 'Closed';
+  status: 'new' | 'assigned' | 'in_progress' | 'escalated' | 'resolved' | 'closed';
   category: 'scholarship' | 'compliance' | 'technical' | 'ambassador' | 'partner' | 'system' | 'finance';
   sub_category?: string;
   urgency: 'low' | 'medium' | 'high' | 'critical';
   impact: 'single_student' | 'multiple_students' | 'regional' | 'national' | 'system_wide';
-  escalated_by: string;
-  assigned_to?: string;
+  reporter_id: string;
+  assignee_id?: string;
   school_id?: string;
   task_id?: string;
   team_id?: string;
@@ -363,30 +363,25 @@ export interface Escalation {
   resolved_at?: string;
   closed_at?: string;
   resolution_notes?: string;
-  resolution_time_hours?: number;
+  time_to_resolve?: number;
   attachments?: string[];
   tags?: string[];
   watchers?: string[];
   customer_satisfaction?: number;
   created_at: string;
   updated_at: string;
-  assigned_at?: string;
   // Joined data
-  reporter_user?: {
+  users?: {
     full_name: string;
     email: string;
     country_code?: string;
   };
-  assigned_to_user?: {
-    full_name: string;
-    email: string;
-  };
-  school?: {
+  schools?: {
     name: string;
     location: string;
     country_code: string;
   };
-  team?: {
+  teams?: {
     name: string;
   };
 }
