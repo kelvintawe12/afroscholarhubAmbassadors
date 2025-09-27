@@ -431,3 +431,68 @@ export const getAmbassadorsData = async () => {
     }
   };
 };
+
+// New functions for ambassador management
+export const getCountries = async () => {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*')
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return data;
+};
+
+export const createCountry = async (country: { code: string; name: string; flag_emoji?: string; currency?: string; timezone?: string }) => {
+  const { data, error } = await supabase
+    .from('countries')
+    .insert([country])
+    .select();
+
+  if (error) throw error;
+  return data[0];
+};
+
+export const createAmbassador = async (ambassadorData: {
+  email: string;
+  full_name: string;
+  country_code?: string;
+  phone?: string;
+  bio?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{
+      ...ambassadorData,
+      role: 'ambassador',
+      status: 'active',
+      onboarding_completed: false,
+      performance_score: 0
+    }])
+    .select();
+
+  if (error) throw error;
+  return data[0] as User;
+};
+
+export const assignCountryLead = async (countryCode: string, leadId: string) => {
+  const { data, error } = await supabase
+    .from('countries')
+    .update({ lead_id: leadId })
+    .eq('code', countryCode)
+    .select();
+
+  if (error) throw error;
+  return data[0];
+};
+
+export const assignCountryToAmbassador = async (ambassadorId: string, countryCode: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ country_code: countryCode })
+    .eq('id', ambassadorId)
+    .select();
+
+  if (error) throw error;
+  return data[0] as User;
+};
