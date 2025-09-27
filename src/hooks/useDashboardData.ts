@@ -3,10 +3,10 @@ import { supabase } from '../utils/supabase';
 
 // Types for dashboard data
 export interface DashboardKPIs {
-  activePipeline: any;
-  newPartners: any;
-  newPartnersThisMonth: number;
-  pipelineValue: number;
+  activePipeline?: any;
+  newPartners?: any;
+  newPartnersThisMonth?: number;
+  pipelineValue?: number;
   leadsGenerated: number;
   tasksCompleted: number;
   schoolsVisited: number;
@@ -681,7 +681,7 @@ export const useRecentActivities = (limit: number = 10) => {
           visit_date,
           notes,
           schools(name),
-          users(full_name)
+          users!ambassador_id(full_name)
         `)
         .order('visit_date', { ascending: false })
         .limit(limit);
@@ -698,7 +698,7 @@ export const useRecentActivities = (limit: number = 10) => {
           title,
           updated_at,
           status,
-          users(full_name)
+          users!ambassador_id(full_name)
         `)
         .eq('status', 'Completed')
         .order('updated_at', { ascending: false })
