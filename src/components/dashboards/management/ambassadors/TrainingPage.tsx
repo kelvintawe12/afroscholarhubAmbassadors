@@ -29,7 +29,6 @@ export const AmbassadorTrainingPage = () => {
     title: 'Avg. Completion Time',
     value: '3.2 days',
     change: -1,
-    subtitle: 'per module',
     icon: <ClockIcon size={20} />
   }];
   // Mock data for training modules
@@ -262,7 +261,7 @@ export const AmbassadorTrainingPage = () => {
           </button>
         </div>
   }];
-  return <div>
+  return <div className="px-2 sm:px-4 lg:px-0">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">
           Ambassador Training
@@ -275,16 +274,16 @@ export const AmbassadorTrainingPage = () => {
 
       {/* Training metrics */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {trainingMetrics.map((metric, index) => <KpiCard key={index} title={metric.title} value={metric.value} change={metric.change} subtitle={metric.subtitle} icon={metric.icon} />)}
+        {trainingMetrics.map((metric, index) => <KpiCard key={index} title={metric.title} value={metric.value} change={metric.change} icon={metric.icon} />)}
       </div>
 
       {/* Training modules section */}
       <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-medium text-gray-900">
             Training Modules
           </h2>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
             <button className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50" onClick={() => {}}>
               <FilterIcon size={16} className="mr-2" />
               Filter
@@ -295,7 +294,9 @@ export const AmbassadorTrainingPage = () => {
             </button>
           </div>
         </div>
-        <DataTable columns={moduleColumns} data={trainingModules} keyField="id" rowsPerPage={6} />
+        <div className="overflow-x-auto">
+          <DataTable columns={moduleColumns} data={trainingModules} keyField="id" rowsPerPage={6} />
+        </div>
       </div>
 
       {/* Charts */}
@@ -306,18 +307,18 @@ export const AmbassadorTrainingPage = () => {
 
       {/* Ambassador progress section */}
       <div className="mb-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-medium text-gray-900">
             Ambassador Training Progress
           </h2>
-          <div className="flex items-center space-x-2">
-            <div className="relative">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:space-x-2">
+            <div className="relative w-full sm:w-auto">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                 <SearchIcon size={16} className="text-gray-400" />
               </div>
-              <input type="search" placeholder="Search ambassadors..." className="w-64 rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              <input type="search" placeholder="Search ambassadors..." className="w-full sm:w-64 rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
             </div>
-            <select className="rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <select className="rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm w-full sm:w-auto" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
               <option value="all">All Statuses</option>
               <option value="Completed">Completed</option>
               <option value="In Progress">In Progress</option>
@@ -325,86 +326,90 @@ export const AmbassadorTrainingPage = () => {
             </select>
           </div>
         </div>
-        <DataTable columns={ambassadorColumns} data={filteredAmbassadors} keyField="id" rowsPerPage={5} showSearch={false} />
+        <div className="overflow-x-auto">
+          <DataTable columns={ambassadorColumns} data={filteredAmbassadors} keyField="id" rowsPerPage={5} showSearch={false} />
+        </div>
       </div>
 
       {/* Upcoming training sessions */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-2 sm:p-4 shadow-sm">
         <h3 className="mb-4 text-base font-medium text-gray-700">
           Upcoming Training Sessions
         </h3>
-        <div className="space-y-4">
-          <div className="flex items-start rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-ash-teal text-white">
-              <CalendarIcon size={20} />
-            </div>
-            <div className="ml-4 flex-1">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900">
-                  New Ambassador Onboarding
-                </h4>
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
-                  Virtual
-                </span>
+        <div className="overflow-x-auto">
+          <div className="flex flex-col gap-4 min-w-[320px] sm:flex-row sm:gap-4">
+            <div className="flex min-w-[320px] flex-1 items-start rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-ash-teal text-white">
+                <CalendarIcon size={20} />
               </div>
-              <p className="mt-1 text-sm text-gray-600">
-                Introduction to AfroScholarHub platform and ambassador
-                responsibilities
-              </p>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-xs text-gray-500">
-                  <span className="flex items-center">
-                    <CalendarIcon size={12} className="mr-1" />
-                    June 15, 2025
-                  </span>
-                  <span className="flex items-center">
-                    <ClockIcon size={12} className="mr-1" />
-                    10:00 AM - 12:00 PM
-                  </span>
-                  <span className="flex items-center">
-                    <UsersIcon size={12} className="mr-1" />
-                    12 Registered
+              <div className="ml-4 flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-gray-900">
+                    New Ambassador Onboarding
+                  </h4>
+                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800">
+                    Virtual
                   </span>
                 </div>
-                <button className="rounded-md border border-ash-teal bg-white px-3 py-1 text-xs font-medium text-ash-teal hover:bg-ash-teal/10">
-                  View Details
-                </button>
+                <p className="mt-1 text-sm text-gray-600">
+                  Introduction to AfroScholarHub platform and ambassador
+                  responsibilities
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <span className="flex items-center">
+                      <CalendarIcon size={12} className="mr-1" />
+                      June 15, 2025
+                    </span>
+                    <span className="flex items-center">
+                      <ClockIcon size={12} className="mr-1" />
+                      10:00 AM - 12:00 PM
+                    </span>
+                    <span className="flex items-center">
+                      <UsersIcon size={12} className="mr-1" />
+                      12 Registered
+                    </span>
+                  </div>
+                  <button className="rounded-md border border-ash-teal bg-white px-3 py-1 text-xs font-medium text-ash-teal hover:bg-ash-teal/10">
+                    View Details
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-start rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-ash-gold text-white">
-              <CalendarIcon size={20} />
-            </div>
-            <div className="ml-4 flex-1">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium text-gray-900">
-                  Advanced Partnership Development
-                </h4>
-                <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                  In-Person
-                </span>
+            <div className="flex min-w-[320px] flex-1 items-start rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-ash-gold text-white">
+                <CalendarIcon size={20} />
               </div>
-              <p className="mt-1 text-sm text-gray-600">
-                Strategies for building and maintaining school partnerships
-              </p>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center space-x-4 text-xs text-gray-500">
-                  <span className="flex items-center">
-                    <CalendarIcon size={12} className="mr-1" />
-                    June 22, 2025
-                  </span>
-                  <span className="flex items-center">
-                    <ClockIcon size={12} className="mr-1" />
-                    9:00 AM - 4:00 PM
-                  </span>
-                  <span className="flex items-center">
-                    <UsersIcon size={12} className="mr-1" />8 Registered
+              <div className="ml-4 flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-gray-900">
+                    Advanced Partnership Development
+                  </h4>
+                  <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                    In-Person
                   </span>
                 </div>
-                <button className="rounded-md border border-ash-teal bg-white px-3 py-1 text-xs font-medium text-ash-teal hover:bg-ash-teal/10">
-                  View Details
-                </button>
+                <p className="mt-1 text-sm text-gray-600">
+                  Strategies for building and maintaining school partnerships
+                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <span className="flex items-center">
+                      <CalendarIcon size={12} className="mr-1" />
+                      June 22, 2025
+                    </span>
+                    <span className="flex items-center">
+                      <ClockIcon size={12} className="mr-1" />
+                      9:00 AM - 4:00 PM
+                    </span>
+                    <span className="flex items-center">
+                      <UsersIcon size={12} className="mr-1" />8 Registered
+                    </span>
+                  </div>
+                  <button className="rounded-md border border-ash-teal bg-white px-3 py-1 text-xs font-medium text-ash-teal hover:bg-ash-teal/10">
+                    View Details
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -418,8 +423,8 @@ export const AmbassadorTrainingPage = () => {
       </div>
 
       {/* Module details modal */}
-      {selectedModule && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+      {selectedModule && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white p-4 sm:p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">
                 {selectedModule.title}
@@ -515,8 +520,8 @@ export const AmbassadorTrainingPage = () => {
         </div>}
 
       {/* Add module modal */}
-      {showAddModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl">
+      {showAddModal && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white p-4 sm:p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">
                 Add New Training Module
