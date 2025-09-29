@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LockIcon, MailIcon, AlertTriangleIcon, CheckCircleIcon, InfoIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { LockIcon, MailIcon, AlertTriangleIcon, CheckCircleIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Checkbox } from './ui/Checkbox';
 import { useAuth } from '../contexts/AuthContext';
