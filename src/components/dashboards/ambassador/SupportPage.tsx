@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { HelpCircleIcon, MessageSquareIcon, PhoneIcon, MailIcon, ChevronDownIcon, ChevronUpIcon, SendIcon } from 'lucide-react';
+import { useAuth } from '../../../hooks/useAuth';
+import { createSupportTicket } from '../../../api/support';
 
 export const SupportPage = () => {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
@@ -8,6 +10,9 @@ export const SupportPage = () => {
     message: '',
     priority: 'medium'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const { user } = useAuth();
 
   const faqs = [
     {
@@ -70,11 +75,31 @@ export const SupportPage = () => {
     setExpandedFaq(expandedFaq === id ? null : id);
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would submit to an API
-    alert('Thank you for your message. We will get back to you within 24 hours.');
-    setContactForm({ subject: '', message: '', priority: 'medium' });
+    if (!user?.id) {
+      setSubmitStatus('error');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      await createSupportTicket({
+        user_id: user.id,
+        subject: contactForm.subject,
+        description: contactForm.message,
+        priority: contactForm.priority as 'low' | 'medium' | 'high'
+      });
+      setSubmitStatus('success');
+      setContactForm({ subject: '', message: '', priority: 'medium' });
+    } catch (error) {
+      console.error('Error creating ticket:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -175,12 +200,31 @@ export const SupportPage = () => {
               />
             </div>
 
+            {submitStatus === 'success' && (
+              <div className="mt-4 rounded-md bg-green-50 p-4">
+                <p className="text-sm text-green-800">Ticket created successfully! We'll get back to you soon.</p>
+              </div>
+            )}
+
+            {submitStatus === 'error' && (
+              <div className="mt-4 rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-800">Failed to create ticket. Please try again.</p>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="flex w-full items-center justify-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <SendIcon size={16} className="mr-2" />
-              Send Message
+              {isSubmitting ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              ) : (
+                <>
+                  <SendIcon size={16} className="mr-2" />
+                  Send Message
+                </>
+              )}
             </button>
           </form>
         </div>

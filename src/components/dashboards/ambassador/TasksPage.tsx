@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { CheckSquareIcon, ClockIcon, CalendarIcon, AlertCircleIcon, PlusIcon, FilterIcon, CheckIcon, XIcon, FlagIcon, ChevronDownIcon, SearchIcon, MoreHorizontalIcon, ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CheckSquareIcon, ClockIcon, CalendarIcon, AlertCircleIcon, PlusIcon, FilterIcon, CheckIcon, XIcon, FlagIcon, ChevronDownIcon, SearchIcon, MoreHorizontalIcon, ArrowUpIcon, ArrowDownIcon, ArrowLeftIcon, CheckCircle } from 'lucide-react';
 import { getAmbassadorTasks, updateTask } from '../../../api/ambassador';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Task } from '../../../utils/supabase';
@@ -8,6 +9,7 @@ export const TasksPage = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [filteredTasks, setFilteredTasks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<string>('dueDate');
@@ -115,7 +117,7 @@ export const TasksPage = () => {
       setSortDirection('asc');
     }
   };
-  const handleStatusChange = async (taskId: string, newStatus: string) => {
+  const handleStatusChange = async (taskId: string, newStatus: string, taskTitle: string) => {
     try {
       await updateTask(taskId, { status: newStatus as 'Pending' | 'In Progress' | 'Completed' });
       // Update locally
@@ -131,6 +133,9 @@ export const TasksPage = () => {
         return task;
       });
       setTasks(updatedTasks);
+      if (newStatus === 'Completed') {
+        setSuccessMessage(`Task "${taskTitle}" marked as completed. View in Activity Log.`);
+      }
     } catch (error) {
       console.error('Error updating task status:', error);
     }
@@ -204,10 +209,33 @@ export const TasksPage = () => {
   };
   return <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
+        <div className="flex items-center mb-4">
+          <Link
+            to="/dashboard/ambassador"
+            className="flex items-center text-sm text-gray-500 hover:text-gray-700 mr-4"
+          >
+            <ArrowLeftIcon size={16} className="mr-1" />
+            Back to Dashboard
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
+        </div>
         <p className="text-sm text-gray-500">
           Manage your tasks, track progress, and stay organized
         </p>
+        {successMessage && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircle size={20} className="text-green-600 mr-2" />
+              <span className="text-green-800 mr-2">{successMessage}</span>
+              <Link
+                to="/dashboard/ambassador/activity"
+                className="text-ash-teal hover:underline font-medium"
+              >
+                View Activity Log →
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
       {/* KPI Cards */}
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -372,7 +400,7 @@ export const TasksPage = () => {
             <tbody className="divide-y divide-gray-200 bg-white">
               {filteredTasks.map(task => <tr key={task.id} className="hover:bg-gray-50">
                   <td className="whitespace-nowrap px-6 py-4 text-center">
-                    <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-ash-teal focus:ring-ash-teal" checked={task.status === 'Completed'} onChange={() => handleStatusChange(task.id, task.status === 'Completed' ? 'Pending' : 'Completed')} />
+                    <input type="checkbox" className="h-4 w-4 rounded border-gray-300 text-ash-teal focus:ring-ash-teal" checked={task.status === 'Completed'} onChange={() => handleStatusChange(task.id, task.status === 'Completed' ? 'Pending' : 'Completed', task.title)} />
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
                     <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${getPriorityBadgeClass(task.priority)}`}>
@@ -422,10 +450,10 @@ export const TasksPage = () => {
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                     <div className="flex justify-end space-x-2">
-                      {task.status !== 'Completed' && <button className="rounded-md bg-green-500 p-1 text-white hover:bg-green-600" onClick={() => handleStatusChange(task.id, 'Completed')} aria-label="Mark as completed">
+                      {task.status !== 'Completed' && <button className="rounded-md bg-green-500 p-1 text-white hover:bg-green-600" onClick={() => handleStatusChange(task.id, 'Completed', task.title)} aria-label="Mark as completed">
                           <CheckIcon size={14} />
                         </button>}
-                      {task.status === 'Pending' && <button className="rounded-md bg-blue-500 p-1 text-white hover:bg-blue-600" onClick={() => handleStatusChange(task.id, 'In Progress')} aria-label="Mark as in progress">
+                      {task.status === 'Pending' && <button className="rounded-md bg-blue-500 p-1 text-white hover:bg-blue-600" onClick={() => handleStatusChange(task.id, 'In Progress', task.title)} aria-label="Mark as in progress">
                           <ClockIcon size={14} />
                         </button>}
                       <button className="rounded-md bg-gray-200 p-1 text-gray-600 hover:bg-gray-300" aria-label="More options">

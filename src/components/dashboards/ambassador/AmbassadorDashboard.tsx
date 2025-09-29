@@ -1,21 +1,49 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { DataTable } from '../../ui/widgets/DataTable';
+import { BarChart } from '../../ui/widgets/BarChart';
 import { LoadingSpinner } from '../../LoadingSpinner';
-import { CheckSquareIcon, SchoolIcon, ClipboardIcon, TrophyIcon, PlusIcon, CalendarIcon, ClockIcon, FlagIcon } from 'lucide-react';
+import { CheckSquareIcon, SchoolIcon, ClipboardIcon, TrophyIcon, PlusIcon, CalendarIcon, ClockIcon, FlagIcon, UsersIcon } from 'lucide-react';
 import { useAmbassadorKPIs, useAmbassadorTasks, useAmbassadorSchools } from '../../../hooks/useDashboardData';
-
-// For demo purposes, using a sample ambassador ID from seed data
-// In a real app, this would come from authentication context
-const SAMPLE_AMBASSADOR_ID = '550e8400-e29b-41d4-a716-446655440010'; // John Doe from seed data
+import { getAmbassadorImpactMetrics } from '../../../api/ambassador';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export const AmbassadorDashboard = () => {
-  const { data: kpiData, loading: kpisLoading, error: kpisError } = useAmbassadorKPIs(SAMPLE_AMBASSADOR_ID);
-  const { data: taskData, loading: tasksLoading, error: tasksError } = useAmbassadorTasks(SAMPLE_AMBASSADOR_ID);
-  const { data: schoolData, loading: schoolsLoading, error: schoolsError } = useAmbassadorSchools(SAMPLE_AMBASSADOR_ID);
+  const { user, loading: authLoading } = useAuth();
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const { data: kpiData, loading: kpisLoading, error: kpisError } = useAmbassadorKPIs(user.id);
+  const { data: taskData, loading: tasksLoading, error: tasksError } = useAmbassadorTasks(user.id);
+  const { data: schoolData, loading: schoolsLoading, error: schoolsError } = useAmbassadorSchools(user.id);
+
+  const [impactMetrics, setImpactMetrics] = useState<{ totalStudents: number; schoolCount: number; partnershipCount: number } | null>(null);
+  const [impactLoading, setImpactLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchImpactMetrics = async () => {
+      try {
+        setImpactLoading(true);
+        const data = await getAmbassadorImpactMetrics(user.id);
+        setImpactMetrics(data);
+      } catch (error) {
+        console.error('Error fetching impact metrics:', error);
+      } finally {
+        setImpactLoading(false);
+      }
+    };
+    fetchImpactMetrics();
+  }, [user.id]);
 
   // Show loading state
-  if (kpisLoading || tasksLoading || schoolsLoading) {
+  if (kpisLoading || tasksLoading || schoolsLoading || impactLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <LoadingSpinner />
@@ -62,6 +90,20 @@ export const AmbassadorDashboard = () => {
     icon: <TrophyIcon size={20} />,
     color: 'bg-green-400'
   }] : [];
+
+  // Prepare impact chart data
+  const impactChartData = impactMetrics
+    ? {
+        labels: ['Students Reached', 'Schools', 'Partnerships'],
+        datasets: [
+          {
+            label: 'Impact',
+            data: [impactMetrics.totalStudents, impactMetrics.schoolCount, impactMetrics.partnershipCount],
+            backgroundColor: ['#34D399', '#60A5FA', '#FBBF24']
+          }
+        ]
+      }
+    : null;
 
   // Transform task data for display
   const displayTaskData = taskData ? taskData.map(task => ({
@@ -141,7 +183,7 @@ export const AmbassadorDashboard = () => {
           Ambassador Dashboard
         </h1>
         <p className="text-sm text-gray-500">
-          Great job, John! Your last visit generated 20 sign-ups. 🎉
+          Great job, {user.full_name?.split(' ')[0] || 'Ambassador'}! Your last visit generated 20 sign-ups. 🎉
         </p>
       </div>
 
@@ -159,52 +201,148 @@ export const AmbassadorDashboard = () => {
         ))}
       </div>
 
+      {/* Impact Summary */}
+      {impactMetrics && (
+        <div className="mb-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-medium text-gray-900">Impact Overview</h2>
+            <Link
+              to="/dashboard/ambassador/impact"
+              className="text-sm font-medium text-ash-teal hover:text-ash-teal/80"
+            >
+              View Full Impact →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center">
+                <UsersIcon size={20} className="text-green-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Students Reached</p>
+                  <p className="text-2xl font-bold text-gray-900">{impactMetrics.totalStudents}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center">
+                <SchoolIcon size={20} className="text-blue-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Schools Engaged</p>
+                  <p className="text-2xl font-bold text-gray-900">{impactMetrics.schoolCount}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center">
+                <TrophyIcon size={20} className="text-yellow-600" />
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-gray-500">Partnerships</p>
+                  <p className="text-2xl font-bold text-gray-900">{impactMetrics.partnershipCount}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {impactChartData && (
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
+              <BarChart title="Impact Breakdown" data={impactChartData} height={200} />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Quick Log Button */}
-      <div className="mb-6 flex justify-end">
-        <button className="flex items-center rounded-md bg-ash-gold px-4 py-2 font-medium text-ash-dark shadow-sm hover:bg-yellow-400">
+      <div className="mb-6 flex justify-end space-x-3">
+        <Link
+          to="/dashboard/ambassador/activity"
+          className="flex items-center rounded-md bg-ash-teal px-4 py-2 font-medium text-white shadow-sm hover:bg-ash-teal/90"
+        >
           <PlusIcon size={18} className="mr-2" />
-          Quick Log Activity
-        </button>
+          Log Activity
+        </Link>
+        <Link
+          to="/dashboard/ambassador/schools"
+          className="flex items-center rounded-md bg-ash-gold px-4 py-2 font-medium text-ash-dark shadow-sm hover:bg-yellow-400"
+        >
+          <SchoolIcon size={18} className="mr-2" />
+          Add School Visit
+        </Link>
       </div>
 
       {/* Tasks */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">My Tasks</h2>
+          <h2 className="text-lg font-medium text-gray-900">Recent Tasks</h2>
           <div className="flex space-x-2">
-            <button className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <Link
+              to="/dashboard/ambassador/tasks"
+              className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
               <ClockIcon size={16} className="mr-1" />
               Due Soon
-            </button>
-            <button className="flex items-center rounded-md bg-ash-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-ash-teal/90">
+            </Link>
+            <Link
+              to="/dashboard/ambassador/tasks"
+              className="flex items-center rounded-md bg-ash-teal px-3 py-1.5 text-sm font-medium text-white hover:bg-ash-teal/90"
+            >
               <PlusIcon size={16} className="mr-1" />
-              Add Task
-            </button>
+              Manage Tasks
+            </Link>
           </div>
         </div>
-        <DataTable
-          columns={taskColumns}
-          data={displayTaskData}
-          keyField="id"
-          pagination={false}
-        />
+        {displayTaskData.length > 0 ? (
+          <DataTable
+            columns={taskColumns}
+            data={displayTaskData.slice(0, 5)} // Show top 5 recent tasks
+            keyField="id"
+            pagination={false}
+          />
+        ) : (
+          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+            <CheckSquareIcon size={48} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No tasks yet</h3>
+            <p className="text-sm text-gray-500 mb-4">Get started by adding your first task.</p>
+            <Link
+              to="/dashboard/ambassador/tasks"
+              className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+            >
+              Add Task
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Schools */}
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-gray-900">My Schools</h2>
-          <button className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          <h2 className="text-lg font-medium text-gray-900">Recent Schools</h2>
+          <Link
+            to="/dashboard/ambassador/schools"
+            className="flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
             <FlagIcon size={16} className="mr-1" />
-            View All
-          </button>
+            View All Schools
+          </Link>
         </div>
-        <DataTable
-          columns={schoolColumns}
-          data={displaySchoolData}
-          keyField="id"
-          rowsPerPage={4}
-        />
+        {displaySchoolData.length > 0 ? (
+          <DataTable
+            columns={schoolColumns}
+            data={displaySchoolData.slice(0, 5)} // Show top 5 recent schools
+            keyField="id"
+            rowsPerPage={5}
+          />
+        ) : (
+          <div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center">
+            <SchoolIcon size={48} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No schools yet</h3>
+            <p className="text-sm text-gray-500 mb-4">Start building your school pipeline.</p>
+            <Link
+              to="/dashboard/ambassador/schools"
+              className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
+            >
+              Add School
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Bottom Row */}

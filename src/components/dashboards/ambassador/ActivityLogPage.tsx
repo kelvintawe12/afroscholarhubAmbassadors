@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { CalendarIcon, MapPinIcon, UsersIcon, ClockIcon, SearchIcon, FilterIcon, EyeIcon, DownloadIcon, AlertCircleIcon } from 'lucide-react';
+import { CalendarIcon, MapPinIcon, UsersIcon, ClockIcon, SearchIcon, FilterIcon, EyeIcon, DownloadIcon, AlertCircleIcon, XIcon, EditIcon } from 'lucide-react';
 import { DataTable } from '../../ui/widgets/DataTable';
-import { getAmbassadorVisits, getAmbassadorTasks } from '../../../api/ambassador';
+import { getAmbassadorVisits, getAmbassadorTasks, updateTask, updateVisit } from '../../../api/ambassador';
 import { useAuth } from '../../../hooks/useAuth';
 import { LoadingSpinner } from '../../LoadingSpinner';
 
@@ -29,6 +29,12 @@ export const ActivityLogPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [dateRange, setDateRange] = useState('all'); // New filter for date range
+
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editedNotes, setEditedNotes] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -79,13 +85,13 @@ export const ActivityLogPage = () => {
               combinedActivities.push({
                 id: `task-${task.id}`,
                 type: 'Task Completion',
-                school: task.school_name || 'General Task',
-                location: task.school_location || 'N/A',
-                date: task.completed_date || task.updated_at,
+                school: task.school_id ? 'Assigned School' : 'General Task',
+                location: 'N/A',
+                date: task.updated_at,
                 duration: 'N/A',
                 studentsReached: 0,
                 activities: [task.title],
-                notes: task.notes || task.description || 'Task completed',
+                notes: task.description || 'Task completed',
                 status: 'Completed',
                 rawData: task
               });
@@ -109,6 +115,131 @@ export const ActivityLogPage = () => {
 
     fetchActivities();
   }, [user?.id]);
+
+  const handleViewDetails = (activity: Activity) => {
+    setSelectedActivity(activity);
+    setEditedNotes(activity.notes);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateNotes = async () => {
+    if (!selectedActivity || !editedNotes.trim()) return;
+
+    setIsUpdating(true);
+    setUpdateMessage(null);
+
+    try {
+      const rawData = selectedActivity.rawData;
+
+      if (selectedActivity.type === 'Task Completion' && rawData && 'id' in rawData && rawData.id) {
+        // Update task
+        await updateTask(rawData.id, { description: editedNotes });
+        setUpdateMessage('Task notes updated successfully');
+      } else if (selectedActivity.type === 'School Visit' && rawData && 'id' in rawData && rawData.id) {
+        // Update visit
+        await updateVisit(rawData.id, { notes: editedNotes });
+        setUpdateMessage('Visit notes updated successfully');
+      } else {
+        setUpdateMessage('Unsupported activity type for editing');
+        return;
+      }
+
+      // Refresh activities after update
+      const fetchActivities = async () => {
+        if (!user?.id) return;
+
+        try {
+          setIsLoading(true);
+          const [visitsData, tasksData] = await Promise.all([
+            getAmbassadorVisits(user.id),
+            getAmbassadorTasks(user.id)
+          ]);
+
+          const combinedActivities: Activity[] = [];
+
+          // Transform visits data
+          if (visitsData) {
+            visitsData.forEach(visit => {
+              combinedActivities.push({
+                id: `visit-${visit.id}`,
+                type: 'School Visit',
+                school: visit.school_name || 'Unknown School',
+                location: visit.school_location || 'Unknown Location',
+                date: visit.visit_date,
+                duration: visit.duration ? `${visit.duration} minutes` : 'Not recorded',
+                studentsReached: visit.students_reached || 0,
+                leadsGenerated: visit.leads_generated || 0,
+                activities: [
+                  ...(visit.workshop_conducted ? ['Workshop'] : []),
+                  ...(visit.presentation_given ? ['Presentation'] : []),
+                  ...(visit.materials_distributed ? ['Material Distribution'] : []),
+                  ...(visit.follow_up_scheduled ? ['Follow-up Scheduled'] : [])
+                ],
+                notes: visit.notes || 'No notes provided',
+                status: visit.status || 'Completed',
+                rawData: visit
+              });
+            });
+          }
+
+          // Transform completed tasks data
+          if (tasksData) {
+            tasksData
+              .filter(task => task.status === 'Completed')
+              .forEach(task => {
+                combinedActivities.push({
+                  id: `task-${task.id}`,
+                  type: 'Task Completion',
+                  school: task.school_id ? 'Assigned School' : 'General Task',
+                  location: 'N/A',
+                  date: task.updated_at,
+                  duration: 'N/A',
+                  studentsReached: 0,
+                  activities: [task.title],
+                  notes: task.description || 'Task completed',
+                  status: 'Completed',
+                  rawData: task
+                });
+              });
+          }
+
+          // Sort by date (most recent first)
+          combinedActivities.sort((a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          setActivities(combinedActivities);
+          setFilteredActivities(combinedActivities);
+        } catch (error) {
+          console.error('Error fetching activities:', error);
+          setError('Failed to load activity data. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchActivities();
+
+      // Close modal after a short delay
+      setTimeout(() => {
+        setIsEditModalOpen(false);
+        setSelectedActivity(null);
+      }, 1500);
+
+    } catch (error) {
+      console.error('Error updating notes:', error);
+      setUpdateMessage('Failed to update notes. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const escapeCsvValue = (value: string) => {
+    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+      return `"${value.replace(/"/g, '""')}"`;
+    }
+    return value;
+  };
 
   useEffect(() => {
     let filtered = [...activities];
@@ -290,13 +421,10 @@ export const ActivityLogPage = () => {
         <div className="flex space-x-2">
           <button 
             className="rounded-md bg-ash-teal p-1 text-white hover:bg-ash-teal/90" 
-            title="View Details"
-            onClick={() => {
-              // Handle view details - could open a modal
-              console.log('View details for:', row);
-            }}
+            title="Edit Activity"
+            onClick={() => handleViewDetails(row)}
           >
-            <EyeIcon size={14} />
+            <EditIcon size={14} />
           </button>
         </div>
       )
@@ -430,16 +558,27 @@ export const ActivityLogPage = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button 
+          <button
             className="flex items-center rounded-md bg-ash-teal px-3 py-2 text-sm font-medium text-white hover:bg-ash-teal/90"
             onClick={() => {
               // Export functionality
-              const csvContent = "data:text/csv;charset=utf-8," + 
-                "Date,Type,School,Location,Duration,Students Reached,Leads Generated,Activities,Notes\n" +
-                filteredActivities.map(activity => 
-                  `"${new Date(activity.date).toLocaleDateString()}","${activity.type}","${activity.school}","${activity.location}","${activity.duration}","${activity.studentsReached}","${activity.leadsGenerated || 0}","${activity.activities.join('; ')}","${activity.notes}"`
+              const headers = ["Date", "Type", "School", "Location", "Duration", "Students Reached", "Leads Generated", "Activities", "Notes"];
+              const csvContent = "data:text/csv;charset=utf-8," +
+                headers.map(escapeCsvValue).join(",") + "\n" +
+                filteredActivities.map(activity =>
+                  [
+                    escapeCsvValue(new Date(activity.date).toLocaleDateString()),
+                    escapeCsvValue(activity.type),
+                    escapeCsvValue(activity.school),
+                    escapeCsvValue(activity.location),
+                    escapeCsvValue(activity.duration),
+                    escapeCsvValue(activity.studentsReached.toString()),
+                    escapeCsvValue((activity.leadsGenerated || 0).toString()),
+                    escapeCsvValue(activity.activities.join('; ')),
+                    escapeCsvValue(activity.notes)
+                  ].join(",")
                 ).join("\n");
-              
+
               const encodedUri = encodeURI(csvContent);
               const link = document.createElement("a");
               link.setAttribute("href", encodedUri);
@@ -520,6 +659,72 @@ export const ActivityLogPage = () => {
                 {totalLeadsGenerated}
               </div>
               <div className="text-sm text-gray-500">Leads Generated</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && selectedActivity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-gray-900">Edit Activity</h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <div className="mb-2 text-sm font-medium text-gray-700">Activity Type</div>
+              <div className="text-sm text-gray-500">{selectedActivity.type}</div>
+            </div>
+
+            <div className="mb-4">
+              <div className="mb-2 text-sm font-medium text-gray-700">School</div>
+              <div className="text-sm text-gray-500">{selectedActivity.school}</div>
+            </div>
+
+            <div className="mb-4">
+              <div className="mb-2 text-sm font-medium text-gray-700">Date</div>
+              <div className="text-sm text-gray-500">{new Date(selectedActivity.date).toLocaleDateString()}</div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">Notes</label>
+              <textarea
+                value={editedNotes}
+                onChange={(e) => setEditedNotes(e.target.value)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal"
+                rows={4}
+                placeholder="Enter notes..."
+              />
+            </div>
+
+            {updateMessage && (
+              <div className={`mb-4 text-sm ${updateMessage.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+                {updateMessage}
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                disabled={isUpdating}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateNotes}
+                disabled={isUpdating || !editedNotes.trim()}
+                className="rounded-md bg-ash-teal px-4 py-2 text-sm font-medium text-white hover:bg-ash-teal/90 disabled:opacity-50"
+              >
+                {isUpdating ? 'Updating...' : 'Update'}
+              </button>
             </div>
           </div>
         </div>

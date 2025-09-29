@@ -542,3 +542,34 @@ export const createTrainingModule = async (data: TrainingModuleData) => {
 
   return { success: true };
 };
+
+export const getAllReports = async () => {
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
+
+export const deleteReport = async (id: string) => {
+  const { error } = await supabase
+    .from('reports')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return { success: true };
+};
+
+export const updateReport = async (id: string, updates: Partial<any>) => {
+  const { data, error } = await supabase
+    .from('reports')
+    .update(updates)
+    .eq('id', id)
+    .select();
+
+  if (error) throw error;
+  return data[0];
+};

@@ -105,3 +105,7 @@ export const getCountryMetrics = async (countryCode: string) => {
     ambassadorCount: ambassadorCount || 0
   };
 };
+
+export const getTeamMembers = async (countryCode: string) => {
+  return getCountryAmbassadors(countryCode);
+};

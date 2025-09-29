@@ -38,6 +38,55 @@ export const createReport = async (reportData: {
   return data;
 };
 
+export const generateCustomReport = async (filters: {
+  startDate: string;
+  endDate: string;
+  type: string;
+  country?: string;
+}) => {
+  const { startDate, endDate, type, country } = filters;
+
+  // Define metrics based on report type
+  let metrics: string[] = [];
+  switch (type) {
+    case 'impact':
+      metrics = ['students_reached', 'partnerships', 'active_ambassadors'];
+      break;
+    case 'activity':
+      metrics = ['visits_count', 'tasks_completed', 'events_organized'];
+      break;
+    case 'comprehensive':
+      metrics = [
+        'students_reached',
+        'partnerships',
+        'active_ambassadors',
+        'total_schools',
+        'visits_count',
+        'tasks_completed',
+        'events_organized'
+      ];
+      break;
+    default:
+      metrics = ['students_reached', 'partnerships'];
+  }
+
+  const data = await generateReportMetrics({
+    start_date: startDate,
+    end_date: endDate,
+    country_code: country,
+    metrics
+  });
+
+  // Add metadata
+  return {
+    ...data,
+    reportType: type,
+    dateRange: { startDate, endDate },
+    country: country || 'All Countries',
+    generatedAt: new Date().toISOString()
+  };
+};
+
 export const getReports = async (userId?: string) => {
   let query = supabase
     .from('reports')

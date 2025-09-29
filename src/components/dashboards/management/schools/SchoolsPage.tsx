@@ -37,17 +37,84 @@ export const SchoolsPage = () => {
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [selectedAmbassador, setSelectedAmbassador] = useState('');
 
-  // Fetch schools from API (replace with your real API)
+  // Fetch schools from Supabase
   useEffect(() => {
-    setIsLoading(true);
-    fetch('/api/schools') // Replace with your actual endpoint
-      .then(res => res.json())
-      .then(data => {
-        setSchools(data);
-        setFilteredSchools(data);
+    const fetchSchools = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select(`
+            id,
+            name,
+            location,
+            address,
+            city,
+            region,
+            country_code,
+            type,
+            status,
+            contact_person,
+            contact_email,
+            contact_phone,
+            student_count,
+            ambassador_id,
+            created_at,
+            updated_at,
+            users:ambassador_id (
+              full_name
+            ),
+            visits (
+              id,
+              visit_date,
+              leads_generated
+            )
+          `)
+          .order('name', { ascending: true });
+
+        if (error) {
+          console.error('Error fetching schools:', error);
+          return;
+        }
+
+        // Transform data to match component expectations
+        const transformedData = data?.map(school => {
+          const totalLeads = school.visits?.reduce((sum, visit) => sum + (visit.leads_generated || 0), 0) || 0;
+          const lastVisit = school.visits?.sort((a, b) =>
+            new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime()
+          )[0]?.visit_date;
+
+          return {
+            id: school.id,
+            name: school.name,
+            location: `${school.city || ''}, ${school.country_code}`.replace(/^, |, $/, ''),
+            country: school.country_code,
+            contactPerson: school.contact_person || '',
+            contactEmail: school.contact_email || '',
+            contactPhone: school.contact_phone || '',
+            studentCount: school.student_count || 0,
+            leadsGenerated: totalLeads,
+            ambassador: (school.users as any)?.full_name || 'Unassigned',
+            status: school.status,
+            lastVisit: lastVisit ? new Date(lastVisit).toLocaleDateString() : 'Never',
+            nextVisit: 'Not scheduled', // This could be calculated from tasks or schedules
+            address: school.address,
+            city: school.city,
+            region: school.region,
+            type: school.type
+          };
+        }) || [];
+
+        setSchools(transformedData);
+        setFilteredSchools(transformedData);
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+      } finally {
         setIsLoading(false);
-      })
-      .catch(() => setIsLoading(false));
+      }
+    };
+
+    fetchSchools();
   }, []);
 
   useEffect(() => {

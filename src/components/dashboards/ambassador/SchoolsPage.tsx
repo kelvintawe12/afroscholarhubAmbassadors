@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { SchoolIcon, MapPinIcon, UsersIcon, CalendarIcon, EyeIcon, PhoneIcon, MailIcon, AlertCircleIcon, TrendingUpIcon, Clock, CheckCircle } from 'lucide-react';
-import { getAmbassadorSchools } from '../../../api/ambassador';
+import { Link } from 'react-router-dom';
+import { SchoolIcon, MapPinIcon, UsersIcon, CalendarIcon, EyeIcon, PhoneIcon, MailIcon, AlertCircleIcon, TrendingUpIcon, Clock, CheckCircle, ArrowLeftIcon } from 'lucide-react';
+import { getAmbassadorSchools, logSchoolVisit } from '../../../api/ambassador';
 import { useAuth } from '../../../contexts/AuthContext';
 import { LoadingSpinner } from '../../LoadingSpinner';
 
@@ -47,10 +48,13 @@ export const SchoolsPage = () => {
   const [filteredSchools, setFilteredSchools] = useState<School[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'prospect' | 'contacted' | 'visited' | 'partnered' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [visitDate, setVisitDate] = useState('');
+  const [visitNotes, setVisitNotes] = useState('');
 
   useEffect(() => {
     const fetchSchools = async () => {
@@ -158,6 +162,47 @@ export const SchoolsPage = () => {
   const handleScheduleVisit = (school: School) => {
     setSelectedSchool(school);
     setIsVisitModalOpen(true);
+    setVisitDate('');
+    setVisitNotes('');
+  };
+
+  const handleLogVisit = async () => {
+    if (!selectedSchool || !visitDate || !user) return;
+
+    try {
+      await logSchoolVisit(selectedSchool.id, user.id, {
+        visit_date: visitDate,
+        notes: visitNotes || undefined
+      });
+      setIsVisitModalOpen(false);
+      setSuccessMessage(`Visit logged for ${selectedSchool.name}. View in Activity Log.`);
+      // Refresh schools data
+      const data = await getAmbassadorSchools(user.id);
+      const transformedSchools: School[] = data.map((school: any) => ({
+        id: String(school.id),
+        name: school.name,
+        location: school.location,
+        country_code: school.country_code,
+        status: school.status,
+        contact_person: school.contact_person,
+        contact_email: school.contact_email,
+        contact_phone: school.contact_phone,
+        students_count: school.students_count,
+        last_visit: school.last_visit,
+        visit_count: school.visit_count || 0,
+        students_reached: school.students_reached || 0,
+        leads_generated: school.leads_generated ?? 0,
+        partnership_score: school.partnership_score,
+        notes: school.notes || '',
+        next_action: school.next_action || getDefaultNextAction(school.status),
+        created_at: school.created_at
+      }));
+      setSchools(transformedSchools);
+      setFilteredSchools(transformedSchools);
+    } catch (error) {
+      console.error('Error logging visit:', error);
+      setError('Failed to log visit. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -199,10 +244,33 @@ export const SchoolsPage = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">My Schools</h1>
+        <div className="flex items-center mb-4">
+          <Link
+            to="/dashboard/ambassador"
+            className="flex items-center text-sm text-gray-500 hover:text-gray-700 mr-4"
+          >
+            <ArrowLeftIcon size={16} className="mr-1" />
+            Back to Dashboard
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-900">My Schools</h1>
+        </div>
         <p className="text-sm text-gray-500">
           Manage your assigned schools and track partnership progress
         </p>
+        {successMessage && (
+          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircle size={20} className="text-green-600 mr-2" />
+              <span className="text-green-800 mr-2">{successMessage}</span>
+              <Link
+                to="/dashboard/ambassador/activity"
+                className="text-ash-teal hover:underline font-medium"
+              >
+                View Activity Log →
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -437,9 +505,30 @@ export const SchoolsPage = () => {
       {isVisitModalOpen && selectedSchool && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4">Schedule Visit - {selectedSchool.name}</h2>
-            <p className="text-gray-600 mb-4">Visit scheduling functionality would go here.</p>
-            <div className="flex gap-2">
+            <h2 className="text-lg font-semibold mb-4">Log Visit - {selectedSchool.name}</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Visit Date</label>
+                <input
+                  type="date"
+                  value={visitDate}
+                  onChange={(e) => setVisitDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ash-teal"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <textarea
+                  value={visitNotes}
+                  onChange={(e) => setVisitNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ash-teal"
+                  placeholder="What happened during the visit? Any leads generated?"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
               <button
                 onClick={() => setIsVisitModalOpen(false)}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -447,13 +536,11 @@ export const SchoolsPage = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  setIsVisitModalOpen(false);
-                  // Implement visit scheduling logic
-                }}
-                className="px-4 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90"
+                onClick={handleLogVisit}
+                disabled={!visitDate}
+                className="px-4 py-2 bg-ash-teal text-white rounded-lg hover:bg-ash-teal/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Schedule
+                Log Visit
               </button>
             </div>
           </div>

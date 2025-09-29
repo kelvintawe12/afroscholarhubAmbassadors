@@ -46,6 +46,20 @@ export const createSchoolVisit = async (visit: Omit<Visit, 'id' | 'created_at'>)
   if (error) throw error;
   return data[0] as Visit;
 };
+
+export const logSchoolVisit = async (schoolId: string, ambassadorId: string, visitData: { visit_date: string; notes?: string }) => {
+  const visit = {
+    school_id: schoolId,
+    ambassador_id: ambassadorId,
+    visit_date: visitData.visit_date,
+    notes: visitData.notes || '',
+    students_reached: 0, // Default, can be updated later
+    leads_generated: 0,
+    duration_minutes: 60, // Default duration
+    activities: [] // Default empty array
+  };
+  return await createSchoolVisit(visit);
+};
 export const updateTask = async (taskId: string, updates: Partial<Task>) => {
   const {
     data,
@@ -53,6 +67,15 @@ export const updateTask = async (taskId: string, updates: Partial<Task>) => {
   } = await supabase.from('tasks').update(updates).eq('id', taskId).select();
   if (error) throw error;
   return data[0] as Task;
+};
+
+export const updateVisit = async (visitId: string, updates: Partial<Visit>) => {
+  const {
+    data,
+    error
+  } = await supabase.from('visits').update(updates).eq('id', visitId).select();
+  if (error) throw error;
+  return data[0] as Visit;
 };
 export const getAmbassadorImpactMetrics = async (ambassadorId: string) => {
   // Get total students reached
@@ -123,4 +146,15 @@ export const updateTrainingProgress = async (data: TrainingProgressData) => {
   }
 
   return updatedData;
+};
+
+export const getResources = async (ambassadorId: string) => {
+  const { data, error } = await supabase
+    .from('resources')
+    .select('*')
+    .or(`access_level.eq.public,access_level.cs.{ambassadors}`)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
 };

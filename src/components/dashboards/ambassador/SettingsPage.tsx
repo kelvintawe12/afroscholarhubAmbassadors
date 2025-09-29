@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BellIcon, ShieldIcon, GlobeIcon, MoonIcon, SunIcon, SaveIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { useAuth } from '../../../hooks/useAuth';
+import { supabase } from '../../../utils/supabase';
 
 export const SettingsPage = () => {
+  const { user } = useAuth();
   const [settings, setSettings] = useState({
     notifications: {
       email: true,
@@ -33,10 +36,70 @@ export const SettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  const handleSave = () => {
-    // Here you would save settings to backend
-    alert('Settings saved successfully!');
+  useEffect(() => {
+    // Load user preferences from database
+    const loadSettings = async () => {
+      if (!user?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('preferences, notification_settings')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setSettings(prev => ({
+            ...prev,
+            preferences: {
+              ...prev.preferences,
+              ...data.preferences
+            },
+            notifications: {
+              ...prev.notifications,
+              ...data.notification_settings
+            }
+          }));
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+
+    loadSettings();
+  }, [user?.id]);
+
+  const handleSave = async () => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    setSaveStatus('idle');
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          preferences: settings.preferences,
+          notification_settings: settings.notifications
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateSetting = (category: string, key: string, value: any) => {
@@ -286,11 +349,22 @@ export const SettingsPage = () => {
 
           {/* Save Button */}
           <div className="flex justify-end pt-6 border-t border-gray-200">
+            {saveStatus === 'success' && (
+              <div className="mr-4 text-green-600 font-medium">Settings saved successfully!</div>
+            )}
+            {saveStatus === 'error' && (
+              <div className="mr-4 text-red-600 font-medium">Failed to save settings. Please try again.</div>
+            )}
             <button
               onClick={handleSave}
-              className="flex items-center px-6 py-3 bg-ash-teal text-white rounded-md hover:bg-ash-teal/90 transition-colors font-medium"
+              disabled={isLoading}
+              className="flex items-center px-6 py-3 bg-ash-teal text-white rounded-md hover:bg-ash-teal/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <SaveIcon size={16} className="mr-2" />
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+              ) : (
+                <SaveIcon size={16} className="mr-2" />
+              )}
               Save Settings
             </button>
           </div>

@@ -1,12 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DownloadIcon, FileTextIcon, VideoIcon, ImageIcon, SearchIcon, FilterIcon } from 'lucide-react';
+import { getResources } from '../../../api/ambassador';
+import { useAuth } from '../../../hooks/useAuth';
 
 export const AmbassadorResourcesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [resources, setResources] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  // Mock resources data
-  const resources = [
+  useEffect(() => {
+    const fetchResources = async () => {
+      if (!user?.id) return;
+      try {
+        setIsLoading(true);
+        const data = await getResources(user.id);
+        setResources(data.length > 0 ? data : mockResources);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+        setResources(mockResources);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchResources();
+  }, [user?.id]);
+
+  // Mock resources data (fallback if no real data)
+  const mockResources = [
     {
       id: 1,
       title: 'Partnership Pitch Deck',

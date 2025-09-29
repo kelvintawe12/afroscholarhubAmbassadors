@@ -7,14 +7,18 @@ import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { LoadingSpinner } from '../../LoadingSpinner';
 import { UsersIcon, SchoolIcon, TrendingUpIcon, PercentIcon, BellIcon, DownloadIcon, PlusIcon, FilterIcon } from 'lucide-react';
-import { useManagementKPIs, useAllSchools } from '../../../hooks/useDashboardData';
+import { useManagementKPIs, useAllSchools, useLeadGenerationTrends, useCountryDistribution, useAmbassadorPerformance, useRecentActivities } from '../../../hooks/useDashboardData';
 
 export const ManagementDashboard = () => {
   const { data: kpiData, loading: kpisLoading, error: kpisError } = useManagementKPIs();
   const { data: schoolData, loading: schoolsLoading, error: schoolsError } = useAllSchools();
+  const { data: leadsChartData, loading: leadsLoading } = useLeadGenerationTrends();
+  const { data: countryDistributionData, loading: countryLoading } = useCountryDistribution();
+  const { data: ambassadorPerformanceData, loading: performanceLoading } = useAmbassadorPerformance();
+  const { data: activities, loading: activitiesLoading } = useRecentActivities(4);
 
   // Show loading state
-  if (kpisLoading || schoolsLoading) {
+  if (kpisLoading || schoolsLoading || leadsLoading || countryLoading || performanceLoading || activitiesLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <LoadingSpinner />
@@ -74,70 +78,36 @@ export const ManagementDashboard = () => {
     lastActivity: school.last_visit
   })) : [];
 
-  // Mock data for charts (would be calculated from real data)
-  const leadsChartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+  const safeLeadsData = leadsChartData as any || {
+    labels: [],
     datasets: [{
       label: 'Leads Generated',
-      data: [450, 520, 500, 700, 800, 1200],
+      data: [] as number[],
       borderColor: '#1A5F7A',
       backgroundColor: 'rgba(26, 95, 122, 0.1)'
     }]
   };
 
-  const countryDistributionData = {
-    labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa', 'Others'],
+  const safeCountryData = countryDistributionData as any || {
+    labels: [],
     datasets: [{
-      data: [40, 25, 15, 12, 8],
+      data: [] as number[],
       backgroundColor: ['rgba(26, 95, 122, 0.8)', 'rgba(244, 196, 48, 0.8)', 'rgba(38, 162, 105, 0.8)', 'rgba(108, 92, 231, 0.8)', 'rgba(225, 112, 85, 0.8)']
     }]
   };
 
-  const ambassadorPerformanceData = {
-    labels: ['John D.', 'Amina Y.', 'Kwame O.', 'Fatima M.', 'Jamal I.'],
+  const safePerformanceData = ambassadorPerformanceData as any || {
+    labels: [],
     datasets: [{
       label: 'Leads Generated',
-      data: [120, 95, 87, 76, 65],
+      data: [] as number[],
       backgroundColor: 'rgba(26, 95, 122, 0.8)'
     }]
   };
 
-  // Mock data for activity feed (would come from real activities)
-  const activities = [{
-    id: 1,
-    type: 'partnership',
-    title: 'New Partnership: Lagos Model School',
-    description: 'Aisha completed the partnership agreement with Lagos Model School',
-    timestamp: '2 hours ago',
-    user: {
-      name: 'Aisha N.'
-    }
-  }, {
-    id: 2,
-    type: 'visit',
-    title: 'School Visit: Nairobi Academy',
-    description: 'John conducted a follow-up visit and collected 20 new leads',
-    timestamp: 'Yesterday',
-    user: {
-      name: 'John K.'
-    }
-  }, {
-    id: 3,
-    type: 'task',
-    title: 'Monthly Report Submitted',
-    timestamp: '3 days ago',
-    user: {
-      name: 'Grace M.'
-    },
-    status: 'completed'
-  }, {
-    id: 4,
-    type: 'note',
-    title: 'Low Activity Alert: South Africa',
-    description: 'Ambassador inactive for 14 days. Follow up required.',
-    timestamp: '1 week ago',
-    status: 'pending'
-  }];
+  const safeActivities = activities as any || [];
+
+
 
   return (
     <div>
@@ -167,8 +137,8 @@ export const ManagementDashboard = () => {
 
       {/* Charts Row */}
       <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <LineChart title="Quarterly Lead Generation Trends" data={leadsChartData} />
-        <PieChart title="Country Distribution" data={countryDistributionData} />
+        <LineChart title="Quarterly Lead Generation Trends" data={safeLeadsData} />
+        <PieChart title="Country Distribution" data={safeCountryData} />
       </div>
 
       {/* Schools Table */}
@@ -204,9 +174,9 @@ export const ManagementDashboard = () => {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <BarChart
           title="Ambassador Performance Leaderboard"
-          data={ambassadorPerformanceData}
+          data={safePerformanceData}
         />
-        <ActivityFeed title="Alerts & Recent Activity" activities={activities} maxItems={4} />
+        <ActivityFeed title="Alerts & Recent Activity" activities={safeActivities} maxItems={4} />
       </div>
     </div>
   );
