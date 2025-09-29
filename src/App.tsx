@@ -7,6 +7,7 @@ import { LoadingSpinner } from './components/LoadingSpinner';
 
 // Lazy load all components for code splitting
 const LoginPage = React.lazy(() => import('./components/LoginPage').then(module => ({ default: module.LoginPage })));
+const SignUpPage = React.lazy(() => import('./components/SignUpPage').then(module => ({ default: module.SignUpPage })));
 const DashboardLayout = React.lazy(() => import('./components/layout/DashboardLayout').then(module => ({ default: module.DashboardLayout })));
 const PWAInstallPrompt = React.lazy(() => import('./components/PWAInstallPrompt').then(module => ({ default: module.default })));
 
@@ -40,6 +41,9 @@ const AmbassadorTrainingViewPage = React.lazy(() =>
     default: module.AmbassadorTrainingViewPage
   }))
 );
+
+// Country Lead Training Component
+const CountryLeadTrainingViewPage = React.lazy(() => import('./components/dashboards/country-lead/Training').then(module => ({ default: module.default })));
 
 // Management Ambassador Components
 const AmbassadorsPage = React.lazy(() => import('./components/dashboards/management/ambassadors/AmbassadorsPage').then(module => ({ default: module.default })));
@@ -76,6 +80,9 @@ const ModerationPage = React.lazy(() => import('./components/dashboards/support/
 const AuditsPage = React.lazy(() => import('./components/dashboards/support/AuditsPage').then(module => ({ default: module.AuditsPage })));
 const DirectoryPage = React.lazy(() => import('./components/dashboards/support/DirectoryPage').then(module => ({ default: module.DirectoryPage })));
 
+// Auth Components
+const AuthCallback = React.lazy(() => import('./components/AuthCallback').then(module => ({ default: module.default })));
+
 // Help Components
 const HelpCenterPage = React.lazy(() => import('./components/help/HelpCenterPage').then(module => ({ default: module.HelpCenterPage })));
 
@@ -96,6 +103,8 @@ function App() {
               <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               {/* Management Routes */}
               <Route
                 path="/dashboard/management"
@@ -283,7 +292,7 @@ function App() {
                 path="/dashboard/country-lead/:countryCode/training"
                 element={
                   <DashboardLayout>
-                  <AmbassadorTrainingViewPage />
+                  <CountryLeadTrainingViewPage />
                   </DashboardLayout>
                 }
               />

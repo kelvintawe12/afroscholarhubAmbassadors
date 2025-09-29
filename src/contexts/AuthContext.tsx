@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+ import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { User as AppUser, AuthState } from '../types';
@@ -7,6 +7,8 @@ interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>;
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ user: User | null; error: AuthError | null }>;
+  signInWithGoogle: () => Promise<void>;
+  updateUserProfile: (updates: Partial<Pick<AppUser, 'full_name' | 'role' | 'country_code' | 'avatar_url'>>) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -137,6 +139,60 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            prompt: 'select_account',
+          },
+        },
+      });
+      if (error) {
+        setError(error.message);
+        throw error;
+      }
+      // Redirect happens automatically on success
+    } catch (err) {
+      const errorMessage = 'Google sign in failed';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserProfile = async (updates: Partial<Pick<AppUser, 'full_name' | 'role' | 'country_code' | 'avatar_url'>>) => {
+    try {
+      setError(null);
+      const { data, error } = await supabase.auth.updateUser({
+        data: updates,
+      });
+      if (error) {
+        return { error: error.message };
+      }
+      // Update local user state
+      if (user && data.user) {
+        const updatedUser: AppUser = {
+          ...user,
+          full_name: updates.full_name ?? user.full_name,
+          role: updates.role ?? user.role,
+          country_code: updates.country_code ?? user.country_code,
+          avatar_url: updates.avatar_url ?? user.avatar_url,
+        };
+        setUser(updatedUser);
+      }
+      return { error: null };
+    } catch (err) {
+      const errorMessage = 'Failed to update profile';
+      setError(errorMessage);
+      return { error: errorMessage };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -144,6 +200,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signOut,
     signUp,
+    signInWithGoogle,
+    updateUserProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
