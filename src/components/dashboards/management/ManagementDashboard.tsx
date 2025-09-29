@@ -8,8 +8,10 @@ import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { LoadingSpinner } from '../../LoadingSpinner';
 import { UsersIcon, SchoolIcon, TrendingUpIcon, PercentIcon, BellIcon, DownloadIcon, PlusIcon, FilterIcon } from 'lucide-react';
 import { useManagementKPIs, useAllSchools, useLeadGenerationTrends, useCountryDistribution, useAmbassadorPerformance, useRecentActivities } from '../../../hooks/useDashboardData';
+import { useAuth } from '../../../contexts/AuthContext'; // Add this import
 
 export const ManagementDashboard = () => {
+  const { user } = useAuth(); // Get the current user
   const { data: kpiData, loading: kpisLoading, error: kpisError } = useManagementKPIs();
   const { data: schoolData, loading: schoolsLoading, error: schoolsError } = useAllSchools();
   const { data: leadsChartData, loading: leadsLoading } = useLeadGenerationTrends();
@@ -116,8 +118,7 @@ export const ManagementDashboard = () => {
           Management Dashboard
         </h1>
         <p className="text-sm text-gray-500">
-          Welcome, COO! 🚀 Quick Win: Nigeria hit 100 partnerships—share on
-          LinkedIn?
+          Welcome, {user?.full_name || user?.email || 'Admin'}!
         </p>
       </div>
 
