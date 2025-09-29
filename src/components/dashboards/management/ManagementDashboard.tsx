@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { LineChart } from '../../ui/widgets/LineChart';
 import { PieChart } from '../../ui/widgets/PieChart';
@@ -18,6 +18,24 @@ export const ManagementDashboard = () => {
   const { data: countryDistributionData, loading: countryLoading } = useCountryDistribution();
   const { data: ambassadorPerformanceData, loading: performanceLoading } = useAmbassadorPerformance();
   const { data: activities, loading: activitiesLoading } = useRecentActivities(4);
+
+  // Slideshow tips for admin
+  const adminTips = [
+    "View and analyze ambassador performance across all countries.",
+    "Add, edit, or remove schools from the master sheet.",
+    "Export school and partnership data for reporting.",
+    "Monitor recent activities and alerts in real time.",
+    "Use filters to find schools or ambassadors quickly.",
+    "Download quarterly reports for management review."
+  ];
+  const [currentTip, setCurrentTip] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % adminTips.length);
+    }, 5000); // Change tip every 5 seconds
+    return () => clearInterval(interval);
+  }, [adminTips.length]);
 
   // Show loading state
   if (kpisLoading || schoolsLoading || leadsLoading || countryLoading || performanceLoading || activitiesLoading) {
@@ -120,6 +138,12 @@ export const ManagementDashboard = () => {
         <p className="text-sm text-gray-500">
           Welcome, {user?.full_name || user?.email || 'Admin'}!
         </p>
+        {/* Admin tips slideshow */}
+        <div className="mt-2 rounded bg-ash-teal/10 px-4 py-2 text-ash-teal transition-all duration-500 min-h-[32px]">
+          <span className="font-medium">
+            {adminTips[currentTip]}
+          </span>
+        </div>
       </div>
 
       {/* KPI Cards */}
