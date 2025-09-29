@@ -34,12 +34,14 @@ export const Navbar = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelpMenu, setShowHelpMenu] = useState(false);
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchResultsRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const helpMenuRef = useRef<HTMLDivElement>(null);
+
+  const displayName = user?.full_name || user?.email?.split('@')[0] || 'User';
   // Focus search input when search is shown
   useEffect(() => {
     if (showSearch && searchInputRef.current) {
@@ -414,14 +416,14 @@ export const Navbar = ({
               <UserIcon size={18} />
             </div>
             <span className="ml-2 hidden text-sm font-medium md:block">
-              John Okafor
+              {displayName}
             </span>
             <ChevronDownIcon size={16} className="ml-1 hidden md:block" />
           </button>
           {showProfileMenu && <div ref={profileMenuRef} className="absolute right-0 mt-2 w-64 rounded-lg border border-gray-300 bg-white py-2 shadow-xl transition-all duration-200 ease-in-out">
               <div className="border-b border-gray-200 px-4 py-4">
-                <p className="font-semibold text-gray-900">John Okafor</p>
-                <p className="text-sm text-gray-600">john@afroscholarhub.org</p>
+                <p className="font-semibold text-gray-900">{displayName}</p>
+                <p className="text-sm text-gray-600">{user?.email}</p>
                 <div className="mt-3">
                   <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
                     Active

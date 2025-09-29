@@ -6,7 +6,7 @@ import { User as AppUser, AuthState } from '../types';
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>;
   signOut: () => Promise<void>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ user: User | null; error: AuthError | null }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ user: User | null; session: any; error: AuthError | null }>;
   signInWithGoogle: () => Promise<void>;
   updateUserProfile: (updates: Partial<Pick<AppUser, 'full_name' | 'role' | 'country_code' | 'avatar_url'>>) => Promise<{ error: string | null }>;
 }
@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('AuthContext: initial session:', session, 'error:', error);
         if (error) {
           setError(error.message);
         } else if (session?.user) {
@@ -44,6 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_sessionEvent, session) => {
+        console.log('AuthContext: auth state changed:', _sessionEvent, session);
         if (session?.user) {
           await setUserFromSession(session.user);
         } else {
@@ -112,11 +114,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) {
         setError(error.message);
       }
-      return { user: data.user, error };
+      return { user: data.user, session: data.session, error };
     } catch (err) {
       const errorMessage = 'Sign up failed';
       setError(errorMessage);
-      return { user: null, error: { message: errorMessage } as AuthError };
+      return { user: null, session: null, error: { message: errorMessage } as AuthError };
     } finally {
       setLoading(false);
     }

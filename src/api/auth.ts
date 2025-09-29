@@ -28,6 +28,30 @@ export const updateUserProfile = async (updates: Partial<Pick<User, 'role' | 'co
 };
 
 /**
+ * Ensure user exists in the public.users table
+ */
+export const ensureUserInDatabase = async (userData: User): Promise<{ error: any }> => {
+  const { error } = await supabase
+    .from('users')
+    .upsert({
+      id: userData.id,
+      email: userData.email,
+      full_name: userData.full_name,
+      role: userData.role,
+      country_code: userData.country_code,
+      status: 'active',
+      created_at: userData.created_at,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Error ensuring user in database:', error);
+  }
+
+  return { error };
+};
+
+/**
  * Get current user profile from auth
  */
 export const getCurrentUserProfile = async (): Promise<{ user: User | null; error: any }> => {

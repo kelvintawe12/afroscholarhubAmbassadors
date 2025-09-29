@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { MailIcon, LockIcon, UserIcon, AlertTriangleIcon, CheckCircleIcon, GlobeIcon, MapPinIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { MailIcon, LockIcon, UserIcon, AlertTriangleIcon, CheckCircleIcon, GlobeIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { useAuth } from '../contexts/AuthContext';
 import { getCountries } from '../api/reports';
-import { updateUserProfile } from '../api/auth';
+import { updateUserProfile, ensureUserInDatabase } from '../api/auth';
 import { Country } from '../types/index';
 
 interface SimpleCountry {
@@ -29,6 +29,7 @@ export const SignUpPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showCountrySelector, setShowCountrySelector] = useState(false);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [countriesLoading, setCountriesLoading] = useState(true);
@@ -80,13 +81,20 @@ export const SignUpPage = () => {
     }
   }, [animateStats]);
 
-  // Check for country selection step
+  // Check for different steps
   useEffect(() => {
     const step = searchParams.get('step');
     if (step === 'country-selection' && user && !(user as any).user_metadata?.country_code) {
       setShowCountrySelector(true);
+    } else if (step === 'profile-completion' && user) {
+      // For Google OAuth users, pre-fill name from user_metadata
+      const googleName = (user as any).user_metadata?.name;
+      if (googleName && !fullName) {
+        setFullName(googleName);
+      }
+      setShowProfileCompletion(true);
     }
-  }, [searchParams, user]);
+  }, [searchParams, user, fullName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,13 +110,16 @@ export const SignUpPage = () => {
     }
     setIsLoading(true);
     try {
-      const { user: newUser, error: signUpError } = await signUp(email, password, { full_name: fullName });
+      const { user: newUser, session, error: signUpError } = await signUp(email, password, { full_name: fullName });
       if (signUpError) {
         setError(signUpError.message);
-      } else {
-        setSuccess('Account created successfully! Please check your email to confirm your account.');
+      } else if (session) {
+        setSuccess('Account created successfully!');
         // Redirect to country selection step
         navigate('/signup?step=country-selection');
+      } else {
+        setSuccess('Account created! Please check your email to confirm your account before signing in.');
+        setTimeout(() => navigate('/login'), 3000);
       }
     } catch (err) {
       setError('Sign up failed. Please try again.');
@@ -128,9 +139,36 @@ export const SignUpPage = () => {
       if (error) {
         setError('Failed to update profile. Please try again.');
       } else {
+        // Ensure user exists in the database
+        await ensureUserInDatabase(updatedUser!);
         setShowCountrySelector(false);
         // Redirect to ambassador dashboard
-        navigate(`/dashboard/ambassador/${countryCode}`);
+        navigate('/dashboard/ambassador');
+      }
+    } catch (err) {
+      setError('Failed to update profile. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProfileComplete = async (countryCode: string) => {
+    setSelectedCountry(countryCode);
+    setIsLoading(true);
+    try {
+      const { user: updatedUser, error } = await updateUserProfile({
+        full_name: fullName,
+        role: 'ambassador',
+        country_code: countryCode,
+      });
+      if (error) {
+        setError('Failed to update profile. Please try again.');
+      } else {
+        // Ensure user exists in the database
+        await ensureUserInDatabase(updatedUser!);
+        setShowProfileCompletion(false);
+        // Redirect to ambassador dashboard
+        navigate('/dashboard/ambassador');
       }
     } catch (err) {
       setError('Failed to update profile. Please try again.');
@@ -354,6 +392,65 @@ export const SignUpPage = () => {
               <Button
                 variant="outline"
                 onClick={() => setShowCountrySelector(false)}
+                className="mr-2"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Profile completion modal */}
+      {showProfileCompletion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="mx-4 w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center">
+              <UserIcon size={24} className="mr-2 text-ash-teal" />
+              <h3 className="text-lg font-semibold text-gray-900">Complete Your Profile</h3>
+            </div>
+            <p className="mb-4 text-sm text-gray-600">
+              Please provide your full name and select your country to complete your registration.
+            </p>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Full Name
+              </label>
+              <Input
+                type="text"
+                className="w-full rounded-md border border-gray-300 py-2 px-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal transition-all duration-300"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-6">
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Country
+              </label>
+              {countriesLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-ash-teal"></div>
+                </div>
+              ) : (
+                <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-md">
+                  {countries.map((country) => (
+                    <button
+                      key={country.code}
+                      onClick={() => handleProfileComplete(country.code)}
+                      className="flex w-full items-center rounded-md p-3 hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <span className="mr-3 text-lg">{country.flag}</span>
+                      <span className="text-sm font-medium text-gray-900">{country.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowProfileCompletion(false)}
                 className="mr-2"
               >
                 Cancel
