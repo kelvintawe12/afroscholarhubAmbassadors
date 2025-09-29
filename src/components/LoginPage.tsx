@@ -174,6 +174,14 @@ export const LoginPage = () => {
                   Sign In
                 </Button>
               </form>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={() => navigate('/reauth')}
+                  className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-2 py-1 rounded-full transition-colors duration-200"
+                >
+                  Re-authenticate
+                </button>
+              </div>
               <div className="mt-4 text-center">
                 <Link to="/signup" className="text-sm font-medium text-ash-teal hover:text-ash-teal/80 transition-colors duration-200">
                   Don't have an account? Sign up

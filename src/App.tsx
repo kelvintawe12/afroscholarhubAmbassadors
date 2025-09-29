@@ -84,6 +84,7 @@ const DirectoryPage = React.lazy(() => import('./components/dashboards/support/D
 const AuthCallback = React.lazy(() => import('./components/AuthCallback').then(module => ({ default: module.default })));
 const ForgotPasswordPage = React.lazy(() => import('./components/ForgotPasswordPage').then(module => ({ default: module.ForgotPasswordPage })));
 const ResetPasswordPage = React.lazy(() => import('./components/ResetPasswordPage').then(module => ({ default: module.ResetPasswordPage })));
+const ReauthPage = React.lazy(() => import('./components/ReauthPage').then(module => ({ default: module.ReauthPage })));
 
 // Help Components
 const HelpCenterPage = React.lazy(() => import('./components/help/HelpCenterPage').then(module => ({ default: module.HelpCenterPage })));
@@ -108,6 +109,7 @@ function App() {
               <Route path="/signup" element={<SignUpPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/reauth" element={<ReauthPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               {/* Management Routes */}
               <Route

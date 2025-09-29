@@ -26,14 +26,25 @@ export const ProfilePage = () => {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select(`
-            *,
-            ambassador_stats:ambassador_stats(*)
-          `)
+          .select('*')
           .eq('id', user.id)
           .single();
 
         if (error) throw error;
+
+        // Get schools count
+        const { count: schoolsCount } = await supabase
+          .from('schools')
+          .select('*', { count: 'exact', head: true })
+          .eq('ambassador_id', user.id);
+
+        // Get students helped from visits
+        const { data: visitsData } = await supabase
+          .from('visits')
+          .select('students_reached')
+          .eq('ambassador_id', user.id);
+
+        const studentsHelped = visitsData?.reduce((sum, visit) => sum + (visit.students_reached || 0), 0) || 0;
 
         if (data) {
           setProfile({
@@ -43,8 +54,8 @@ export const ProfilePage = () => {
             location: data.location || '',
             bio: data.bio || '',
             joinDate: new Date(data.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-            schoolsManaged: data.ambassador_stats?.schools_managed || 0,
-            studentsHelped: data.ambassador_stats?.students_helped || 0
+            schoolsManaged: schoolsCount || 0,
+            studentsHelped
           });
         }
       } catch (error) {
@@ -94,14 +105,25 @@ export const ProfilePage = () => {
         try {
           const { data, error } = await supabase
             .from('users')
-            .select(`
-              *,
-              ambassador_stats:ambassador_stats(*)
-            `)
+            .select('*')
             .eq('id', user.id)
             .single();
 
           if (error) throw error;
+
+          // Get schools count
+          const { count: schoolsCount } = await supabase
+            .from('schools')
+            .select('*', { count: 'exact', head: true })
+            .eq('ambassador_id', user.id);
+
+          // Get students helped from visits
+          const { data: visitsData } = await supabase
+            .from('visits')
+            .select('students_reached')
+            .eq('ambassador_id', user.id);
+
+          const studentsHelped = visitsData?.reduce((sum, visit) => sum + (visit.students_reached || 0), 0) || 0;
 
           if (data) {
             setProfile({
@@ -111,8 +133,8 @@ export const ProfilePage = () => {
               location: data.location || '',
               bio: data.bio || '',
               joinDate: new Date(data.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-              schoolsManaged: data.ambassador_stats?.schools_managed || 0,
-              studentsHelped: data.ambassador_stats?.students_helped || 0
+              schoolsManaged: schoolsCount || 0,
+              studentsHelped
             });
           }
         } catch (error) {

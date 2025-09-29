@@ -82,7 +82,7 @@ export const AmbassadorDashboard = () => {
           .from('users')
           .select('last_activity')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
         if (error) {
           console.error('Error fetching last sign-in:', error);
           return;

@@ -1,7 +1,8 @@
- import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
 import { User as AppUser, AuthState } from '../types';
+import { ensureUserInDatabase } from '../api/auth';
 
 interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>;
@@ -72,6 +73,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         created_at: authUser.created_at,
         updated_at: authUser.updated_at || authUser.created_at,
       };
+
+      // Ensure user exists in the database
+      await ensureUserInDatabase(appUser);
+
       setUser(appUser);
       setError(null);
     } catch (err) {

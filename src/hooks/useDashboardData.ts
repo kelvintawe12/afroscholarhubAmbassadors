@@ -100,7 +100,7 @@ export const useAmbassadorKPIs = (ambassadorId: string) => {
   return useDashboardData<DashboardKPIs>(
     async () => {
       // First check if the ambassador exists
-      const { data: ambassadorExists, error: ambassadorError } = await supabase
+      let { data: ambassadorExists, error: ambassadorError } = await supabase
         .from('users')
         .select('id, performance_score, role')
         .eq('id', ambassadorId)
@@ -111,8 +111,65 @@ export const useAmbassadorKPIs = (ambassadorId: string) => {
         throw new Error(`Ambassador not found: ${ambassadorError.message}`);
       }
 
+      // If ambassador doesn't exist in database, try to create the user row
       if (!ambassadorExists) {
-        throw new Error('Ambassador not found in database');
+        console.log('Ambassador not found in database, attempting to create user row...');
+        try {
+          // Get current user data from auth
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+          if (authError || !user) {
+            throw new Error('User not authenticated');
+          }
+
+          // Create user data object
+          const userData = {
+            id: user.id,
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            role: user.user_metadata?.role || 'ambassador',
+            country_code: user.user_metadata?.country_code
+          };
+
+          // Ensure user exists in database
+          console.log('Calling ensure_user_in_database with:', {
+            user_id: userData.id,
+            user_email: userData.email,
+            user_full_name: userData.full_name,
+            user_role: userData.role,
+            user_country_code: userData.country_code,
+          });
+
+          const { data: ensureData, error: ensureError } = await supabase.rpc('ensure_user_in_database', {
+            user_id: userData.id,
+            user_email: userData.email,
+            user_full_name: userData.full_name,
+            user_role: userData.role,
+            user_country_code: userData.country_code,
+          });
+
+          console.log('ensure_user_in_database result:', { data: ensureData, error: ensureError });
+
+          if (ensureError) {
+            console.error('Error ensuring user in database:', ensureError);
+            throw new Error(`Failed to create user record: ${ensureError.message}`);
+          }
+
+          // Re-check if ambassador now exists
+          const { data: recheckData, error: recheckError } = await supabase
+            .from('users')
+            .select('id, performance_score, role')
+            .eq('id', ambassadorId)
+            .maybeSingle();
+
+          if (recheckError || !recheckData) {
+            throw new Error('Failed to create ambassador record');
+          }
+
+          ambassadorExists = recheckData;
+        } catch (createError) {
+          console.error('Error creating ambassador record:', createError);
+          throw new Error('Ambassador not found in database');
+        }
       }
 
       if (ambassadorExists.role !== 'ambassador') {
