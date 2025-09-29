@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { PieChart } from '../../ui/widgets/PieChart';
 import { DataTable } from '../../ui/widgets/DataTable';
@@ -8,18 +9,66 @@ import { UsersIcon, SchoolIcon, CalendarIcon, CheckCircleIcon, PlusIcon, Message
 import { useCountryLeadKPIs, useCountryAmbassadors, useRecentActivities } from '../../../hooks/useDashboardData';
 import { useDashboardData } from '../../../hooks/useDashboardData';
 import { getCountrySchools } from '../../../api/country-lead';
-
-// For demo purposes, using Nigeria as sample country
-// In a real app, this would come from authentication context
-const SAMPLE_COUNTRY_CODE = 'NG';
+import { useAuth } from '../../../contexts/AuthContext';
+import { getCountries } from '../../../api/reports';
 
 export const CountryLeadDashboard = () => {
-  const { data: kpiData, loading: kpisLoading, error: kpisError } = useCountryLeadKPIs(SAMPLE_COUNTRY_CODE);
-  const { data: ambassadorData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(SAMPLE_COUNTRY_CODE);
+  const { countryCode } = useParams<{ countryCode: string }>();
+  const { user } = useAuth();
+  const [countries, setCountries] = useState<Record<string, string>>({});
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const countriesData = await getCountries();
+        const countriesMap: Record<string, string> = {};
+        countriesData.forEach(country => {
+          countriesMap[country.code.toLowerCase()] = country.name;
+        });
+        setCountries(countriesMap);
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+        // Fallback to hardcoded countries if fetch fails
+        setCountries({
+          'ng': 'Nigeria',
+          'ke': 'Kenya',
+          'za': 'South Africa',
+          'gh': 'Ghana',
+          'tz': 'Tanzania',
+          'ug': 'Uganda',
+          'zm': 'Zambia',
+          'zw': 'Zimbabwe',
+          'bw': 'Botswana',
+          'mw': 'Malawi',
+          'mz': 'Mozambique',
+          'na': 'Namibia',
+          'rw': 'Rwanda',
+          'et': 'Ethiopia',
+          'sn': 'Senegal',
+          'ci': 'Ivory Coast',
+          'ma': 'Morocco',
+          'eg': 'Egypt',
+          'tn': 'Tunisia',
+          'dz': 'Algeria'
+        });
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
+  // Use the country code from URL params, fallback to user's country or 'ng'
+  const currentCountryCode = countryCode || user?.country_code || 'ng';
+  const countryName = countries[currentCountryCode.toLowerCase()] || currentCountryCode.toUpperCase();
+  const userName = user?.full_name?.split(' ')[0] || 'Team Lead';
+
+  const { data: kpiData, loading: kpisLoading, error: kpisError } = useCountryLeadKPIs(currentCountryCode);
+  const { data: ambassadorData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(currentCountryCode);
   const { data: activitiesData, loading: activitiesLoading, error: activitiesError } = useRecentActivities(4);
   const { data: schoolsData, loading: schoolsLoading, error: schoolsError } = useDashboardData(
-    () => getCountrySchools(SAMPLE_COUNTRY_CODE),
-    [SAMPLE_COUNTRY_CODE]
+    () => getCountrySchools(currentCountryCode),
+    [currentCountryCode]
   );
 
   // Show loading state
@@ -139,9 +188,9 @@ export const CountryLeadDashboard = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Nigeria Operations</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{countryName} Operations</h1>
         <p className="text-sm text-gray-500">
-          Aisha, your Nigeria team is crushing it—75% goal met!
+          {userName}, your {countryName} team is crushing it—75% goal met!
         </p>
       </div>
 

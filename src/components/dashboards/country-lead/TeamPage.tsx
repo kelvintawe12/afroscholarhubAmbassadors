@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 import { UsersIcon, PlusIcon, FilterIcon, SearchIcon, MailIcon, PhoneIcon, CheckCircleIcon, XCircleIcon, ClockIcon, MoreHorizontalIcon, ArrowUpCircleIcon, ArrowDownCircleIcon, MessageSquareIcon, FileTextIcon, MapPinIcon, AlertTriangleIcon } from 'lucide-react';
-import { getCountryAmbassadors } from '../../../api/country-lead';
+import { useCountryAmbassadors } from '../../../hooks/useDashboardData';
+import { useAuth } from '../../../contexts/AuthContext';
 const AddAmbassadorModal: React.FC<{ onClose: () => void; onAdd?: (ambassador: any) => void }> = ({ onClose, onAdd }) => {
   const [form, setForm] = useState({
     name: '',
@@ -110,88 +112,43 @@ const AddAmbassadorModal: React.FC<{ onClose: () => void; onAdd?: (ambassador: a
   );
 };
 export const TeamPage = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [ambassadors, setAmbassadors] = useState<any[]>([]);
-  const [filteredAmbassadors, setFilteredAmbassadors] = useState<any[]>([]);
+  const { countryCode } = useParams<{ countryCode: string }>();
+  const { user } = useAuth();
+
+  // Use the country code from URL params, fallback to user's country or 'ng'
+  const currentCountryCode = countryCode || user?.country_code || 'ng';
+
+  const { data: ambassadorData, loading: ambassadorsLoading, error: ambassadorsError } = useCountryAmbassadors(currentCountryCode);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterRegion, setFilterRegion] = useState('all');
   const [sortField, setSortField] = useState('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [showAddAmbassador, setShowAddAmbassador] = useState(false);
-  useEffect(() => {
-    const fetchAmbassadors = async () => {
-      try {
-        setIsLoading(true);
-        const data = await getCountryAmbassadors('ng');
-        const mappedData = data.map((user: any) => ({
-          id: user.id,
-          name: user.full_name || 'Unknown',
-          email: user.email,
-          phone: user.phone || '',
-          region: user.country_code || 'Unknown',
-          status: 'active', // Default; can be enhanced with real status logic
-          role: user.role || 'Ambassador',
-          joinDate: user.created_at || new Date().toISOString().split('T')[0],
-          performance: 0, // Placeholder; fetch from visits or metrics
-          schoolsCount: 0, // Placeholder; count assigned schools
-          studentsReached: 0, // Placeholder; sum from visits
-          lastActivity: 'Unknown', // Placeholder; fetch from recent activity
-          avatar: user.avatar_url || 'https://randomuser.me/api/portraits/lego/1.jpg',
-          bio: user.bio || '',
-          skills: [] // Placeholder; fetch from profiles or skills table
-        }));
-        setAmbassadors(mappedData);
-        setFilteredAmbassadors(mappedData);
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Error fetching ambassadors:', error);
-        setIsLoading(false);
-      }
-    };
-    fetchAmbassadors();
-  }, []);
-  useEffect(() => {
-    // Filter and sort ambassadors
-    let filtered = [...ambassadors];
-    // Apply status filter
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(ambassador => ambassador.status === filterStatus);
-    }
-    // Apply region filter
-    if (filterRegion !== 'all') {
-      filtered = filtered.filter(ambassador => ambassador.region === filterRegion);
-    }
-    // Apply search
-    if (searchQuery) {
-      filtered = filtered.filter(ambassador => ambassador.name.toLowerCase().includes(searchQuery.toLowerCase()) || ambassador.email.toLowerCase().includes(searchQuery.toLowerCase()) || ambassador.region.toLowerCase().includes(searchQuery.toLowerCase()));
-    }
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let comparison = 0;
-      switch (sortField) {
-        case 'name':
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case 'performance':
-          comparison = a.performance - b.performance;
-          break;
-        case 'schoolsCount':
-          comparison = a.schoolsCount - b.schoolsCount;
-          break;
-        case 'studentsReached':
-          comparison = a.studentsReached - b.studentsReached;
-          break;
-        case 'joinDate':
-          comparison = new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime();
-          break;
-        default:
-          comparison = 0;
-      }
-      return sortDirection === 'asc' ? comparison : -comparison;
-    });
-    setFilteredAmbassadors(filtered);
-  }, [ambassadors, filterStatus, filterRegion, searchQuery, sortField, sortDirection]);
+
+  // Transform ambassador data for display
+  const ambassadors = useMemo(() => {
+    return ambassadorData ? ambassadorData.map(ambassador => ({
+      id: ambassador.id,
+      name: ambassador.full_name,
+      email: ambassador.email,
+      phone: '', // Not available in the hook data
+      region: ambassador.country_code,
+      status: ambassador.status,
+      role: 'Ambassador',
+      joinDate: new Date().toISOString().split('T')[0], // Placeholder
+      performance: ambassador.performance_score,
+      schoolsCount: ambassador.schools_count,
+      studentsReached: ambassador.leads_generated,
+      lastActivity: ambassador.last_activity,
+      avatar: 'https://randomuser.me/api/portraits/lego/1.jpg', // Placeholder
+      bio: '',
+      skills: []
+    })) : [];
+  }, [ambassadorData]);
+
+
   // Get unique regions for filter
   const regions = Array.from(new Set(ambassadors.map(ambassador => ambassador.region)));
   // Get team metrics
@@ -234,8 +191,10 @@ export const TeamPage = () => {
     }
   };
   // Add this handler to update ambassadors list after adding
+  const [localAddedAmbassadors, setLocalAddedAmbassadors] = useState<any[]>([]);
+
   const handleAddAmbassador = (newAmbassador: any) => {
-    setAmbassadors(prev => [
+    setLocalAddedAmbassadors((prev: any[]) => [
       {
         ...newAmbassador,
         id: Date.now(), // Temporary ID for demo
@@ -251,6 +210,54 @@ export const TeamPage = () => {
       ...prev
     ]);
   };
+
+  // Combine fetched ambassadors with locally added ambassadors
+  const combinedAmbassadors = useMemo(() => {
+    return [...localAddedAmbassadors, ...ambassadors];
+  }, [localAddedAmbassadors, ambassadors]);
+
+  // Use combinedAmbassadors for filtering and sorting
+  const filteredAmbassadors = useMemo(() => {
+    let filtered = [...combinedAmbassadors];
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(ambassador => ambassador.status === filterStatus);
+    }
+    if (filterRegion !== 'all') {
+      filtered = filtered.filter(ambassador => ambassador.region === filterRegion);
+    }
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(ambassador =>
+        ambassador.name.toLowerCase().includes(lowerQuery) ||
+        ambassador.email.toLowerCase().includes(lowerQuery) ||
+        ambassador.region.toLowerCase().includes(lowerQuery)
+      );
+    }
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'performance':
+          comparison = a.performance - b.performance;
+          break;
+        case 'schoolsCount':
+          comparison = a.schoolsCount - b.schoolsCount;
+          break;
+        case 'studentsReached':
+          comparison = a.studentsReached - b.studentsReached;
+          break;
+        case 'joinDate':
+          comparison = new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime();
+          break;
+        default:
+          comparison = 0;
+      }
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+    return filtered;
+  }, [combinedAmbassadors, filterStatus, filterRegion, searchQuery, sortField, sortDirection]);
   return <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
@@ -376,12 +383,12 @@ export const TeamPage = () => {
       </div>
 
       {/* Loading State */}
-      {isLoading && <div className="flex h-64 items-center justify-center">
+      {ambassadorsLoading && <div className="flex h-64 items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-ash-teal border-t-transparent"></div>
         </div>}
 
       {/* No Results */}
-      {!isLoading && filteredAmbassadors.length === 0 && <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+      {!ambassadorsLoading && filteredAmbassadors.length === 0 && <div className="flex h-64 flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center">
           <UsersIcon size={48} className="mb-4 text-gray-400" />
           <h3 className="mb-2 text-lg font-medium text-gray-900">
             No ambassadors found
@@ -399,7 +406,7 @@ export const TeamPage = () => {
         </div>}
 
       {/* Ambassador List */}
-      {!isLoading && filteredAmbassadors.length > 0 && <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      {!ambassadorsLoading && filteredAmbassadors.length > 0 && <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
