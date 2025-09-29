@@ -7,6 +7,28 @@ import { useAuth } from '../contexts/AuthContext';
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { signIn, signInWithGoogle, user } = useAuth();
+
+  // Navigate to appropriate dashboard after successful login or if already logged in
+  useEffect(() => {
+    if (user) {
+      switch (user.role) {
+        case 'management':
+          navigate('/dashboard/management', { replace: true });
+          break;
+        case 'country_lead':
+          navigate(`/dashboard/country-lead/${user.country_code || 'ng'}`, { replace: true });
+          break;
+        case 'ambassador':
+          navigate('/dashboard/ambassador', { replace: true });
+          break;
+        case 'support':
+          navigate('/dashboard/support', { replace: true });
+          break;
+        default:
+          navigate('/dashboard/ambassador', { replace: true });
+      }
+    }
+  }, [user, navigate]);
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

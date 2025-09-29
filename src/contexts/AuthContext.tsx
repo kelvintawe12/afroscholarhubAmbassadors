@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../utils/supabase';
-import { User as AppUser, AuthState } from '../types';
+import { User as AppUser, AuthState, UserRole } from '../types';
 import { ensureUserInDatabase } from '../api/auth';
 
 interface AuthContextType extends AuthState {
@@ -61,20 +61,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setUserFromSession = async (authUser: User): Promise<void> => {
     try {
-      // Get additional user data from profiles table if needed
-      // For now, map Supabase user to our AppUser type
+      // First, try to get the role from the database
+      const { data: dbUser, error: dbError } = await supabase
+        .from('users')
+        .select('role, country_code, full_name')
+        .eq('id', authUser.id)
+        .single();
+
+      let role: UserRole = 'ambassador'; // Default role
+      let country_code = authUser.user_metadata?.country_code;
+      let full_name = authUser.user_metadata?.full_name || authUser.user_metadata?.name;
+
+      if (!dbError && dbUser) {
+        role = dbUser.role as UserRole;
+        country_code = dbUser.country_code || country_code;
+        full_name = dbUser.full_name || full_name;
+      }
+
       const appUser: AppUser = {
         id: authUser.id,
         email: authUser.email || '',
-        full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name,
+        full_name: full_name,
         avatar_url: authUser.user_metadata?.avatar_url,
-        role: authUser.user_metadata?.role || 'ambassador', // Default role
-        country_code: authUser.user_metadata?.country_code,
+        role: role,
+        country_code: country_code,
         created_at: authUser.created_at,
         updated_at: authUser.updated_at || authUser.created_at,
       };
 
-      // Ensure user exists in the database
+      // Ensure user exists in the database (this will update if role changed)
       await ensureUserInDatabase(appUser);
 
       setUser(appUser);
