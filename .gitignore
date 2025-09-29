@@ -11,7 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
-.env
+# environment variable files
 .env.*.local
 .env.example
 .env.test
