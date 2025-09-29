@@ -90,7 +90,18 @@ export const AmbassadorTrainingPage: React.FC = () => {
     applicable_countries: [],
     materials: undefined,
   });
-  const [formErrors, setFormErrors] = useState<Record<keyof FormData, string | undefined>>({});
+  const [formErrors, setFormErrors] = useState<Record<keyof FormData, string | undefined>>({
+    title: undefined,
+    description: undefined,
+    type: undefined,
+    format: undefined,
+    duration: undefined,
+    target_audience: undefined,
+    difficulty_level: undefined,
+    learning_objectives: undefined,
+    applicable_countries: undefined,
+    materials: undefined,
+  });
   const [countries, setCountries] = useState<{ code: string; name: string }[]>([]);
 
   // Fetch countries for applicable_countries dropdown
@@ -380,9 +391,18 @@ export const AmbassadorTrainingPage: React.FC = () => {
 
   // Validate form
   const validateForm = (): boolean => {
-  // Validate form
-  const validateForm = (): boolean => {
-    const errors: Record<keyof FormData, string | undefined> = {};
+    const errors: Record<keyof FormData, string | undefined> = {
+      title: undefined,
+      description: undefined,
+      type: undefined,
+      format: undefined,
+      duration: undefined,
+      target_audience: undefined,
+      difficulty_level: undefined,
+      learning_objectives: undefined,
+      applicable_countries: undefined,
+      materials: undefined,
+    };
     if (!formData.title) errors.title = 'Module title is required';
     if (!formData.description) errors.description = 'Description is required';
     if (!formData.duration) errors.duration = 'Duration is required';

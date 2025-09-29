@@ -4,6 +4,7 @@ import { BarChart } from '../../ui/widgets/BarChart';
 import { PieChart } from '../../ui/widgets/PieChart';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { TrendingUpIcon, UsersIcon, SchoolIcon, CalendarIcon, DownloadIcon, FilterIcon, ChevronDownIcon, MapPinIcon, GlobeIcon, ArrowUpRightIcon, ArrowDownRightIcon } from 'lucide-react';
+import { getAnalyticsData } from '../../../api/management';
 export const AnalyticsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -13,81 +14,8 @@ export const AnalyticsPage = () => {
     const fetchAnalyticsData = async () => {
       try {
         setIsLoading(true);
-        // In a real app, this would use the API client
-        // const data = await getAnalyticsData()
-        // For now, use mock data
-        const mockData = {
-          kpis: {
-            totalGrowth: 32,
-            growthChange: 8,
-            newStudents: 458,
-            studentChange: 12,
-            newSchools: 17,
-            schoolChange: 5,
-            eventsHosted: 28,
-            eventsChange: -3
-          },
-          monthlyGrowth: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-            studentsReached: [450, 520, 500, 700, 800, 950, 1000, 1200, 1350, 1500, 1700, 1850],
-            schoolPartnerships: [12, 15, 18, 20, 22, 25, 28, 30, 35, 38, 42, 45]
-          },
-          countryComparison: {
-            labels: ['Nigeria', 'Kenya', 'Ghana', 'South Africa'],
-            studentsReached: [800, 450, 320, 280],
-            schoolPartnerships: [20, 12, 8, 5]
-          },
-          schoolsByStatus: {
-            labels: ['Partnered', 'Prospects', 'Visited', 'Inactive'],
-            data: [45, 63, 28, 12]
-          },
-          ambassadorPerformance: {
-            labels: ['Excellent', 'Good', 'Average', 'Needs Improvement'],
-            data: [18, 24, 8, 2]
-          },
-          recentEvents: [{
-            id: 1,
-            name: 'Lagos Career Fair',
-            country: 'Nigeria',
-            date: '2025-03-15',
-            students: 250,
-            conversion: 75,
-            roi: 4.2
-          }, {
-            id: 2,
-            name: 'Nairobi Tech Summit',
-            country: 'Kenya',
-            date: '2025-02-28',
-            students: 180,
-            conversion: 62,
-            roi: 3.1
-          }, {
-            id: 3,
-            name: 'Accra Education Expo',
-            country: 'Ghana',
-            date: '2025-04-10',
-            students: 120,
-            conversion: 45,
-            roi: 2.3
-          }, {
-            id: 4,
-            name: 'Cape Town Workshop',
-            country: 'South Africa',
-            date: '2025-03-22',
-            students: 90,
-            conversion: 38,
-            roi: 1.8
-          }, {
-            id: 5,
-            name: 'Abuja School Tour',
-            country: 'Nigeria',
-            date: '2025-05-05',
-            students: 200,
-            conversion: 68,
-            roi: 3.5
-          }]
-        };
-        setAnalyticsData(mockData);
+        const data = await getAnalyticsData();
+        setAnalyticsData(data);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching analytics data:', error);

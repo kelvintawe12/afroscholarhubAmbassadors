@@ -37,45 +37,183 @@ export const getSchoolsByStatus = async (status: School['status']) => {
   return data;
 };
 export const getAnalyticsData = async () => {
-  // Get total students reached
-  const {
-    data: visitData,
-    error: visitError
-  } = await supabase.from('visits').select('students_reached');
-  if (visitError) throw visitError;
-  const totalStudents = visitData.reduce((sum, visit) => sum + visit.students_reached, 0);
-  // Get school counts by status
-  const {
-    data: schoolData,
-    error: schoolError
-  } = await supabase.from('schools').select('status');
-  if (schoolError) throw schoolError;
-  const schoolsByStatus = schoolData.reduce((acc, school) => {
-    acc[school.status] = (acc[school.status] || 0) + 1;
+  // Get visits data for students and monthly trends
+  const { data: visitsData, error: visitsError } = await supabase
+    .from('visits')
+    .select('students_reached, visit_date, school_id, leads_generated');
+
+  if (visitsError) throw visitsError;
+
+  // Get schools data
+  const { data: schoolsData, error: schoolsError } = await supabase
+    .from('schools')
+    .select('id, status, country_code, created_at');
+
+  if (schoolsError) throw schoolsError;
+
+  // Get users data for ambassadors
+  const { data: usersData, error: usersError } = await supabase
+    .from('users')
+    .select('id, role, performance_score, country_code')
+    .eq('role', 'ambassador');
+
+  if (usersError) throw usersError;
+
+  // Get events data
+  const { data: eventsData, error: eventsError } = await supabase
+    .from('events')
+    .select('id, name, country_code, event_date, students_reached, leads_generated');
+
+  if (eventsError) throw eventsError;
+
+  // Calculate KPIs
+  const totalStudents = visitsData.reduce((sum, visit) => sum + (visit.students_reached || 0), 0);
+  const totalSchools = schoolsData.length;
+  const totalEvents = eventsData.length;
+
+  // Calculate growth (simplified: compare last 6 months vs previous 6 months)
+  const sixMonthsAgo = new Date();
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+  const recentVisits = visitsData.filter(v => new Date(v.visit_date) >= sixMonthsAgo);
+  const previousVisits = visitsData.filter(v => new Date(v.visit_date) >= twelveMonthsAgo && new Date(v.visit_date) < sixMonthsAgo);
+
+  const recentStudents = recentVisits.reduce((sum, v) => sum + (v.students_reached || 0), 0);
+  const previousStudents = previousVisits.reduce((sum, v) => sum + (v.students_reached || 0), 0);
+  const studentChange = previousStudents > 0 ? Math.round(((recentStudents - previousStudents) / previousStudents) * 100) : 0;
+
+  const recentSchools = schoolsData.filter(s => new Date(s.created_at) >= sixMonthsAgo).length;
+  const previousSchools = schoolsData.filter(s => new Date(s.created_at) >= twelveMonthsAgo && new Date(s.created_at) < sixMonthsAgo).length;
+  const schoolChange = previousSchools > 0 ? Math.round(((recentSchools - previousSchools) / previousSchools) * 100) : 0;
+
+  const recentEvents = eventsData.filter(e => new Date(e.event_date) >= sixMonthsAgo).length;
+  const previousEvents = eventsData.filter(e => new Date(e.event_date) >= twelveMonthsAgo && new Date(e.event_date) < sixMonthsAgo).length;
+  const eventsChange = previousEvents > 0 ? Math.round(((recentEvents - previousEvents) / previousEvents) * 100) : 0;
+
+  // Total growth (overall metric, using student growth as proxy)
+  const totalGrowth = studentChange;
+  const growthChange = studentChange; // Simplified
+
+  const kpis = {
+    totalGrowth,
+    growthChange,
+    newStudents: recentStudents,
+    studentChange,
+    newSchools: recentSchools,
+    schoolChange,
+    eventsHosted: recentEvents,
+    eventsChange
+  };
+
+  // Monthly growth data (last 12 months)
+  const monthlyData: Record<string, { students: number; schools: number }> = {};
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentYear = new Date().getFullYear();
+
+  months.forEach((month, index) => {
+    const monthVisits = visitsData.filter(v => {
+      const date = new Date(v.visit_date);
+      return date.getFullYear() === currentYear && date.getMonth() === index;
+    });
+    const monthSchools = schoolsData.filter(s => {
+      const date = new Date(s.created_at);
+      return date.getFullYear() === currentYear && date.getMonth() === index;
+    });
+
+    monthlyData[month] = {
+      students: monthVisits.reduce((sum, v) => sum + (v.students_reached || 0), 0),
+      schools: monthSchools.length
+    };
+  });
+
+  const monthlyGrowth = {
+    labels: months,
+    studentsReached: months.map(m => monthlyData[m].students),
+    schoolPartnerships: months.map(m => monthlyData[m].schools)
+  };
+
+  // Country comparison
+  const countryData: Record<string, { students: number; schools: number }> = {};
+  ['Nigeria', 'Kenya', 'Ghana', 'South Africa'].forEach(country => {
+    const code = country === 'Nigeria' ? 'NG' : country === 'Kenya' ? 'KE' : country === 'Ghana' ? 'GH' : 'ZA';
+    const countryVisits = visitsData.filter(v => {
+      const school = schoolsData.find(s => s.id === v.school_id);
+      return school?.country_code === code;
+    });
+    const countrySchools = schoolsData.filter(s => s.country_code === code);
+
+    countryData[country] = {
+      students: countryVisits.reduce((sum, v) => sum + (v.students_reached || 0), 0),
+      schools: countrySchools.length
+    };
+  });
+
+  const countryComparison = {
+    labels: Object.keys(countryData),
+    studentsReached: Object.values(countryData).map((d: { students: number; schools: number }) => d.students),
+    schoolPartnerships: Object.values(countryData).map((d: { students: number; schools: number }) => d.schools)
+  };
+
+  // Schools by status
+  const statusCounts = schoolsData.reduce((acc, school) => {
+    const status = school.status;
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  // Get ambassador count
-  const {
-    count: ambassadorCount,
-    error: ambassadorError
-  } = await supabase.from('users').select('id', {
-    count: 'exact',
-    head: true
-  }).eq('role', 'ambassador');
-  if (ambassadorError) throw ambassadorError;
-  // Get upcoming events
-  const {
-    data: upcomingEvents,
-    error: eventsError
-  } = await supabase.from('events').select('*').gt('event_date', new Date().toISOString()).order('event_date', {
-    ascending: true
-  }).limit(5);
-  if (eventsError) throw eventsError;
+
+  const schoolsByStatus = {
+    labels: ['Partnered', 'Prospects', 'Visited', 'Inactive'],
+    data: [
+      statusCounts['partnered'] || 0,
+      statusCounts['prospect'] || 0,
+      statusCounts['visited'] || 0,
+      statusCounts['inactive'] || 0
+    ]
+  };
+
+  // Ambassador performance
+  const performanceBuckets = usersData.reduce((acc, user) => {
+    const score = user.performance_score || 0;
+    if (score >= 80) acc.excellent++;
+    else if (score >= 60) acc.good++;
+    else if (score >= 40) acc.average++;
+    else acc.needsImprovement++;
+    return acc;
+  }, { excellent: 0, good: 0, average: 0, needsImprovement: 0 });
+
+  const ambassadorPerformance = {
+    labels: ['Excellent', 'Good', 'Average', 'Needs Improvement'],
+    data: [
+      performanceBuckets.excellent,
+      performanceBuckets.good,
+      performanceBuckets.average,
+      performanceBuckets.needsImprovement
+    ]
+  };
+
+  // Recent events (last 5 events with computed metrics)
+  const recentEventsData = eventsData
+    .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime())
+    .slice(0, 5)
+    .map(event => ({
+      id: event.id,
+      name: event.name,
+      country: event.country_code || 'Unknown',
+      date: event.event_date,
+      students: event.students_reached || 0,
+      conversion: event.students_reached && event.leads_generated ? Math.round((event.leads_generated / event.students_reached) * 100) : 0,
+      roi: event.leads_generated ? (event.leads_generated / 10).toFixed(1) : '0.0' // Simplified ROI calculation
+    }));
+
   return {
-    totalStudents,
+    kpis,
+    monthlyGrowth,
+    countryComparison,
     schoolsByStatus,
-    ambassadorCount: ambassadorCount || 0,
-    upcomingEvents
+    ambassadorPerformance,
+    recentEvents: recentEventsData
   };
 };
 export const createSchool = async (school: Omit<School, 'id' | 'created_at'>) => {

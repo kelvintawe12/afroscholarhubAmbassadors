@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock environment variables
 Object.defineProperty(window, 'matchMedia', {
@@ -25,33 +26,37 @@ global.ResizeObserver = class ResizeObserver {
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
+  root = null;
+  rootMargin = '';
+  thresholds = [];
   constructor() {}
   observe() {}
   unobserve() {}
   disconnect() {}
+  takeRecords() { return []; }
 };
 
 // Mock Supabase
-jest.mock('../utils/supabase', () => ({
+vi.mock('../utils/supabase', () => ({
   supabase: {
     auth: {
-      getUser: jest.fn(),
-      signInWithPassword: jest.fn(),
-      signOut: jest.fn(),
+      getUser: vi.fn(),
+      signInWithPassword: vi.fn(),
+      signOut: vi.fn(),
     },
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(),
-          order: jest.fn(),
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn(),
+          order: vi.fn(),
         })),
       })),
-      insert: jest.fn(() => ({
-        select: jest.fn(),
+      insert: vi.fn(() => ({
+        select: vi.fn(),
       })),
-      update: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          select: jest.fn(),
+      update: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          select: vi.fn(),
         })),
       })),
     })),
@@ -59,7 +64,7 @@ jest.mock('../utils/supabase', () => ({
 }));
 
 // Mock lucide-react icons
-jest.mock('lucide-react', () => ({
+vi.mock('lucide-react', () => ({
   CheckSquareIcon: () => 'CheckSquareIcon',
   SchoolIcon: () => 'SchoolIcon',
   ClipboardIcon: () => 'ClipboardIcon',
