@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { LineChart } from '../../ui/widgets/LineChart';
 import { PieChart } from '../../ui/widgets/PieChart';
@@ -6,7 +6,7 @@ import { BarChart } from '../../ui/widgets/BarChart';
 import { DataTable } from '../../ui/widgets/DataTable';
 import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { LoadingSpinner } from '../../LoadingSpinner';
-import { UsersIcon, SchoolIcon, TrendingUpIcon, PercentIcon, BellIcon, DownloadIcon, PlusIcon, FilterIcon } from 'lucide-react';
+import { UsersIcon, SchoolIcon, PercentIcon, DownloadIcon, PlusIcon, FilterIcon } from 'lucide-react';
 import { useManagementKPIs, useAllSchools, useLeadGenerationTrends, useCountryDistribution, useAmbassadorPerformance, useRecentActivities } from '../../../hooks/useDashboardData';
 import { useAuth } from '../../../contexts/AuthContext'; // Add this import
 
