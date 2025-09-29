@@ -4,7 +4,12 @@ import { BarChart } from '../../ui/widgets/BarChart';
 import { LineChart } from '../../ui/widgets/LineChart';
 import { PieChart } from '../../ui/widgets/PieChart';
 import { UsersIcon, SchoolIcon, TrophyIcon, CheckSquareIcon, MapPinIcon, TargetIcon, TrendingUpIcon } from 'lucide-react';
-import { getAmbassadorImpactMetrics } from '../../../api/ambassador';
+import {
+  getAmbassadorImpactMetrics,
+  getAmbassadorTasksCompleted,
+  getAmbassadorVisitsCount,
+  getAmbassadorLeadsGenerated
+} from '../../../api/ambassador';
 import { useAuth } from '../../../hooks/useAuth';
 
 export const ImpactPage = () => {
@@ -25,17 +30,19 @@ export const ImpactPage = () => {
 
       try {
         setIsLoading(true);
-        // In a real app, this would fetch from API
-        // For now, using mock data
-        const mockData = {
-          totalStudents: 245,
-          schoolCount: 12,
-          partnershipCount: 8,
-          tasksCompleted: 34,
-          visitsCount: 18,
-          leadsGenerated: 15
-        };
-        setMetrics(mockData);
+        const impactMetrics = await getAmbassadorImpactMetrics(user.id);
+        const tasksCompleted = await getAmbassadorTasksCompleted(user.id);
+        const visitsCount = await getAmbassadorVisitsCount(user.id);
+        const leadsGenerated = await getAmbassadorLeadsGenerated(user.id);
+
+        setMetrics({
+          totalStudents: impactMetrics.totalStudents,
+          schoolCount: impactMetrics.schoolCount,
+          partnershipCount: impactMetrics.partnershipCount,
+          tasksCompleted,
+          visitsCount,
+          leadsGenerated
+        });
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching impact metrics:', error);
@@ -59,14 +66,14 @@ export const ImpactPage = () => {
       }
     : null;
 
-  // Prepare data for LineChart (monthly trend - mock data)
+  // Prepare data for LineChart (current metrics as single point)
   const lineChartData = metrics
     ? {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        labels: ['Current'],
         datasets: [
           {
             label: 'Students Reached',
-            data: [50, 80, 120, 150, 200, metrics.totalStudents],
+            data: [metrics.totalStudents],
             borderColor: '#34D399',
             backgroundColor: 'rgba(52, 211, 153, 0.1)',
             fill: true,
@@ -74,7 +81,7 @@ export const ImpactPage = () => {
           },
           {
             label: 'Schools Visited',
-            data: [2, 3, 5, 7, 9, metrics.schoolCount],
+            data: [metrics.schoolCount],
             borderColor: '#60A5FA',
             backgroundColor: 'rgba(96, 165, 250, 0.1)',
             fill: true,
@@ -84,13 +91,13 @@ export const ImpactPage = () => {
       }
     : null;
 
-  // Prepare data for PieChart (activity breakdown - mock data)
+  // Prepare data for PieChart (activity breakdown with real data)
   const pieChartData = metrics
     ? {
-        labels: ['School Visits', 'Task Completions', 'Follow-ups', 'Outreach'],
+        labels: ['School Visits', 'Task Completions', 'Partnerships', 'Leads Generated'],
         datasets: [
           {
-            data: [metrics.visitsCount, metrics.tasksCompleted, 12, 8],
+            data: [metrics.visitsCount, metrics.tasksCompleted, metrics.partnershipCount, metrics.leadsGenerated],
             backgroundColor: [
               '#10B981',
               '#3B82F6',
@@ -162,10 +169,10 @@ export const ImpactPage = () => {
 
           <div className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
             <BarChart title="Impact Overview" data={barChartData} height={300} />
-            <PieChart title="Activity Breakdown" data={pieChartData} height={300} subtitle="Distribution of activities this quarter" />
+            <PieChart title="Activity Breakdown" data={pieChartData} height={300} subtitle="Current activity distribution" />
           </div>
 
-          <LineChart title="Impact Trends" data={lineChartData} height={300} subtitle="Monthly progress over the last 6 months" />
+          <LineChart title="Current Impact" data={lineChartData} height={300} subtitle="Current metrics overview" />
         </>
       )}
     </div>

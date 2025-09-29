@@ -6,8 +6,9 @@ import { BarChart } from '../../ui/widgets/BarChart';
 import { LoadingSpinner } from '../../LoadingSpinner';
 import { CheckSquareIcon, SchoolIcon, ClipboardIcon, TrophyIcon, PlusIcon, CalendarIcon, ClockIcon, FlagIcon, UsersIcon } from 'lucide-react';
 import { useAmbassadorKPIs, useAmbassadorTasks, useAmbassadorSchools } from '../../../hooks/useDashboardData';
-import { getAmbassadorImpactMetrics } from '../../../api/ambassador';
+import { getAmbassadorImpactMetrics, getResources } from '../../../api/ambassador';
 import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../utils/supabase';
 
 export const AmbassadorDashboard = () => {
   const { user, loading: authLoading } = useAuth();
@@ -26,6 +27,26 @@ export const AmbassadorDashboard = () => {
 
   const [impactMetrics, setImpactMetrics] = useState<{ totalStudents: number; schoolCount: number; partnershipCount: number } | null>(null);
   const [impactLoading, setImpactLoading] = useState(true);
+  const [badges, setBadges] = useState<any[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
+  const [lastSignIn, setLastSignIn] = useState<string | null>(null);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
+  const welcomeMessages = [
+    `Welcome back, ${user.full_name?.split(' ')[0] || 'Ambassador'}! Ready to make an impact?`,
+    `Great job, ${user.full_name?.split(' ')[0] || 'Ambassador'}! Let's continue building the future of education.`,
+    user.country_code ? `Hello from ${user.country_code}, ${user.full_name?.split(' ')[0] || 'Ambassador'}! Your work matters.` : `Hello, ${user.full_name?.split(' ')[0] || 'Ambassador'}! Your dedication inspires change.`,
+    `Welcome, ${user.full_name?.split(' ')[0] || 'Ambassador'}! Every school visit creates ripples of change.`,
+    `Hi ${user.full_name?.split(' ')[0] || 'Ambassador'}! Let's turn potential into progress today.`
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % welcomeMessages.length);
+    }, 4000); // Change message every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [welcomeMessages.length]);
 
   useEffect(() => {
     const fetchImpactMetrics = async () => {
@@ -40,6 +61,40 @@ export const AmbassadorDashboard = () => {
       }
     };
     fetchImpactMetrics();
+  }, [user.id]);
+
+  useEffect(() => {
+    const fetchResources = async () => {
+      try {
+        const res = await getResources(user.id);
+        setResources(res || []);
+      } catch (error) {
+        console.error('Error fetching resources:', error);
+      }
+    };
+    fetchResources();
+  }, [user.id]);
+
+  useEffect(() => {
+    const fetchLastSignIn = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('last_activity')
+          .eq('id', user.id)
+          .single();
+        if (error) {
+          console.error('Error fetching last sign-in:', error);
+          return;
+        }
+        if (data?.last_activity) {
+          setLastSignIn(new Date(data.last_activity).toLocaleString());
+        }
+      } catch (err) {
+        console.error('Error fetching last sign-in:', err);
+      }
+    };
+    fetchLastSignIn();
   }, [user.id]);
 
   // Show loading state
@@ -126,55 +181,7 @@ export const AmbassadorDashboard = () => {
     lastVisit: school.last_visit
   })) : [];
 
-  // Mock data for badges (would be calculated from real achievements)
-  const badges = [{
-    id: 1,
-    name: 'School Closer',
-    description: '5 Partnerships',
-    icon: '🏆',
-    unlocked: true
-  }, {
-    id: 2,
-    name: 'Lead Generator',
-    description: '100+ Leads',
-    icon: '🚀',
-    unlocked: true
-  }, {
-    id: 3,
-    name: 'Outreach Hero',
-    description: 'Consistent Activity',
-    icon: '⭐',
-    unlocked: true
-  }, {
-    id: 4,
-    name: 'Top Performer',
-    description: 'Regional Recognition',
-    icon: '🥇',
-    unlocked: false
-  }];
 
-  // Mock data for resources (would come from resources table)
-  const resources = [{
-    id: 1,
-    title: 'Partnership Pitch Deck',
-    type: 'PDF',
-    icon: '📊'
-  }, {
-    id: 2,
-    title: 'Branded Flyer Template',
-    type: 'DOCX',
-    icon: '📄'
-  }, {
-    id: 3,
-    title: '5-min Essay Workshop',
-    type: 'VIDEO',
-    icon: '🎥'
-  }, {
-    id: 4,
-    title: 'Scholarship Application Guide',
-    type: 'PDF',
-    icon: '📚'
-  }];
 
   return (
     <div>
@@ -182,8 +189,8 @@ export const AmbassadorDashboard = () => {
         <h1 className="text-2xl font-bold text-gray-900">
           Ambassador Dashboard
         </h1>
-        <p className="text-sm text-gray-500">
-          Great job, {user.full_name?.split(' ')[0] || 'Ambassador'}! Your last visit generated 20 sign-ups. 🎉
+        <p className="text-sm text-gray-500 transition-opacity duration-500 ease-in-out">
+          {welcomeMessages[currentMessageIndex]}
         </p>
       </div>
 

@@ -14,12 +14,7 @@ export const getAmbassadorSchools = async (ambassadorId: string) => {
   const {
     data,
     error
-  } = await supabase.from('schools').select(`
-    *,
-    visit_count:visits(count),
-    students_reached:visits(sum(students_reached)),
-    leads_generated:visits(sum(leads_generated))
-  `).eq('ambassador_id', ambassadorId).order('name', {
+  } = await supabase.from('schools').select('*').eq('ambassador_id', ambassadorId).order('name', {
     ascending: true
   });
   if (error) throw error;
@@ -121,6 +116,37 @@ export const getAllAmbassadors = async () => {
   return data as User[];
 };
 
+export const getAmbassadorTasksCompleted = async (ambassadorId: string) => {
+  const { count, error } = await supabase
+    .from('tasks')
+    .select('*', { count: 'exact', head: true })
+    .eq('ambassador_id', ambassadorId)
+    .eq('status', 'Completed');
+
+  if (error) throw error;
+  return count || 0;
+};
+
+export const getAmbassadorVisitsCount = async (ambassadorId: string) => {
+  const { count, error } = await supabase
+    .from('visits')
+    .select('*', { count: 'exact', head: true })
+    .eq('ambassador_id', ambassadorId);
+
+  if (error) throw error;
+  return count || 0;
+};
+
+export const getAmbassadorLeadsGenerated = async (ambassadorId: string) => {
+  const { data, error } = await supabase
+    .from('visits')
+    .select('leads_generated')
+    .eq('ambassador_id', ambassadorId);
+
+  if (error) throw error;
+  return data.reduce((sum, visit) => sum + visit.leads_generated, 0);
+};
+
 interface TrainingProgressData {
   user_id: string;
   training_module_id: string;
@@ -152,7 +178,7 @@ export const getResources = async (ambassadorId: string) => {
   const { data, error } = await supabase
     .from('resources')
     .select('*')
-    .or(`access_level.eq.public,access_level.cs.{ambassadors}`)
+    .or(`access_level.eq.all,access_level.eq.ambassadors`)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
