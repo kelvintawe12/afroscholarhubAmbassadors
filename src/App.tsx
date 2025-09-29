@@ -46,6 +46,9 @@ const AmbassadorsPage = React.lazy(() => import('./components/dashboards/managem
 const AmbassadorPerformancePage = React.lazy(() => import('./components/dashboards/management/ambassadors/PerformancePage').then(module => ({ default: module.AmbassadorPerformancePage })));
 const AmbassadorTrainingPage = React.lazy(() => import('./components/dashboards/management/ambassadors/TrainingPage').then(module => ({ default: module.AmbassadorTrainingPage })));
 
+// Management Users Components
+const UsersPage = React.lazy(() => import('./components/dashboards/management/users/UsersPage').then(module => ({ default: module.default })));
+
 // Management Schools Components
 const SchoolsPage = React.lazy(() => import('./components/dashboards/management/schools/SchoolsPage').then(module => ({ default: module.SchoolsPage })));
 const SchoolProspectsPage = React.lazy(() => import('./components/dashboards/management/schools/ProspectsPage').then(module => ({ default: module.SchoolProspectsPage })));
@@ -147,6 +150,14 @@ function App() {
                 element={
                   <DashboardLayout>
                     <AmbassadorTrainingPage />
+                  </DashboardLayout>
+                }
+              />
+              <Route
+                path="/dashboard/management/users"
+                element={
+                  <DashboardLayout>
+                    <UsersPage />
                   </DashboardLayout>
                 }
               />

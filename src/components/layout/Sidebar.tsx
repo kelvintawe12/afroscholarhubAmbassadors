@@ -31,6 +31,9 @@ export const Sidebar = ({
         <SidebarItem title="Performance" href="/dashboard/management/ambassadors/performance" active={isActive('/management/ambassadors/performance')} onNavigate={onNavigate} />
         <SidebarItem title="Training" href="/dashboard/management/ambassadors/training" active={isActive('/management/ambassadors/training')} onNavigate={onNavigate} />
       </SidebarSection>
+      <SidebarSection title="Users" icon={<UsersIcon size={18} />} expanded={expandedSection === 'users'} onClick={() => toggleSection('users')} active={isActive('/management/users')}>
+        <SidebarItem title="Directory" href="/dashboard/management/users" active={isActive('/management/users')} onNavigate={onNavigate} />
+      </SidebarSection>
       <SidebarSection title="Schools" icon={<SchoolIcon size={18} />} expanded={expandedSection === 'schools'} onClick={() => toggleSection('schools')} active={isActive('/management/schools')}>
         <SidebarItem title="Master Sheet" href="/dashboard/management/schools" active={isActive('/management/schools')} onNavigate={onNavigate} />
         <SidebarItem title="Partnerships" href="/dashboard/management/schools/partnerships" active={isActive('/management/schools/partnerships')} onNavigate={onNavigate} />

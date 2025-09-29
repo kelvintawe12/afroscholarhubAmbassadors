@@ -1,5 +1,19 @@
 import { supabase, School, User, Event } from '../utils/supabase';
+import { UserRole, Country } from '../types';
 // Management API functions
+export const getAllUsers = async () => {
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      countries:country_code (name, flag_emoji)
+    `)
+    .order('full_name', { ascending: true });
+
+  if (error) throw error;
+  return data as (User & { countries?: { name: string; flag_emoji: string } })[];
+};
+
 export const getAllAmbassadors = async () => {
   const {
     data,
@@ -633,6 +647,78 @@ export const assignCountryToAmbassador = async (ambassadorId: string, countryCod
 
   if (error) throw error;
   return data[0] as User;
+};
+
+export const createUser = async (userData: {
+  email: string;
+  full_name: string;
+  role: UserRole;
+  country_code?: string;
+  phone?: string;
+  bio?: string;
+}) => {
+  const { data, error } = await supabase
+    .from('users')
+    .insert([{
+      ...userData,
+      status: 'active',
+      onboarding_completed: false,
+      performance_score: 0
+    }])
+    .select();
+
+  if (error) throw error;
+  return data[0] as User;
+};
+
+export const updateUserRole = async (userId: string, newRole: UserRole) => {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ role: newRole })
+    .eq('id', userId)
+    .select();
+
+  if (error) throw error;
+  return data[0] as User;
+};
+
+export const updateUserCountry = async (userId: string, countryCode: string) => {
+  const { data, error } = await supabase
+    .from('users')
+    .update({ country_code: countryCode })
+    .eq('id', userId)
+    .select();
+
+  if (error) throw error;
+  return data[0] as User;
+};
+
+export const getUsersByRole = async (role: UserRole) => {
+  const { data, error } = await supabase
+    .from('users')
+    .select(`
+      *,
+      countries:country_code (name, flag_emoji)
+    `)
+    .eq('role', role)
+    .order('full_name', { ascending: true });
+
+  if (error) throw error;
+  return data as (User & { countries?: { name: string; flag_emoji: string } })[];
+};
+
+export const getCountryLeads = async () => {
+  const { data, error } = await supabase
+    .from('countries')
+    .select(`
+      *,
+      users:lead_id (id, full_name, email, role)
+    `)
+    .eq('active', true)
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return data as (Country & { users?: { id: string; full_name: string; email: string; role: UserRole } })[];
 };
 
 interface TrainingModuleData {
