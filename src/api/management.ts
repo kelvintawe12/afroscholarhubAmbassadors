@@ -76,7 +76,7 @@ export const getAnalyticsData = async () => {
   // Get events data
   const { data: eventsData, error: eventsError } = await supabase
     .from('events')
-    .select('id, name, country_code, event_date, students_reached, leads_generated');
+    .select('id, name, country_code, event_date, actual_attendance, leads_generated');
 
   if (eventsError) throw eventsError;
 
@@ -216,8 +216,8 @@ export const getAnalyticsData = async () => {
       name: event.name,
       country: event.country_code || 'Unknown',
       date: event.event_date,
-      students: event.students_reached || 0,
-      conversion: event.students_reached && event.leads_generated ? Math.round((event.leads_generated / event.students_reached) * 100) : 0,
+      students: event.actual_attendance || 0,
+      conversion: event.actual_attendance && event.leads_generated ? Math.round((event.leads_generated / event.actual_attendance) * 100) : 0,
       roi: event.leads_generated ? (event.leads_generated / 10).toFixed(1) : '0.0' // Simplified ROI calculation
     }));
 
