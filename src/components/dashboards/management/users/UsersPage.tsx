@@ -120,17 +120,17 @@ const getUserGrowthData = (users: DisplayUser[]) => {
 
 // Role badges config
 const roleConfig: Record<UserRole, { color: string; label: string; icon: React.ReactNode }> = {
-  management: { color: 'bg-blue-100 text-blue-800', label: 'Management', icon: <UserCog className="h-4 w-4" /> },
-  country_lead: { color: 'bg-purple-100 text-purple-800', label: 'Country Lead', icon: <MapPin className="h-4 w-4" /> },
-  ambassador: { color: 'bg-green-100 text-green-800', label: 'Ambassador', icon: <Users className="h-4 w-4" /> },
-  support: { color: 'bg-indigo-100 text-indigo-800', label: 'Support', icon: <Shield className="h-4 w-4" /> }
+  management: { color: 'bg-ash-teal/10 text-ash-teal', label: 'Management', icon: <UserCog className="h-4 w-4" /> },
+  country_lead: { color: 'bg-ash-gold/10 text-ash-gold', label: 'Country Lead', icon: <MapPin className="h-4 w-4" /> },
+  ambassador: { color: 'bg-ash-dark/10 text-ash-dark', label: 'Ambassador', icon: <Users className="h-4 w-4" /> },
+  support: { color: 'bg-ash-light text-ash-dark', label: 'Support', icon: <Shield className="h-4 w-4" /> }
 };
 
 // Status config
 const statusConfig = {
-  active: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-4 w-4" /> },
-  inactive: { color: 'bg-gray-100 text-gray-700', icon: <Clock className="h-4 w-4" /> },
-  pending: { color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="h-4 w-4" /> }
+  active: { color: 'bg-ash-gold/10 text-ash-gold', icon: <CheckCircle className="h-4 w-4" /> },
+  inactive: { color: 'bg-ash-dark/10 text-ash-dark', icon: <Clock className="h-4 w-4" /> },
+  pending: { color: 'bg-ash-teal/10 text-ash-teal', icon: <AlertCircle className="h-4 w-4" /> }
 };
 
 // User Card Component

@@ -54,12 +54,12 @@ const priorityConfig = {
 
 // Status colors
 const statusConfig = {
-  'new': { color: 'bg-gray-100 text-gray-800', label: 'New' },
-  'assigned': { color: 'bg-blue-100 text-blue-800', label: 'Assigned' },
-  'in_progress': { color: 'bg-yellow-100 text-yellow-800', label: 'In Progress' },
-  'escalated': { color: 'bg-orange-100 text-orange-800', label: 'Escalated' },
-  'resolved': { color: 'bg-green-100 text-green-800', label: 'Resolved' },
-  'closed': { color: 'bg-gray-200 text-gray-600', label: 'Closed' }
+  'new': { color: 'bg-ash-teal/10 text-ash-teal', label: 'New' },
+  'assigned': { color: 'bg-ash-gold/10 text-ash-gold', label: 'Assigned' },
+  'in_progress': { color: 'bg-ash-teal/10 text-ash-teal', label: 'In Progress' },
+  'escalated': { color: 'bg-ash-dark/10 text-ash-dark', label: 'Escalated' },
+  'resolved': { color: 'bg-ash-gold/10 text-ash-gold', label: 'Resolved' },
+  'closed': { color: 'bg-ash-dark/10 text-ash-dark', label: 'Closed' }
 };
 
 // Impact levels

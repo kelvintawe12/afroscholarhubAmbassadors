@@ -98,10 +98,10 @@ const activityTrendsData = {
 
 // Configuration
 const statusConfig = {
-  active: { color: 'bg-green-100 text-green-800', icon: <CheckCircle className="h-4 w-4" /> },
-  inactive: { color: 'bg-gray-100 text-gray-700', icon: <Clock className="h-4 w-4" /> },
-  training: { color: 'bg-yellow-100 text-yellow-800', icon: <GraduationCap className="h-4 w-4" /> },
-  'on-leave': { color: 'bg-orange-100 text-orange-800', icon: <AlertCircle className="h-4 w-4" /> }
+  active: { color: 'bg-ash-gold/10 text-ash-gold', icon: <CheckCircle className="h-4 w-4" /> },
+  inactive: { color: 'bg-ash-dark/10 text-ash-dark', icon: <Clock className="h-4 w-4" /> },
+  training: { color: 'bg-ash-teal/10 text-ash-teal', icon: <GraduationCap className="h-4 w-4" /> },
+  'on-leave': { color: 'bg-ash-teal/10 text-ash-teal', icon: <AlertCircle className="h-4 w-4" /> }
 };
 
 const roleConfig = {

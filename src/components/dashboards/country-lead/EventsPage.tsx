@@ -23,7 +23,8 @@ import { ActivityFeed } from '../../ui/widgets/ActivityFeed';
 import { KpiCard } from '../../ui/widgets/KpiCard';
 import { useAuth } from '../../../hooks/useAuth';
 import { getCountryEvents, createEvent } from '../../../api/country-lead';
-import { Event as DBEvent } from '../../../utils/supabase';
+import { getCountries } from '../../../api/management';
+import { Event as DBEvent, Country } from '../../../utils/supabase';
 import { toast } from 'react-hot-toast';
 
 // Types
@@ -111,11 +112,11 @@ const eventTypeConfig = {
 
 // Status colors
 const statusConfig = {
-  draft: { color: 'bg-gray-100 text-gray-700', label: 'Draft' },
-  published: { color: 'bg-blue-100 text-blue-800', label: 'Published' },
-  live: { color: 'bg-green-100 text-green-800', label: 'Live' },
-  completed: { color: 'bg-purple-100 text-purple-800', label: 'Completed' },
-  cancelled: { color: 'bg-red-100 text-red-800', label: 'Cancelled' }
+  draft: { color: 'bg-ash-dark/10 text-ash-dark', label: 'Draft' },
+  published: { color: 'bg-ash-teal/10 text-ash-teal', label: 'Published' },
+  live: { color: 'bg-ash-gold/10 text-ash-gold', label: 'Live' },
+  completed: { color: 'bg-ash-teal/10 text-ash-teal', label: 'Completed' },
+  cancelled: { color: 'bg-ash-dark/10 text-ash-dark', label: 'Cancelled' }
 };
 
 // Components
@@ -267,6 +268,7 @@ const EventsPage: React.FC = () => {
     status: 'all'
   });
   const [events, setEvents] = useState<EventCardData[]>([]);
+  const [allCountries, setAllCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
@@ -280,10 +282,11 @@ const EventsPage: React.FC = () => {
     budget: 0
   });
 
-  // Fetch events on mount
+  // Fetch events and countries on mount
   useEffect(() => {
     if (user?.country_code) {
       fetchEvents();
+      fetchCountries();
     }
   }, [user?.country_code]);
 
@@ -321,6 +324,16 @@ const EventsPage: React.FC = () => {
       toast.error('Failed to load events');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const data = await getCountries();
+      setAllCountries(data);
+    } catch (error) {
+      console.error('Error fetching countries:', error);
+      toast.error('Failed to load countries');
     }
   };
 
@@ -425,11 +438,10 @@ const EventsPage: React.FC = () => {
 
   const countries = [
     { value: 'all', label: 'All Countries' },
-    { value: 'NG', label: 'Nigeria 🇳🇬' },
-    { value: 'GH', label: 'Ghana 🇬🇭' },
-    { value: 'KE', label: 'Kenya 🇰🇪' },
-    { value: 'ZA', label: 'South Africa 🇿🇦' },
-    { value: 'multi', label: 'Multi-country 🌍' }
+    ...allCountries.map(country => ({
+      value: country.code,
+      label: `${country.name} ${country.flag_emoji}`
+    }))
   ];
 
   const statuses = [

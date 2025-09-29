@@ -104,6 +104,12 @@ export type Resource = {
 export type Country = {
   code: string;
   name: string;
-  flag_url: string;
+  flag_emoji: string;
+  currency?: string;
+  timezone?: string;
   lead_id?: string;
+  active: boolean;
+  settings?: any;
+  created_at: string;
+  updated_at: string;
 };
