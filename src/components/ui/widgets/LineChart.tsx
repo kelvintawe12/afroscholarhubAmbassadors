@@ -2,7 +2,7 @@ import React from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, ChartData, ChartOptions } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { DownloadIcon, InfoIcon } from 'lucide-react';
-// Register ChartJS components
+// Register ChartJS cmps
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 interface LineChartProps {
   title: string;
