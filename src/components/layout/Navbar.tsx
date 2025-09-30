@@ -33,8 +33,7 @@ export const Navbar = ({
   }]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showHelpMenu, setShowHelpMenu] = useState(false);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [logoutCountdown, setLogoutCountdown] = useState<number | null>(null);
+
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -76,19 +75,7 @@ export const Navbar = ({
     };
   }, []);
 
-  // Logout countdown effect
-  useEffect(() => {
-    if (logoutCountdown === null) return;
 
-    if (logoutCountdown > 0) {
-      const timer = setTimeout(() => setLogoutCountdown(logoutCountdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      handleLogout();
-      setShowLogoutModal(false);
-      setLogoutCountdown(null);
-    }
-  }, [logoutCountdown]);
   const getRoleTitle = (role: string) => {
     switch (role) {
       case 'management':
@@ -475,7 +462,7 @@ export const Navbar = ({
                   <SettingsIcon size={16} className="mr-3 text-gray-600" />
                   <span className="flex-1">Settings</span>
                 </button>
-                <button className="flex w-full items-center px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 rounded-md" onClick={() => setShowLogoutModal(true)}>
+                <button className="flex w-full items-center px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 rounded-md" onClick={handleLogout}>
                   <LogOutIcon size={16} className="mr-3" />
                   <span className="flex-1">Log out</span>
                 </button>
@@ -484,30 +471,6 @@ export const Navbar = ({
         </div>
       </div>
 
-      {/* Logout Confirmation Modal */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirm Logout</h3>
-            <p className="text-gray-600 mb-6">Are you sure you want to log out?</p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => { setShowLogoutModal(false); setLogoutCountdown(null); }}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
-                disabled={logoutCountdown !== null}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setLogoutCountdown(4)}
-                disabled={logoutCountdown !== null}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {logoutCountdown !== null ? `Logging out in ${logoutCountdown}...` : 'Log out'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </header>;
 };

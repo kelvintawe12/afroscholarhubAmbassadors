@@ -76,14 +76,17 @@ export const getAnalyticsData = async () => {
   // Get events data
   const { data: eventsData, error: eventsError } = await supabase
     .from('events')
-    .select('id, name, country_code, event_date, actual_attendance, leads_generated');
+    .select('id, name, country_code, event_date, actual_attendance');
 
-  if (eventsError) throw eventsError;
+  const events = eventsError ? [] : (eventsData || []);
+  if (eventsError) {
+    console.warn('Events data not available:', eventsError.message);
+  }
 
   // Calculate KPIs
   const totalStudents = visitsData.reduce((sum, visit) => sum + (visit.students_reached || 0), 0);
   const totalSchools = schoolsData.length;
-  const totalEvents = eventsData.length;
+  const totalEvents = events.length;
 
   // Calculate growth (simplified: compare last 6 months vs previous 6 months)
   const sixMonthsAgo = new Date();
@@ -102,8 +105,8 @@ export const getAnalyticsData = async () => {
   const previousSchools = schoolsData.filter(s => new Date(s.created_at) >= twelveMonthsAgo && new Date(s.created_at) < sixMonthsAgo).length;
   const schoolChange = previousSchools > 0 ? Math.round(((recentSchools - previousSchools) / previousSchools) * 100) : 0;
 
-  const recentEvents = eventsData.filter(e => new Date(e.event_date) >= sixMonthsAgo).length;
-  const previousEvents = eventsData.filter(e => new Date(e.event_date) >= twelveMonthsAgo && new Date(e.event_date) < sixMonthsAgo).length;
+  const recentEvents = events.filter(e => new Date(e.event_date) >= sixMonthsAgo).length;
+  const previousEvents = events.filter(e => new Date(e.event_date) >= twelveMonthsAgo && new Date(e.event_date) < sixMonthsAgo).length;
   const eventsChange = previousEvents > 0 ? Math.round(((recentEvents - previousEvents) / previousEvents) * 100) : 0;
 
   // Total growth (overall metric, using student growth as proxy)
@@ -208,7 +211,7 @@ export const getAnalyticsData = async () => {
   };
 
   // Recent events (last 5 events with computed metrics)
-  const recentEventsData = eventsData
+  const recentEventsData = events
     .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime())
     .slice(0, 5)
     .map(event => ({
@@ -217,8 +220,8 @@ export const getAnalyticsData = async () => {
       country: event.country_code || 'Unknown',
       date: event.event_date,
       students: event.actual_attendance || 0,
-      conversion: event.actual_attendance && event.leads_generated ? Math.round((event.leads_generated / event.actual_attendance) * 100) : 0,
-      roi: event.leads_generated ? (event.leads_generated / 10).toFixed(1) : '0.0' // Simplified ROI calculation
+      conversion: 0, // Placeholder since leads_generated not available on events
+      roi: '0.0' // Placeholder since leads_generated not available on events
     }));
 
   return {

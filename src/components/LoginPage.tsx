@@ -30,13 +30,9 @@ export const LoginPage = () => {
     }
   }, [user, navigate]);
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loginAttempts, setLoginAttempts] = useState(0);
-  const [showPassword, setShowPassword] = useState(false);
   const [animateStats, setAnimateStats] = useState(false);
   const [statsVisible, setStatsVisible] = useState([false, false, false, false]);
   // Trigger animations after component mount
@@ -61,35 +57,7 @@ export const LoginPage = () => {
       return () => timers.forEach(timer => clearTimeout(timer));
     }
   }, [animateStats]);
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const { user: signedInUser, error: signInError } = await signIn(email, password);
-      if (signInError) {
-        setLoginAttempts(prev => prev + 1);
-        if (loginAttempts >= 2) {
-          setError('Too many failed attempts. Please try again later or reset your password.');
-        } else {
-          setError(signInError.message || 'Invalid email or password. Please try again.');
-        }
-      } else if (signedInUser) {
-        setSuccess('Authentication successful!');
-        // Navigation will be handled by AuthContext based on user role and country_code
-        // The AuthContext should redirect automatically after successful login
-      }
-    } catch (err) {
-      setError('Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   return <div className="flex min-h-screen w-full flex-col">
       {/* Left side - Login form */}
@@ -126,7 +94,7 @@ export const LoginPage = () => {
                   type="button"
                   variant="outline"
                   fullWidth
-                  onClick={signInWithGoogle}
+                  onClick={() => signInWithGoogle()}
                   className="flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -150,52 +118,7 @@ export const LoginPage = () => {
                   <span>Continue with Google</span>
                 </Button>
               </div>
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">Or continue with email</span>
-                </div>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="relative">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <MailIcon size={16} className="text-gray-400" />
-                    </div>
-                    <input type="email" className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal transition-all duration-300" placeholder="Enter your work email" value={email} onChange={e => setEmail(e.target.value)} required />
-                  </div>
-                </div>
-                <div className="relative">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <LockIcon size={16} className="text-gray-400" />
-                    </div>
-                    <input type={showPassword ? 'text' : 'password'} className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-10 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal transition-all duration-300" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <button type="button" className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Checkbox label="Remember me" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
-                  <Link to="/forgot-password" className="text-sm font-medium text-ash-teal hover:text-ash-teal/80 transition-colors duration-200">
-                    Forgot password?
-                  </Link>
-                </div>
-                <Button type="submit" variant="secondary" fullWidth isLoading={isLoading} className="transform transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]">
-                  Sign In
-                </Button>
-              </form>
+
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={() => navigate('/reauth')}

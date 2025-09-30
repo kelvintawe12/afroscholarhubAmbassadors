@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { MailIcon, LockIcon, UserIcon, AlertTriangleIcon, CheckCircleIcon, GlobeIcon, EyeIcon, EyeOffIcon } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { UserIcon, AlertTriangleIcon, GlobeIcon } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { useAuth } from '../contexts/AuthContext';
 import { getCountries } from '../api/reports';
 import { updateUserProfile, ensureUserInDatabase } from '../api/auth';
-import { Country } from '../types/index';
 
 interface SimpleCountry {
   code: string;
@@ -21,19 +20,18 @@ interface CountryOption extends SimpleCountry {
 export const SignUpPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { signUp, signInWithGoogle, user, loading: authLoading } = useAuth();
+  const { signInWithGoogle, user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
   const [showCountrySelector, setShowCountrySelector] = useState(false);
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>('');
   const [countriesLoading, setCountriesLoading] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+
   const [animateStats, setAnimateStats] = useState(false);
   const [statsVisible, setStatsVisible] = useState([false, false, false, false]);
 
@@ -96,37 +94,7 @@ export const SignUpPage = () => {
     }
   }, [searchParams, user, fullName]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    if (!email || !password || !fullName) {
-      setError('Please fill in all fields');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const { user: newUser, session, error: signUpError } = await signUp(email, password, { full_name: fullName });
-      if (signUpError) {
-        setError(signUpError.message);
-      } else if (session) {
-        setSuccess('Account created successfully!');
-        // Redirect to country selection step
-        navigate('/signup?step=country-selection');
-      } else {
-        setSuccess('Account created! Please check your email to confirm your account before signing in.');
-        setTimeout(() => navigate('/login'), 3000);
-      }
-    } catch (err) {
-      setError('Sign up failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
 
   const handleCountrySelect = async (countryCode: string) => {
     setSelectedCountry(countryCode);
@@ -198,12 +166,7 @@ export const SignUpPage = () => {
                 <p>{error}</p>
               </div>
             )}
-            {success && (
-              <div className="mb-6 flex items-start rounded-md border-l-4 border-green-500 bg-green-50 p-3 text-sm text-green-700 animate-slide-up">
-                <CheckCircleIcon size={16} className="mr-2 mt-0.5 flex-shrink-0" />
-                <p>{success}</p>
-              </div>
-            )}
+
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm animate-fade-in">
               <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
                 Create your account
@@ -213,7 +176,7 @@ export const SignUpPage = () => {
                   type="button"
                   variant="outline"
                   fullWidth
-                  onClick={signInWithGoogle}
+                  onClick={() => signInWithGoogle(true)}
                   className="flex items-center justify-center space-x-2 border-gray-300 hover:bg-gray-50 transition-colors duration-200"
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -225,88 +188,8 @@ export const SignUpPage = () => {
                   <span>Continue with Google</span>
                 </Button>
               </div>
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="bg-white px-2 text-gray-500">Or continue with email</span>
-                </div>
-              </div>
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="relative">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <UserIcon size={16} className="text-gray-400" />
-                    </div>
-                    <Input
-                      type="text"
-                      className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal transition-all duration-300"
-                      placeholder="Enter your full name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="relative">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <MailIcon size={16} className="text-gray-400" />
-                    </div>
-                    <Input
-                      type="email"
-                      className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal transition-all duration-300"
-                      placeholder="Enter your work email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="relative">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                      <LockIcon size={16} className="text-gray-400" />
-                    </div>
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      className="w-full rounded-md border border-gray-300 py-2 pl-10 pr-10 focus:border-ash-teal focus:outline-none focus:ring-1 focus:ring-ash-teal transition-all duration-300"
-                      placeholder="Create a password (min 6 characters)"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                      <button
-                        type="button"
-                        className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  fullWidth
-                  isLoading={isLoading}
-                  className="transform transition-transform duration-200 hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  Create Account
-                </Button>
-              </form>
+
+
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}

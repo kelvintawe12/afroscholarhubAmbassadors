@@ -8,7 +8,7 @@ interface AuthContextType extends AuthState {
   signIn: (email: string, password: string) => Promise<{ user: User | null; error: AuthError | null }>;
   signOut: () => Promise<void>;
   signUp: (email: string, password: string, metadata?: any) => Promise<{ user: User | null; session: any; error: AuthError | null }>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (isSignup?: boolean) => Promise<void>;
   updateUserProfile: (updates: Partial<Pick<AppUser, 'full_name' | 'role' | 'country_code' | 'avatar_url'>>) => Promise<{ error: string | null }>;
 }
 
@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSignupMode, setIsSignupMode] = useState(false);
 
   useEffect(() => {
     // Get initial session
@@ -45,8 +46,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_sessionEvent, session) => {
-        console.log('AuthContext: auth state changed:', _sessionEvent, session);
+      async (event, session) => {
+        console.log('AuthContext: auth state changed:', event, session);
+        if (event === 'SIGNED_IN' && isSignupMode) {
+          // Account already exists, error and navigate to login
+          setError('Account already exists. Please sign in instead.');
+          await supabase.auth.signOut();
+          window.location.href = '/login';
+          return;
+        }
         if (session?.user) {
           await setUserFromSession(session.user);
         } else {
@@ -61,7 +69,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const setUserFromSession = async (authUser: User): Promise<void> => {
     try {
-      // First, try to get the role from the database
+      // Always query database for role and other user data
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .select('role, country_code, full_name')
@@ -76,6 +84,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         role = dbUser.role as UserRole;
         country_code = dbUser.country_code || country_code;
         full_name = dbUser.full_name || full_name;
+      } else {
+        // If database query fails, fall back to metadata
+        role = (authUser.user_metadata?.role as UserRole) || 'ambassador';
+        console.warn('Failed to fetch user data from database, using metadata defaults');
       }
 
       const appUser: AppUser = {
@@ -89,11 +101,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updated_at: authUser.updated_at || authUser.created_at,
       };
 
-      // Ensure user exists in the database (this will update if role changed)
-      await ensureUserInDatabase(appUser);
-
       setUser(appUser);
       setError(null);
+
+      // Ensure user exists in database asynchronously (don't block UI)
+      if (dbError) {
+        ensureUserInDatabase(appUser).catch(err =>
+          console.warn('Failed to ensure user in database:', err)
+        );
+      }
     } catch (err) {
       setError('Failed to set user data');
     }
@@ -145,8 +161,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
-    setLoading(true);
-    setError(null);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
@@ -156,12 +170,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (err) {
       setError('Sign out failed');
-    } finally {
-      setLoading(false);
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (isSignup = false) => {
+    setIsSignupMode(isSignup);
     setLoading(true);
     setError(null);
     try {

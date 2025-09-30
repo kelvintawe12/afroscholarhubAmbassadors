@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { ToastProvider } from './components/Toast';
 import { AuthProvider } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoadingSpinner } from './components/LoadingSpinner';
 
 // Lazy load all components for code splitting
@@ -115,169 +116,211 @@ function App() {
               <Route
                 path="/dashboard/management"
                 element={
-                  <DashboardLayout>
-                    <ManagementDashboard />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <ManagementDashboard />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/global"
                 element={
-                  <DashboardLayout>
-                    <GlobalPeekPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <GlobalPeekPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/analytics"
                 element={
-                  <DashboardLayout>
-                    <AnalyticsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <AnalyticsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/insights"
                 element={
-                  <DashboardLayout>
-                    <InsightsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <InsightsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/ambassadors"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <AmbassadorsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/ambassadors/performance"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorPerformancePage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <AmbassadorPerformancePage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/ambassadors/training"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorTrainingPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <AmbassadorTrainingPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/users"
                 element={
-                  <DashboardLayout>
-                    <UsersPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <UsersPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/schools"
                 element={
-                  <DashboardLayout>
-                    <SchoolsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <SchoolsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/schools/prospects"
                 element={
-                  <DashboardLayout>
-                    <SchoolProspectsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <SchoolProspectsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/schools/partnerships"
                 element={
-                  <DashboardLayout>
-                    <SchoolPartnershipsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <SchoolPartnershipsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/outreaches/events"
                 element={
-                  <DashboardLayout>
-                    <OutreachEventsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <OutreachEventsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/outreaches/events/new"
                 element={
-                  <DashboardLayout>
-                    <EventCreatePage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <EventCreatePage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/outreaches/events/:id/edit"
                 element={
-                  <DashboardLayout>
-                    <EventEditPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <EventEditPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/outreaches/pipeline"
                 element={
-                  <DashboardLayout>
-                    <OutreachPipelinePage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <OutreachPipelinePage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/outreaches/calendar"
                 element={
-                  <DashboardLayout>
-                    <CalendarPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <CalendarPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/reports/weekly"
                 element={
-                  <DashboardLayout>
-                    <WeeklyReportsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <WeeklyReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/reports/monthly"
                 element={
-                  <DashboardLayout>
-                    <MonthlyReportsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <MonthlyReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/reports/quarterly"
                 element={
-                  <DashboardLayout>
-                    <QuarterlyReportsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <QuarterlyReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/reports/custom"
                 element={
-                  <DashboardLayout>
-                    <CustomReportsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <CustomReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/management/settings"
                 element={
-                  <DashboardLayout>
-                    <SettingsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="management">
+                    <DashboardLayout>
+                      <SettingsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               {/* Country Lead Routes */}
@@ -288,229 +331,285 @@ function App() {
               <Route
                 path="/dashboard/country-lead/:countryCode"
                 element={
-                  <DashboardLayout>
-                    <CountryLeadDashboard />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <CountryLeadDashboard />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
                 {/* add that for the TrainingViewPage */}
               <Route
                 path="/dashboard/country-lead/:countryCode/training"
                 element={
-                  <DashboardLayout>
-                  <CountryLeadTrainingViewPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                    <CountryLeadTrainingViewPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
 
               <Route
                 path="/dashboard/country-lead/:countryCode/team"
                 element={
-                  <DashboardLayout>
-                    <TeamPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <TeamPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/country-lead/:countryCode/pipeline"
                 element={
-                  <DashboardLayout>
-                    <PipelinePage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <PipelinePage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/country-lead/:countryCode/events"
                 element={
-                  <DashboardLayout>
-                    <EventsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <EventsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/country-lead/:countryCode/resources"
                 element={
-                  <DashboardLayout>
-                    <ResourcesPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <ResourcesPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/country-lead/:countryCode/escalations"
                 element={
-                  <DashboardLayout>
-                    <EscalationsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <EscalationsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/country-lead/:countryCode/global"
                 element={
-                  <DashboardLayout>
-                    <GlobalPeekPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <GlobalPeekPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/country-lead/:countryCode/reports"
                 element={
-                  <DashboardLayout>
-                    <ReportsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="country_lead">
+                    <DashboardLayout>
+                      <ReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               {/* Ambassador Routes */}
               <Route
                 path="/dashboard/ambassador"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorDashboard />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <AmbassadorDashboard />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/global"
                 element={
-                  <DashboardLayout>
-                    <GlobalPeekPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <GlobalPeekPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/tasks"
                 element={
-                  <DashboardLayout>
-                    <TasksPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <TasksPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/schools"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorSchoolsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <AmbassadorSchoolsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/activity"
                 element={
-                  <DashboardLayout>
-                    <ActivityLogPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <ActivityLogPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/resources"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorResourcesPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <AmbassadorResourcesPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/impact"
                 element={
-                  <DashboardLayout>
-                    <ImpactPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <ImpactPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/support"
                 element={
-                  <DashboardLayout>
-                    <SupportPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <SupportPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/profile"
                 element={
-                  <DashboardLayout>
-                    <ProfilePage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <ProfilePage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/settings"
                 element={
-                  <DashboardLayout>
-                    <SettingsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <SettingsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/ambassador/training"
                 element={
-                  <DashboardLayout>
-                    <AmbassadorTrainingViewPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="ambassador">
+                    <DashboardLayout>
+                      <AmbassadorTrainingViewPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               {/* Support Routes */}
               <Route
                 path="/dashboard/support"
                 element={
-                  <DashboardLayout>
-                    <SupportDashboard />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <SupportDashboard />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/global"
                 element={
-                  <DashboardLayout>
-                    <GlobalPeekPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <GlobalPeekPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/queues"
                 element={
-                  <DashboardLayout>
-                    <QueuesPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <QueuesPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/resources"
                 element={
-                  <DashboardLayout>
-                    <SupportResourcesPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <SupportResourcesPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/reports"
                 element={
-                  <DashboardLayout>
-                    <SupportReportsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <SupportReportsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/moderation"
                 element={
-                  <DashboardLayout>
-                    <ModerationPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <ModerationPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/audits"
                 element={
-                  <DashboardLayout>
-                    <AuditsPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <AuditsPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               <Route
                 path="/dashboard/support/directory"
                 element={
-                  <DashboardLayout>
-                    <DirectoryPage />
-                  </DashboardLayout>
+                  <ProtectedRoute requiredRole="support">
+                    <DashboardLayout>
+                      <DirectoryPage />
+                    </DashboardLayout>
+                  </ProtectedRoute>
                 }
               />
               {/* Help Routes */}
