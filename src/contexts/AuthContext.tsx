@@ -154,6 +154,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
+      // Check if email already exists in users table
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .limit(1);
+
+      if (checkError) {
+        setError('Failed to check email');
+        setLoading(false);
+        return { user: null, session: null, error: { message: 'Failed to check email' } as AuthError };
+      }
+
+      if (existingUsers && existingUsers.length > 0) {
+        setError('Email already exists. Please sign in instead.');
+        window.location.href = '/login';
+        setLoading(false);
+        return { user: null, session: null, error: { message: 'Email already exists' } as AuthError };
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
