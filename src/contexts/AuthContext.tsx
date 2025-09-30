@@ -25,24 +25,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isSignupMode, setIsSignupMode] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('AuthContext: initial session:', session, 'error:', error);
-        if (error) {
-          setError(error.message);
-        } else if (session?.user) {
-          await setUserFromSession(session.user);
-        }
-      } catch (err) {
-        setError('Failed to get session');
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Check if this is a page refresh
+    const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    const isRefresh = navigationEntry?.type === 'reload';
 
-    getInitialSession();
+    if (isRefresh) {
+      // Sign out on refresh
+      supabase.auth.signOut().then(() => {
+        setUser(null);
+        setLoading(false);
+      });
+    } else {
+      // Get initial session on normal load
+      const getInitialSession = async () => {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          console.log('AuthContext: initial session:', session, 'error:', error);
+          if (error) {
+            setError(error.message);
+          } else if (session?.user) {
+            await setUserFromSession(session.user);
+          }
+        } catch (err) {
+          setError('Failed to get session');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      getInitialSession();
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -64,7 +76,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const setUserFromSession = async (authUser: User): Promise<void> => {

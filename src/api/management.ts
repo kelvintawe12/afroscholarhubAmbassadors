@@ -421,52 +421,64 @@ export const getInsightsData = async () => {
 };
 
 export const getAmbassadorsData = async () => {
-  // Get ambassadors with their performance data
-  const { data: usersData, error: usersError } = await supabase
-    .from('users')
-    .select(`
-      id,
-      full_name,
-      email,
-      role,
-      country_code,
-      performance_score,
-      created_at,
-      last_activity,
-      status
-    `)
-    .eq('role', 'ambassador');
+  try {
+    // Get ambassadors with their performance data
+    const { data: usersData, error: usersError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        full_name,
+        email,
+        role,
+        country_code,
+        performance_score,
+        created_at,
+        last_activity,
+        status
+      `)
+      .eq('role', 'ambassador');
 
-  if (usersError) throw usersError;
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      throw new Error(`Failed to fetch ambassadors: ${usersError.message}`);
+    }
 
-  // Get visits data for each ambassador
-  const { data: visitsData, error: visitsError } = await supabase
-    .from('visits')
-    .select(`
-      ambassador_id,
-      school_id,
-      students_reached,
-      leads_generated,
-      visit_date
-    `);
+    // Get visits data for each ambassador
+    const { data: visitsData, error: visitsError } = await supabase
+      .from('visits')
+      .select(`
+        ambassador_id,
+        school_id,
+        students_reached,
+        leads_generated,
+        visit_date
+      `);
 
-  if (visitsError) throw visitsError;
+    if (visitsError) {
+      console.error('Error fetching visits:', visitsError);
+      // Don't throw here, just log and continue with empty visits data
+      console.warn('Continuing without visits data due to error');
+    }
 
-  // Get tasks data for each ambassador
-  const { data: tasksData, error: tasksError } = await supabase
-    .from('tasks')
-    .select(`
-      ambassador_id,
-      status,
-      created_at
-    `);
+    // Get tasks data for each ambassador
+    const { data: tasksData, error: tasksError } = await supabase
+      .from('tasks')
+      .select(`
+        ambassador_id,
+        status,
+        created_at
+      `);
 
-  if (tasksError) throw tasksError;
+    if (tasksError) {
+      console.error('Error fetching tasks:', tasksError);
+      // Don't throw here, just log and continue with empty tasks data
+      console.warn('Continuing without tasks data due to error');
+    }
 
-  // Aggregate data per ambassador
-  const ambassadors = usersData.map(user => {
-    const userVisits = visitsData.filter(v => v.ambassador_id === user.id);
-    const userTasks = tasksData.filter(t => t.ambassador_id === user.id);
+    // Aggregate data per ambassador
+    const ambassadors = usersData.map(user => {
+      const userVisits = (visitsData || []).filter(v => v.ambassador_id === user.id);
+      const userTasks = (tasksData || []).filter(t => t.ambassador_id === user.id);
 
     const uniqueSchools = new Set(userVisits.map(v => v.school_id)).size;
     const totalSchools = uniqueSchools;
@@ -585,6 +597,10 @@ export const getAmbassadorsData = async () => {
       completionRate: completionRateData
     }
   };
+  } catch (error) {
+    console.error('Error in getAmbassadorsData:', error);
+    throw new Error(`Failed to fetch ambassadors data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 
 // New functions for ambassador management

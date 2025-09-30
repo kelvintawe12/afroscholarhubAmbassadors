@@ -26,7 +26,7 @@ import { KpiCard } from '../../../ui/widgets/KpiCard';
 import { BarChart } from '../../../ui/widgets/BarChart';
 import { PieChart } from '../../../ui/widgets/PieChart';
 import { LineChart } from '../../../ui/widgets/LineChart';
-import { getAmbassadorsData, getCountries, createAmbassador, assignCountryLead, assignCountryToAmbassador } from '../../../../api/management';
+import { getAmbassadorsData, getCountries, createAmbassador, assignCountryLead, assignCountryToAmbassador, updateUserRole } from '../../../../api/management';
 
 // Types
 interface Ambassador {
@@ -381,10 +381,19 @@ const AmbassadorsPage: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await getAmbassadorsData();
+
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Request timeout - please refresh the page')), 30000); // 30 second timeout
+        });
+
+        const dataPromise = getAmbassadorsData();
+        const data = await Promise.race([dataPromise, timeoutPromise]);
+
         setDashboardData(data);
       } catch (err: any) {
-        setError(err.message);
+        console.error('Error fetching ambassadors data:', err);
+        setError(err.message || 'Failed to load ambassadors data');
       } finally {
         setLoading(false);
       }
@@ -480,17 +489,21 @@ const AmbassadorsPage: React.FC = () => {
   const [newCountryName, setNewCountryName] = useState('');
   const [showAddAmbassador, setShowAddAmbassador] = useState(false);
   const [newAmbassador, setNewAmbassador] = useState({ name: '', email: '', countryCode: '' });
+  const [selectedAmbassador, setSelectedAmbassador] = useState<Ambassador | null>(null);
+  const [showAmbassadorModal, setShowAmbassadorModal] = useState(false);
 
   const handleAssignLead = (ambassador: Ambassador) => {
     setAssigningLead(ambassador);
     // Optionally open a modal for confirmation or country selection
   };
 
-  const confirmAssignLead = async () => {
-    if (assigningLead && assigningLead.country) {
+  const confirmAssignLead = async (ambassador?: Ambassador) => {
+    const leadToAssign = ambassador || assigningLead;
+    if (leadToAssign && leadToAssign.country) {
       try {
-        await assignCountryLead(assigningLead.country, assigningLead.id);
-        alert(`${assigningLead.name} assigned as Country Lead!`);
+        await assignCountryLead(leadToAssign.country, leadToAssign.id);
+        await updateUserRole(leadToAssign.id, 'country_lead');
+        alert(`${leadToAssign.name} assigned as Country Lead!`);
         setAssigningLead(null);
         await refreshData();
       } catch (err: any) {
@@ -855,10 +868,13 @@ const AmbassadorsPage: React.FC = () => {
             {filteredAmbassadors.length > 0 ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredAmbassadors.slice(0, 6).map((ambassador) => (
-                  <AmbassadorCard 
+                  <AmbassadorCard
                     key={ambassador.id}
                     ambassador={ambassador}
-                    onClick={() => console.log('View ambassador:', ambassador.name)}
+                    onClick={() => {
+                      setSelectedAmbassador(ambassador);
+                      setShowAmbassadorModal(true);
+                    }}
                   />
                 ))}
               </div>
@@ -1160,7 +1176,7 @@ const AmbassadorsPage: React.FC = () => {
             </p>
             <div className="flex justify-end gap-2 mt-6">
               <button className="px-4 py-2 rounded bg-gray-100" onClick={() => setAssigningLead(null)}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-ash-teal text-white" onClick={confirmAssignLead}>Confirm</button>
+              <button className="px-4 py-2 rounded bg-ash-teal text-white" onClick={() => confirmAssignLead()}>Confirm</button>
             </div>
           </div>
         </div>
@@ -1382,6 +1398,181 @@ const AmbassadorsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Ambassador Details Modal */}
+      {showAmbassadorModal && selectedAmbassador && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-ash-teal to-ash-gold p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-ash-teal to-ash-gold flex items-center justify-center text-white font-semibold text-lg">
+                      {selectedAmbassador.name.charAt(0)}
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">{selectedAmbassador.name}</h2>
+                    <p className="text-white/80 text-sm flex items-center">
+                      <span className="mr-1">{selectedAmbassador.flag || '🏳️'}</span>
+                      {selectedAmbassador.country} • {selectedAmbassador.role}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAmbassadorModal(false);
+                    setSelectedAmbassador(null);
+                  }}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X className="h-6 w-6 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Info */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Performance Overview */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance Overview</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-ash-teal">{selectedAmbassador.performanceScore}%</div>
+                        <div className="text-sm text-gray-500">Performance Score</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{selectedAmbassador.schoolsReached}</div>
+                        <div className="text-sm text-gray-500">Schools Reached</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-yellow-600">{selectedAmbassador.scholarshipsGenerated}</div>
+                        <div className="text-sm text-gray-500">Scholarships</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">{selectedAmbassador.conversionRate}%</div>
+                        <div className="text-sm text-gray-500">Conversion Rate</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center">
+                        <Mail className="h-5 w-5 text-gray-400 mr-3" />
+                        <span className="text-gray-900">{selectedAmbassador.email}</span>
+                      </div>
+                      {selectedAmbassador.phone && (
+                        <div className="flex items-center">
+                          <Phone className="h-5 w-5 text-gray-400 mr-3" />
+                          <span className="text-gray-900">{selectedAmbassador.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center">
+                        <MapPin className="h-5 w-5 text-gray-400 mr-3" />
+                        <span className="text-gray-900">{selectedAmbassador.country}, {selectedAmbassador.region}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Training & Certification */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Training & Certification</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-sm mb-1">
+                          <span>Training Completion</span>
+                          <span>{selectedAmbassador.trainingCompletion}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-ash-teal to-ash-gold h-2 rounded-full"
+                            style={{ width: `${selectedAmbassador.trainingCompletion}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Certifications</span>
+                        <span className="text-sm font-semibold text-gray-900">{selectedAmbassador.certifications}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sidebar */}
+                <div className="space-y-6">
+                  {/* Status & Role */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Status & Role</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-sm text-gray-500">Current Status</span>
+                        <div className="mt-1">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig[selectedAmbassador.status]?.color || 'bg-gray-100 text-gray-700'}`}>
+                            {statusConfig[selectedAmbassador.status]?.icon || <Clock className="h-4 w-4" />}
+                            {selectedAmbassador.status}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-500">Role</span>
+                        <div className="mt-1">
+                          <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${roleConfig[selectedAmbassador.role]?.color || 'bg-gray-100 text-gray-700'}`}>
+                            {roleConfig[selectedAmbassador.role]?.label || selectedAmbassador.role}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-500">Join Date</span>
+                        <div className="mt-1 text-sm font-medium text-gray-900">
+                          {new Date(selectedAmbassador.joinDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-500">Last Activity</span>
+                        <div className="mt-1 text-sm font-medium text-gray-900">
+                          {selectedAmbassador.lastActivity}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                    <div className="space-y-3">
+                      <button className="w-full flex items-center gap-2 px-4 py-2 bg-ash-teal text-white rounded-lg font-medium hover:bg-ash-teal/90 transition-colors">
+                        <MessageSquare className="h-4 w-4" />
+                        Send Message
+                      </button>
+                      <button className="w-full flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        <Download className="h-4 w-4" />
+                        Export Profile
+                      </button>
+                      <button
+                        className="w-full flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (selectedAmbassador) confirmAssignLead(selectedAmbassador);
+                        }}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Assign as Lead
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

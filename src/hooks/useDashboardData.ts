@@ -672,8 +672,7 @@ export const useCountryDistribution = () => {
     async () => {
       const { data, error } = await supabase
         .from('schools')
-        .select('country_code')
-        .eq('status', 'partnered');
+        .select('country_code');
 
       if (error) throw error;
 
